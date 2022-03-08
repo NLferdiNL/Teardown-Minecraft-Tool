@@ -13,6 +13,8 @@ toolName = "minecraftbuildtool"
 toolReadableName = "Minecraft Tool"
 
 -- TODO: Block Name above inventory, scrollable creative inventory.
+-- TODO: Middle mouse to select (or grab in creative)
+-- TODO: Fix grabbing objects.
 
 local toolVox = "MOD/vox/tool.vox"
 
@@ -156,7 +158,7 @@ function tick(dt)
 		SetString("game.player.tool", "sledge")
 	end
 	
-	if InputPressed(binds["Place"]) or InputDown(binds["Place"])then
+	if InputPressed(binds["Place"]) or InputDown(binds["Place"]) then
 		if InputDown(binds["Place"]) then
 			holdTimer = holdTimer - dt
 			
@@ -421,7 +423,7 @@ function ToolPlaceBlockAnim()
 end
 
 function ScrollLogic()
-	if GetValue("NumbersToSelect") and GetString("game.player.tool") then
+	if GetValue("NumbersToSelect") and lastFrameTool == toolName then
 		for i = 1, 9 do
 			local numberKeyDown = InputPressed(tostring(i))
 			
