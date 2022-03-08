@@ -1,0 +1,4 @@
+name = Minecraft Building Tool
+author = NLferdiNL
+description = [noupload]Build/Destroy using Minecraft blocks.
+tags = Tool
