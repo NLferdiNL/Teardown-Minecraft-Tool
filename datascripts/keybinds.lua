@@ -20,6 +20,7 @@ bindOrder = {
 	"Prev_Block",
 	"Next_Block",
 	"Toggle_Dynamic",
+	"Open_Inventory",
 	--"Reset_Special_Blocks",
 	--"Set_Offset",
 	"Quit_Tool",

@@ -12,7 +12,7 @@
 toolName = "minecraftbuildtool"
 toolReadableName = "Minecraft Tool"
 
--- TODO: Create hotbar, create inventory.
+-- TODO: Block Name above inventory, scrollable creative inventory.
 
 local toolVox = "MOD/vox/tool.vox"
 
@@ -29,10 +29,7 @@ local modDisabled = false
 local drawPlayerLine = false
 local dynamicBlock = false
 local checkCollision = false
-local creativeMode = true
-
-local inventoryOpen = false
-local inventoryBlockDataOnMouse = {0, 0}
+creativeMode = true
 
 local holdTimer = 0
 local holdTimerMax = {0.5, 0.25, 0.1}
@@ -49,7 +46,7 @@ local hotbarSelectorImagePath = "MOD/sprites/hotbar_selector.png"
 local crosshairImagePath = "MOD/sprites/crosshair.png"
 
 local hotbarSelectedIndex = 1
-local inventory = {}
+inventory = {}
 
 local mainInventorySize = 9 * 4
 local miscInventorySlots = 4 --Armor
@@ -58,9 +55,11 @@ for i = 1, mainInventorySize + miscInventorySlots do
 	inventory[i] = {0, 0} --{BLOCKID, STACKSIZE}
 	
 	if i >= 32 then
-		inventory[i] = {i - 31, i - 31}
+		inventory[i] = {i - 31, 1}
 	end
 end
+
+inventoryHotBarStartIndex = #inventory - 8
 
 function init()
 	saveFileInit(savedVars)
@@ -99,6 +98,8 @@ function tick(dt)
 	ScrollLogic()
 	lastFrameTool = GetString("game.player.tool")
 	
+	inventory_tick()
+	
 	if not canUseTool() then
 		return
 	end
@@ -109,7 +110,20 @@ function tick(dt)
 		return
 	end
 	
-	if isMenuOpenRightNow then
+	if InputPressed(binds["Open_Inventory"]) or (getInventoryOpen() and InputPressed("esc")) then
+		if InputPressed("esc") then
+			SetPaused(false)
+		end
+		
+		local inventoryOpen = getInventoryOpen()
+		if inventoryOpen then
+			-- Drop Mouse Held Item()
+		end
+		
+		setInventoryOpen(not inventoryOpen)
+	end
+	
+	if isMenuOpenRightNow  or getInventoryOpen() then
 		return
 	end
 	
@@ -142,10 +156,6 @@ function tick(dt)
 		SetString("game.player.tool", "sledge")
 	end
 	
-	if InputPressed(binds["Open_Inventory"]) then
-		inventoryOpen = not inventoryOpen
-	end
-	
 	if InputPressed(binds["Place"]) or InputDown(binds["Place"])then
 		if InputDown(binds["Place"]) then
 			holdTimer = holdTimer - dt
@@ -176,7 +186,12 @@ function draw(dt)
 	end
 	
 	renderHud()
-	renderCrosshair()
+	
+	inventory_draw()
+	
+	if not getInventoryOpen() then
+		renderCrosshair()
+	end
 end
 
 function GetAimTarget()
@@ -432,16 +447,16 @@ function ScrollLogic()
 		end
 	else
 		if InputPressed(binds["Prev_Block"]) then
-			scrollDiff = scrollDiff - 1
+			scrollDiff = scrollDiff + 1
 		end
 		
 		if InputPressed(binds["Next_Block"]) then
-			scrollDiff = scrollDiff + 1
+			scrollDiff = scrollDiff - 1
 		end
 	end
 	
 	if scrollDiff > 0 then
-		selectedBlock = selectedBlock + 1
+		--selectedBlock = selectedBlock + 1
 		hotbarSelectedIndex = hotbarSelectedIndex - 1
 		if selectedBlock > #blocks then
 			selectedBlock = 1
@@ -451,7 +466,7 @@ function ScrollLogic()
 			hotbarSelectedIndex = 9
 		end
 	elseif scrollDiff < 0 then
-		selectedBlock = selectedBlock - 1
+		--selectedBlock = selectedBlock - 1
 		hotbarSelectedIndex = hotbarSelectedIndex + 1
 		if selectedBlock < 1 then
 			selectedBlock = #blocks
@@ -531,9 +546,7 @@ end
 function getCurrentHeldBlockData(index)
 	index = index or hotbarSelectedIndex - 1
 
-	local inventoryStartIndex = #inventory - 8
-
-	local currInvData = inventory[inventoryStartIndex + index]
+	local currInvData = inventory[inventoryHotBarStartIndex + index]
 	
 	if currInvData[1] == 0 or currInvData[2] == 0 then
 		return nil
@@ -583,7 +596,7 @@ function renderHud()
 							local blockName = blocks[currBlockId][1]
 							UiAlign("center middle")
 							UiTranslate(i * (selectorWidth * arbitraryIndexNumber))
-							UiImageBox("MOD/sprites/blocks/" .. blockName .. ".png", selectorWidth / 2, selectorHeight / 2, 0, 0)
+							UiImageBox("MOD/sprites/blocks/" .. blockName .. ".png", selectorWidth * 0.6, selectorHeight * 0.6, 0, 0)
 							
 							if currBlockStackSize > 1 then
 								UiTranslate(selectorHeight / 4, selectorHeight / 4)
@@ -597,10 +610,6 @@ function renderHud()
 		UiPop()
 	UiPop()
 
-	if true then
-		return
-	end
-
 	UiPush()
 		UiAlign("center left")
 		
@@ -609,8 +618,10 @@ function renderHud()
 		UiTextShadow(0, 0, 0, 0.5, 2.0)
 		
 		if modDisabled then
+			UiTranslate(0, -150)
 			UiText("Minecraft Building Tool requires the experimental build of Teardown.")
-		else
+			return
+		end--[[else
 			if GetValue("ScrollToSelect") then
 				UiText(blocks[selectedBlock][1])
 			else
@@ -618,8 +629,8 @@ function renderHud()
 			end
 		end
 		
-		UiTranslate(-75, -30)
-		
+		UiTranslate(-75, -30)]]--
+		UiTranslate(-75, -110)
 		drawStatusBox("[" .. binds["Toggle_Dynamic"]:upper() .. "] Dynamic Block", dynamicBlock)
 		--drawToggle("[" .. binds["Toggle_Walk_Mode"]:upper() .. "] to toggle walk speed.", walkModeActive)
 		
