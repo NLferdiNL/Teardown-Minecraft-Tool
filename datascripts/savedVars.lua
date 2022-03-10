@@ -25,6 +25,15 @@ savedVars = {
 		valueType = "int",
 		configurable = true,
 	},
+	
+	InventoryUIScale = {
+		name = "Inventory UI Scale.",
+		boxDescription = "Size of the inventory UI.",
+		default = 1,
+		current = nil,
+		valueType = "int",
+		configurable = true,
+	},
 }
 
 menuVarOrder = { "ScrollToSelect", "NumbersToSelect",}

@@ -4,13 +4,14 @@ local inventoryBlockDataOnMouse = {0, 0}
 
 local creativeInventoryItemsTabImagePath = "MOD/sprites/container/creative_tab_items.png"
 
-local itemIconSize = 30
+local scaling = 1
+local itemIconSize = 30 * scaling
 
-function inventory_init()
-
+function inventory_init(uiScale)
+	setInventoryScaling(uiScale)
 end
 
-function inventory_tick()
+function inventory_tick(dt)
 	if not inventoryOpen then
 		return
 	end
@@ -35,15 +36,20 @@ function inventory_draw()
 			
 			UiTranslate(UiWidth() * 0.5, UiHeight() * 0.5)
 			
-			UiImageBox(creativeInventoryItemsTabImagePath, 410, 292, -5, -5)
+			local bgImageWidth = 410 * scaling
+			local bgImageHeight = 292 * scaling
+			local marginX = 16 * scaling
+			local marginY = 35 * scaling
+			
+			UiImageBox(creativeInventoryItemsTabImagePath, bgImageWidth, bgImageHeight, -5, -5)
 			
 			UiPush()
-				UiTranslate(-410 / 2, -292 / 2)
+				UiTranslate(-bgImageWidth / 2, -bgImageHeight / 2)
 				
-				local itemIconOffsetX = 16 + itemIconSize * 0.7
-				local itemIconOffsetY = 35 + itemIconSize * 0.7
+				local itemIconOffsetX = marginX + itemIconSize * 0.7
+				local itemIconOffsetY = marginY + itemIconSize * 0.7
 				
-				local itemInventoryOffset = itemIconSize + 7.2
+				local itemInventoryOffset = itemIconSize + 7.2 * scaling
 				
 				UiTranslate(itemIconOffsetX, itemIconOffsetY)
 				
@@ -64,7 +70,7 @@ function inventory_draw()
 					end
 				UiPop()
 				
-				UiTranslate(0, 5 * itemInventoryOffset + 10)
+				UiTranslate(0, 5 * itemInventoryOffset + 10 * scaling)
 				UiPush()
 					for i = 0, 8 do
 						drawSurvivalBlockButton(inventoryHotBarStartIndex + i)
@@ -146,6 +152,11 @@ function drawItemOnMouse()
 		
 		UiImageBox("MOD/sprites/blocks/" .. blockData[1] .. ".png", itemIconSize, itemIconSize, 0, 0)
 	UiPop()
+end
+
+function setInventoryScaling(newValue)
+	scaling = newValue
+	itemIconSize = 30 * scaling
 end
 
 function setInventoryOpen(newValue)

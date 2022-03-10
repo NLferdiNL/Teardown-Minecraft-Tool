@@ -63,10 +63,12 @@ end
 
 inventoryHotBarStartIndex = #inventory - 8
 
+inventoryScales = {1, 1.5, 2}
+
 function init()
 	saveFileInit(savedVars)
 	menu_init()
-	inventory_init()
+	inventory_init(inventoryScales[GetValue("InventoryUIScale")])
 	
 	RegisterTool(toolName, toolReadableName, toolVox)
 	SetBool("game.tool." .. toolName .. ".enabled", true)
@@ -100,7 +102,7 @@ function tick(dt)
 	ScrollLogic()
 	lastFrameTool = GetString("game.player.tool")
 	
-	inventory_tick()
+	inventory_tick(dt)
 	
 	if not canUseTool() then
 		return

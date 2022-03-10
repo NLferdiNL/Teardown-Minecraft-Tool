@@ -19,11 +19,12 @@ local menuMargin = 10
 local menuWidth = 0
 local menuHeight = 0
 
-local extraButtonHeight = 1
+local extraButtonHeight = 2
 
 local textBoxes = {}
 
 local blockPlacementSpeedNames = {"Slow", "Medium", "Fast"}
+local inventoryUiSizes = {"Small", "Medium", "Large"}
 
 local buttonWidth = 250
 
@@ -173,7 +174,29 @@ function customButtons()
 		UiFont("regular.ttf", 20)
 		UiText("Block Placement Speed")
 		UiTranslate(buttonWidth * 0.65, 0)
-		SetValue("BlockPlacementSpeed", selectionBox(GetValue("BlockPlacementSpeed"), blockPlacementSpeedNames, false, buttonWidth * 0.6))
+		
+		local blockPlacementSpeed = GetValue("BlockPlacementSpeed")
+		local newBlockPlacementSpeed = selectionBox(blockPlacementSpeed, blockPlacementSpeedNames, false, buttonWidth * 0.6)
+		
+		if blockPlacementSpeed ~= newBlockPlacementSpeed then
+			SetValue("BlockPlacementSpeed", newBlockPlacementSpeed)
+		end
+		
+		UiTranslate(0, 50)
+		
+		UiPush()
+			UiTranslate(-buttonWidth * 0.65, 0)
+			UiText("Inventory UI Scale")
+		UiPop()
+		
+		local inventoryScale = GetValue("InventoryUIScale")
+		local newInventoryScale = selectionBox(inventoryScale, inventoryUiSizes, false, buttonWidth * 0.6)
+		
+		if inventoryScale ~= newInventoryScale then
+			SetValue("InventoryUIScale", newInventoryScale)
+			setInventoryScaling(inventoryScales[newInventoryScale])
+		end
+		
 	UiPop()
 end
 
