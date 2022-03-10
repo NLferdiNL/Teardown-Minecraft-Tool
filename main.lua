@@ -15,6 +15,10 @@ toolReadableName = "Minecraft Tool"
 -- TODO: Block Name above inventory, scrollable creative inventory.
 -- TODO: Add dropping items.
 -- TODO: Fix block of ___ insides to be random.
+-- TODO: Block break particles.
+-- TODO: Double doors (add mirror next to sametype variable, unique type ids?)
+-- TODO: Slab systems (also using unique type ids?)
+-- TODO: Mouse over inventory, number press to hotbar.
 
 local toolVox = "MOD/vox/tool.vox"
 
