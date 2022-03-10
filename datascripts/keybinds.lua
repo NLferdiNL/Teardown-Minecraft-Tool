@@ -2,6 +2,7 @@
 
 binds = {
 	Mine = "lmb",
+	Pick_Block = "mmb",
 	Place = "rmb",
 	Open_Inventory = "i",
 	Scroll = "mousewheel",

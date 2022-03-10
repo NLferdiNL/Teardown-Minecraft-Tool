@@ -13,16 +13,14 @@ toolName = "minecraftbuildtool"
 toolReadableName = "Minecraft Tool"
 
 -- TODO: Block Name above inventory, scrollable creative inventory.
--- TODO: Middle mouse to select (or grab in creative)
 -- TODO: Add dropping items.
--- TODO: Inventory: Add scrolling.
 -- TODO: Fix block of ___ insides to be random.
 
 local toolVox = "MOD/vox/tool.vox"
 
 local menu_disabled = false
 
-local selectedBlock = #blocks - 1 --1
+--local selectedBlock = #blocks - 1 --1
 local lastFrameTool = ""
 
 local gridOffset = Vec(0, 0, 0)
@@ -145,12 +143,6 @@ function tick(dt)
 		return
 	end
 	
-	--[[if InputPressed(binds["Reset_Special_Blocks"]) then
-		--DebugPrint("before " .. #specialBlocks)
-		GetSpecialBlocks()
-		--DebugPrint("after " .. #specialBlocks)
-	end]]--
-	
 	--[[if InputPressed(binds["Set_Offset"]) then
 		SetOffset()
 	end]]--
@@ -174,6 +166,10 @@ function tick(dt)
 		RemoveBlock()
 		animTimer = animTimerMax
 		ToolPlaceBlockAnim()
+	end
+	
+	if InputPressed(binds["Pick_Block"]) then
+		PickBlock()
 	end
 	
 	if canGrabObject or GetPlayerGrabBody() ~= 0 or GetPlayerGrabShape() ~= 0 then
@@ -229,6 +225,32 @@ function GetAimTarget()
 	return hit, hitPoint, distance, normal, shape
 end
 
+function PickBlock()
+	if not hit then
+		return
+	end
+	
+	local blockTag = GetTagValue(shape, "minecraftblockid")
+	local aimBlockId = tonumber(blockTag)
+	
+	local found = false
+	
+	for i = 0, 8 do
+		local selectedBlockInvData = getCurrentHeldBlockData(i)
+		local currBlockId = selectedBlockInvData[1]
+		
+		if currBlockId == aimBlockId then
+			found = true
+			hotbarSelectedIndex = i + 1
+			break
+		end
+	end
+	
+	if creativeMode and not found then
+		inventory[inventoryHotBarStartIndex + hotbarSelectedIndex - 1] = {aimBlockId, 1}
+	end
+end
+
 function RemoveBlock()
 	if not hit then
 		return
@@ -262,7 +284,8 @@ function PlaceBlock()
 		return
 	end
 	
-	local selectedBlockData = blocks[selectedBlockInvData[1]]
+	local selectedBlockId = selectedBlockInvData[1]
+	local selectedBlockData = blocks[selectedBlockId]
 	
 	--local hitPointBlockOffset = VecAdd(hitPoint, Vec(-0.8, -0.8, -0.8))
 	--local normalOffset = VecAdd(hitPointBlockOffset, VecScale(normal, 0.8))
@@ -357,7 +380,7 @@ function PlaceBlock()
 	local hasSpecialData = 0
 	
 	if selectedBlockData[7] ~= nil then
-		specialBlocks[#specialBlocks + 1] = {block, selectedBlock}
+		specialBlocks[#specialBlocks + 1] = {block, selectedBlockId}
 		hasSpecialData = #specialBlocks
 	end
 	
@@ -366,13 +389,13 @@ function PlaceBlock()
 	if GetEntityType(block) == "body" then
 		block = GetBodyShapes(block)[1]
 	else
-		SetTag(block, "minecraftblockid", selectedBlock)
+		SetTag(block, "minecraftblockid", selectedBlockId)
 		if hasSpecialData > 0 then
 			SetTag(block, "minecraftspecialdata", hasSpecialData)
 		end
 	end
 	
-	SetTag(block, "minecraftblockid", selectedBlock)
+	SetTag(block, "minecraftblockid", selectedBlockId)
 	if hasSpecialData > 0 then
 		SetTag(block, "minecraftspecialdata", hasSpecialData)
 	end
@@ -478,9 +501,9 @@ function ScrollLogic()
 	if scrollDiff > 0 then
 		--selectedBlock = selectedBlock + 1
 		hotbarSelectedIndex = hotbarSelectedIndex - 1
-		if selectedBlock > #blocks then
+		--[[if selectedBlock > #blocks then
 			selectedBlock = 1
-		end
+		end]]--
 		
 		if hotbarSelectedIndex < 1 then
 			hotbarSelectedIndex = 9
@@ -488,9 +511,9 @@ function ScrollLogic()
 	elseif scrollDiff < 0 then
 		--selectedBlock = selectedBlock - 1
 		hotbarSelectedIndex = hotbarSelectedIndex + 1
-		if selectedBlock < 1 then
+		--[[if selectedBlock < 1 then
 			selectedBlock = #blocks
-		end
+		end]]--
 		
 		if hotbarSelectedIndex > 9 then
 			hotbarSelectedIndex = 1
