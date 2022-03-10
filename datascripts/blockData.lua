@@ -34,4 +34,6 @@ blocks = {{"Grass", 			 "MOD/vox/blocks/grass.vox", 			{x = 0, y = 0, 	z = 0}, 	
 		  {"Block Of Iron", 	 "MOD/vox/blocks/blockofiron.vox",		{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil,																									false, 		nil},
 		  {"Block Of Gold", 	 "MOD/vox/blocks/blockofgold.vox",		{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil,																									false, 		nil},
 		  {"Block Of Diamond", 	 "MOD/vox/blocks/blockofdiamond.vox",	{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil,																									false, 		nil},
+		  {"Block Of Emerald", 	 "MOD/vox/blocks/blockofemerald.vox",	{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil,																									false, 		nil},
+		  {"Block Of Redstone",  "MOD/vox/blocks/blockofredstone.vox",	{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil,																									false, 		nil},
 		 }

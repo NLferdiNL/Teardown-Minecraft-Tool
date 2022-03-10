@@ -14,7 +14,9 @@ toolReadableName = "Minecraft Tool"
 
 -- TODO: Block Name above inventory, scrollable creative inventory.
 -- TODO: Middle mouse to select (or grab in creative)
--- TODO: Fix grabbing objects.
+-- TODO: Add dropping items.
+-- TODO: Inventory: Add scrolling.
+-- TODO: Fix block of ___ insides to be random.
 
 local toolVox = "MOD/vox/tool.vox"
 
@@ -64,6 +66,15 @@ end
 inventoryHotBarStartIndex = #inventory - 8
 
 inventoryScales = {1, 1.5, 2}
+
+-- Aim variables
+local hit = false
+local hitPoint = Vec()
+local distance = 0
+local normal = Vec()
+local shape = 0
+
+local canGrabObject = false
 
 function init()
 	saveFileInit(savedVars)
@@ -122,6 +133,9 @@ function tick(dt)
 		local inventoryOpen = getInventoryOpen()
 		if inventoryOpen then
 			-- Drop Mouse Held Item()
+			local blockId, stackSize = getInventoryBlockDataOnMouse()
+			
+			setInventoryBlockDataOnMouse(0, 0)
 		end
 		
 		setInventoryOpen(not inventoryOpen)
@@ -129,12 +143,6 @@ function tick(dt)
 	
 	if isMenuOpenRightNow  or getInventoryOpen() then
 		return
-	end
-	
-	if InputPressed(binds["Mine"]) then
-		RemoveBlock()
-		animTimer = animTimerMax
-		ToolPlaceBlockAnim()
 	end
 	
 	--[[if InputPressed(binds["Reset_Special_Blocks"]) then
@@ -160,6 +168,18 @@ function tick(dt)
 		SetString("game.player.tool", "sledge")
 	end
 	
+	AimLogic()
+	
+	if InputPressed(binds["Mine"]) then
+		RemoveBlock()
+		animTimer = animTimerMax
+		ToolPlaceBlockAnim()
+	end
+	
+	if canGrabObject or GetPlayerGrabBody() ~= 0 or GetPlayerGrabShape() ~= 0 then
+		return
+	end
+	
 	if InputPressed(binds["Place"]) or InputDown(binds["Place"]) then
 		if InputDown(binds["Place"]) then
 			holdTimer = holdTimer - dt
@@ -178,8 +198,6 @@ function tick(dt)
 	elseif InputReleased(binds["Place"]) then
 		holdTimer = 0
 	end
-	
-	AimLogic()
 end
 
 function draw(dt)
@@ -208,12 +226,10 @@ function GetAimTarget()
 		return false, nil, nil, nil
 	end
 	
-	return hit, hitPoint, normal, shape
+	return hit, hitPoint, distance, normal, shape
 end
 
 function RemoveBlock()
-	local hit, hitPoint, normal, shape = GetAimTarget()
-	
 	if not hit then
 		return
 	end
@@ -236,8 +252,6 @@ function RemoveBlock()
 end
 
 function PlaceBlock()
-	local hit, hitPoint, normal, shape = GetAimTarget()
-	
 	if not hit then
 		return
 	end
@@ -386,11 +400,13 @@ function CollisionCheck(pos, size)
 end
 
 function AimLogic()
-	local hit, hitPoint, normal, shape = GetAimTarget()
+	hit, hitPoint, distance, normal, shape = GetAimTarget()
 	
 	if not hit then
 		return
 	end
+	
+	canGrabObject = distance <= 3 and IsBodyDynamic(GetShapeBody(shape))
 	
 	local normalOffset = VecAdd(hitPoint, VecScale(normal, -gridModulo / 2))
 	local gridAligned = getGridAlignedPos(normalOffset)
@@ -498,8 +514,6 @@ end
 end]]--
 
 function SetOffset()
-	local hit, hitPoint, normal, shape = GetAimTarget()
-	
 	if not hit then
 		return
 	end
