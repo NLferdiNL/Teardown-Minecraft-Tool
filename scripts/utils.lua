@@ -236,12 +236,49 @@ function renderFace(pos, rot, xWidth, yWidth, red, green, blue, spriteAlpha)
 	DrawSprite(faceSprite, Transform(pos, rot), xWidth, yWidth, red, green, blue, spriteAlpha, true, false)
 end
 
-function spawnDebugParticle(pos)
+function spawnDebugParticle(pos, lifetime, color4)
+	lifetime = lifetime or 10
+	color4 = color4 or {r = 1, g = 0, b = 0}
 	ParticleReset()
 	ParticleCollide(0)
 	ParticleType("plain")
 	ParticleTile(4)
-	ParticleColor(1, 0, 0)
+	ParticleColor(color4.r, color4.g, color4.b)
 	ParticleRadius(0.25)
 	SpawnParticle(pos, Vec(), 10)
+end
+
+function CheckIfPosWithin(pos, minBounds, maxBounds)
+	local xCheck = pos[1] > minBounds[1] and pos[1] < maxBounds[1]
+	
+	if not xCheck then
+		return false
+	end
+	
+	local yCheck = pos[2] > minBounds[2] and pos[2] < maxBounds[2]
+	
+	if not yCheck then
+		return false
+	end
+	
+	local zCheck = pos[3] > minBounds[3] and pos[3] < maxBounds[3]
+	
+	if not zCheck then
+		return false
+	end
+	
+	return true
+end
+
+function CollisionCheck(pos, size)
+	local margin = 0.05
+
+	local minPos = Vec(pos[1] + margin, pos[2] + margin, pos[3] + margin)
+	local maxPos = Vec(pos[1] + size[1] / 2 - margin, 
+					   pos[2] + size[2] / 2 - margin, 
+					   pos[3] + size[3] / 2 - margin)
+	
+	local shapes = QueryAabbShapes(minPos, maxPos)
+	
+	return shapes
 end

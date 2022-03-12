@@ -37,7 +37,7 @@ local gridModulo = blockSize / 10
 local modDisabled = false
 local drawPlayerLine = false
 local dynamicBlock = false
-local checkCollision = false
+local checkCollision = true
 creativeMode = true
 
 local holdTimer = 0
@@ -306,23 +306,23 @@ function PlaceBlock()
 	--local hitPointBlockOffset = VecAdd(hitPoint, Vec(-0.8, -0.8, -0.8))
 	--local normalOffset = VecAdd(hitPointBlockOffset, VecScale(normal, 0.8))
 	
-	local normalOffset = VecAdd(hitPoint, VecScale(normal, gridModulo / 2))
+	local normalOffset = VecAdd(hitPoint, VecScale(normal, gridModulo * 0.1))
 	local gridAligned = getGridAlignedPos(normalOffset)
 	
 	local blockRot = Quat()
 	
-	if selectedBlockData[3].x ~= 0 or selectedBlockData[3].y ~= 0 or selectedBlockData[3].z ~= 0 then
-		local playerPos = GetPlayerCameraTransform().pos
+	local playerPos = GetPlayerCameraTransform().pos
 	
-		playerPos[2] = playerPos[2] - gridModulo / 2
-		
-		playerPos = getGridAlignedPos(playerPos, 1)
-		--[[playerPos = Vec(playerPos[1] + 0.8,
-						playerPos[2] + 0.8,
-						playerPos[3] + 0.8)]]--
-		
-		--blockRot = QuatLookAt(gridAligned, playerPos)
-		
+	playerPos[2] = playerPos[2] - gridModulo / 2
+	
+	playerPos = getGridAlignedPos(playerPos, 1)
+	--[[playerPos = Vec(playerPos[1] + 0.8,
+					playerPos[2] + 0.8,
+					playerPos[3] + 0.8)]]--
+	
+	--blockRot = QuatLookAt(gridAligned, playerPos)
+	
+	if selectedBlockData[3].x ~= 0 or selectedBlockData[3].y ~= 0 or selectedBlockData[3].z ~= 0 then
 		local blockEulerX = 0
 		local blockEulerY = 0
 		local blockEulerZ = 0
@@ -363,6 +363,49 @@ function PlaceBlock()
 		blockRot = QuatEuler(blockEulerX, blockEulerY, blockEulerZ)
 	end
 	
+	--[[
+	local alignOffset = Vec()
+			
+	--if otherBlockTransform.pos[1] == gridAligned.po
+	DebugPrint(VecToString(gridAligned))
+	DebugPrint(VecToString(otherBlockTransform.pos))
+	
+	--blockRot = QuatRotateQuat(blockRot, QuatEuler(0, 180, 0)
+	--gridAligned = VecAdd(gridAligned, alignOffset)
+	]]--
+	if selectedBlockData[9] > 1 then
+		local otherBlock = shape
+		local otherBlockId = 0
+		local otherBlockType = 1
+		local otherBlockTransform = GetShapeWorldTransform(otherBlock)
+		local blockMaxBounds = Vec(blockSize / 10, blockSize / 10, blockSize / 10)
+		
+		if HasTag(shape, "minecraftblockid") then
+			otherBlockId = tonumber(GetTagValue(shape, "minecraftblockid"))
+			otherBlockType = blocks[otherBlockId][9]
+		end
+	
+		if selectedBlockData[9] == 2 then
+			local left = TransformToParentPoint(gridAligned, VecAdd(gridAligned, Vec(0, 0, -1)))
+			local right = TransformToParentPoint(gridAligned, VecAdd(gridAligned, Vec(0, 0, 1)))
+			
+			--spawnDebugParticle(left)
+			--spawnDebugParticle(right)
+		elseif otherBlockType == selectedBlockData[9] and otherBlockType == 3 and CheckIfPosWithin(VecAdd(hitPoint, VecScale(normal, gridModulo * 0.1)), otherBlockTransform.pos, VecAdd(otherBlockTransform.pos, blockMaxBounds)) then
+			local otherBlockTransform = GetShapeWorldTransform(otherBlock)
+			
+			if otherBlockTransform.pos[2] < gridAligned[2] + blockSize / 2 then
+				gridAligned = VecAdd(otherBlockTransform.pos, Vec(0, blockSize / 10 / 2, 0))
+			else
+				gridAligned = VecAdd(otherBlockTransform.pos, Vec(0, -blockSize / 10 / 2, 0))
+			end
+		elseif selectedBlockData[9] == 3 then
+			if hitPoint[2] + normal[2] * 0.01 > gridAligned[2] + blockSize / 10 / 2 then
+				gridAligned = VecAdd(gridAligned, Vec(0, blockSize / 10 / 2, 0))
+			end
+		end
+	end
+	
 	--gridAligned = VecAdd(gridAligned[1] + selectedBlockData[6].x, gridAligned[2] + selectedBlockData[6].y, gridAligned[3] + selectedBlockData[6].z)
 	
 	--gridAligned = VecAdd(gridAligned, gridOffset)
@@ -377,7 +420,7 @@ function PlaceBlock()
 	
 	local blockBrushXML = "brush='" .. selectedBlockData[2]
 	
-	local collCheckPassed = not checkCollision or CollisionCheck(gridAligned, VecScale(blockSizeVec, blockSize / 100))
+	local collCheckPassed = not checkCollision or #CollisionCheck(gridAligned, VecScale(blockSizeVec, blockSize / 100)) <= 0
 	
 	if not collCheckPassed then
 		return
@@ -385,8 +428,8 @@ function PlaceBlock()
 	
 	local extraBlockXML = ""
 	
-	if selectedBlockData[9] ~= nil then
-		extraBlockXML = selectedBlockData[9]
+	if selectedBlockData[10] ~= nil then
+		extraBlockXML = selectedBlockData[10]
 	end
 	
 	local blockXML = "<voxbox " .. blockSizeXML .. " " .. blockOffsetXML .. " prop='" .. tostring(dynamicBlock or selectedBlockData[8]) .. "' " .. blockBrushXML .. "' " .. selectedBlockData[4] .. ">" .. extraBlockXML .. "</voxbox>"
@@ -404,11 +447,6 @@ function PlaceBlock()
 	
 	if GetEntityType(block) == "body" then
 		block = GetBodyShapes(block)[1]
-	else
-		SetTag(block, "minecraftblockid", selectedBlockId)
-		if hasSpecialData > 0 then
-			SetTag(block, "minecraftspecialdata", hasSpecialData)
-		end
 	end
 	
 	SetTag(block, "minecraftblockid", selectedBlockId)
@@ -425,19 +463,6 @@ function PlaceBlock()
 	end
 end
 
-function CollisionCheck(pos, size)
-	local margin = 0.05
-
-	local minPos = Vec(pos[1] + margin, pos[2] + margin, pos[3] + margin)
-	local maxPos = Vec(pos[1] + size[1] / 2 - margin, 
-					   pos[2] + size[2] / 2 - margin, 
-					   pos[3] + size[3] / 2 - margin)
-	
-	local shapes = QueryAabbShapes(minPos, maxPos)
-	
-	return #shapes <= 0
-end
-
 function AimLogic()
 	hit, hitPoint, distance, normal, shape = GetAimTarget()
 	
@@ -447,7 +472,7 @@ function AimLogic()
 	
 	canGrabObject = distance <= 3 and IsBodyDynamic(GetShapeBody(shape))
 	
-	local normalOffset = VecAdd(hitPoint, VecScale(normal, -gridModulo / 2))
+	local normalOffset = VecAdd(hitPoint, VecScale(normal, -gridModulo * 0.1))
 	local gridAligned = getGridAlignedPos(normalOffset)
 							
 	local blockOffset = Vec(gridAligned[1] + gridModulo / 2,
