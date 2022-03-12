@@ -11,14 +11,17 @@
 
 toolName = "minecraftbuildtool"
 toolReadableName = "Minecraft Tool"
+local toolSlot = nil
 
 -- TODO: Block Name above inventory, scrollable creative inventory.
 -- TODO: Add dropping items.
--- TODO: Fix block of ___ insides to be random.
+-- TODO: Fix "block of ___" insides to be random.
 -- TODO: Block break particles.
 -- TODO: Double doors (add mirror next to sametype variable, unique type ids?)
 -- TODO: Slab systems (also using unique type ids?)
--- TODO: Mouse over inventory, number press to hotbar.
+-- TODO: Mouse over inventory > number press to hotbar.
+-- TODO: Grab stops working when dist is greater but item still held.
+-- TODO: Fix trapdoor alignment, clips into hinged block.
 
 local toolVox = "MOD/vox/tool.vox"
 
@@ -83,7 +86,11 @@ function init()
 	menu_init()
 	inventory_init(inventoryScales[GetValue("InventoryUIScale")])
 	
-	RegisterTool(toolName, toolReadableName, toolVox)
+	if toolSlot ~= nil then
+		RegisterTool(toolName, toolReadableName, toolVox, toolSlot)
+	else
+		RegisterTool(toolName, toolReadableName, toolVox)
+	end
 	SetBool("game.tool." .. toolName .. ".enabled", true)
 	
 	--SetString("game.player.tool", toolName)
@@ -121,7 +128,8 @@ function tick(dt)
 		return
 	end
 	
-	SetString("hud.aimdot", false)
+	--SetBool("hud.aimdot", false)
+	SetBool("hud.disable", true)
 	
 	if modDisabled then
 		return
@@ -236,6 +244,10 @@ function PickBlock()
 	
 	local blockTag = GetTagValue(shape, "minecraftblockid")
 	local aimBlockId = tonumber(blockTag)
+	
+	if aimBlockId == nil or aimBlockId <= 0 then
+		return
+	end
 	
 	local found = false
 	

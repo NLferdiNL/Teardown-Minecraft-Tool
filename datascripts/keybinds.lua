@@ -9,6 +9,7 @@ binds = {
 	Prev_Block = "z",
 	Next_Block = "c",
 	Toggle_Dynamic = "x",
+	Drop_Item = "q",
 	Quit_Tool = "n",
 	--Set_Offset = "l",
 	--Reset_Special_Blocks = "o",
@@ -24,6 +25,7 @@ bindOrder = {
 	"Open_Inventory",
 	--"Reset_Special_Blocks",
 	--"Set_Offset",
+	--"Drop_Item",
 	"Quit_Tool",
 	"Open_Menu",
 }
@@ -37,6 +39,7 @@ bindNames = {
 	Prev_Block = "Previous Block",
 	Next_Block = "Next Block",
 	Toggle_Dynamic = "Toggle Dynamic",
+	Drop_Item = "Drop Item",
 	Quit_Tool = "Quit Tool",
 	--Set_Offset = "Set Offset",
 	--Reset_Special_Blocks = "Reset special blocks",
