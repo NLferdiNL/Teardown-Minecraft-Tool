@@ -34,6 +34,15 @@ savedVars = {
 		valueType = "int",
 		configurable = true,
 	},
+	
+	OldRotationMethod = {
+		name = "Old Rotation Method",
+		boxDescription = "Use old rotation method of facing towards you.\nWarning: This method is deprecated and will not receive updates!",
+		default = false,
+		current = nil,
+		valueType = "bool",
+		configurable = true,
+	},
 }
 
-menuVarOrder = { "ScrollToSelect", "NumbersToSelect",}
+menuVarOrder = { "ScrollToSelect", "NumbersToSelect", "OldRotationMethod",}

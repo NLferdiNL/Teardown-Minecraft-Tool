@@ -270,8 +270,28 @@ function CheckIfPosWithin(pos, minBounds, maxBounds)
 	return true
 end
 
-function CollisionCheck(pos, size)
-	local margin = 0.05
+function roundToNearest(x, factor) 
+    return math.floor(x/factor+0.5)*factor
+end
+
+function CollisionCheckCenterPivot(pos, size)
+	margin = margin or 0.05
+
+	local minPos = Vec(pos[1] + margin - size[1] / 2, 
+					   pos[2] + margin - size[2] / 2, 
+					   pos[3] + margin - size[3] / 2)
+	
+	local maxPos = Vec(pos[1] + size[1] / 2 - margin, 
+					   pos[2] + size[2] / 2 - margin, 
+					   pos[3] + size[3] / 2 - margin)
+	
+	local shapes = QueryAabbShapes(minPos, maxPos)
+	
+	return shapes
+end
+
+function CollisionCheck(pos, size, margin)
+	margin = margin or 0.05
 
 	local minPos = Vec(pos[1] + margin, pos[2] + margin, pos[3] + margin)
 	local maxPos = Vec(pos[1] + size[1] / 2 - margin, 

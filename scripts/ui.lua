@@ -62,6 +62,8 @@ function drawToggle(label, value, callback, buttonWidth, buttonHeight)
 	
 	buttonWidth = buttonWidth or 250
 	buttonHeight = buttonHeight or 40
+	
+	local mouseInRect = false
 
 	UiPush()
 		UiButtonImageBox("MOD/sprites/square.png", 6, 6, 0, 0, 0, 0.5)
@@ -70,10 +72,18 @@ function drawToggle(label, value, callback, buttonWidth, buttonHeight)
 		if UiTextButton(fullLabel, buttonWidth, buttonHeight) then
 			callback(not value)
 		end
+		
+		UiAlign("top left")
+		UiTranslate(-buttonWidth / 2, -buttonHeight / 2)
+		mouseInRect = UiIsMouseInRect(buttonWidth, buttonHeight)
 	UiPop()
+	
+	return mouseInRect
 end
 
 function drawToggleBox(value, callback)
+	local mouseInRect = false
+
 	UiPush()
 		local image = "ui/common/box-outline-6.png"
 		
@@ -87,7 +97,13 @@ function drawToggleBox(value, callback)
 				UiImageBox("ui/terminal/checkmark.png", 25, 25, 0, 0)
 			UiPop()
 		end
+		
+		UiAlign("top left")
+		UiTranslate(-60, -60)
+		mouseInRect = UiIsMouseInRect(120, 120)
 	UiPop()
+	
+	return mouseInRect
 end
 
 function drawStatusBox(label, status)
@@ -139,6 +155,8 @@ function selectionBox(index, keys, triggerChange, optionWidth, margin, maxIndex,
 	
 	maxIndex = maxIndex or #keys
 	
+	local mouseInRect = false
+	
 	UiPush()
 		UiFont("regular.ttf", 26)
 		UiAlign("center middle")
@@ -146,6 +164,10 @@ function selectionBox(index, keys, triggerChange, optionWidth, margin, maxIndex,
 		UiPush()
 			UiColorFilter(0, 0, 0, 0.5)
 			UiImageBox("MOD/sprites/square.png", optionWidth, 40, 6, 6)
+			
+			UiAlign("top left")
+			UiTranslate(-optionWidth / 2, -20)
+			mouseInRect = UiIsMouseInRect(optionWidth, 40)
 		UiPop()
 		
 		UiPush()
@@ -185,5 +207,5 @@ function selectionBox(index, keys, triggerChange, optionWidth, margin, maxIndex,
 		UiPop()
 	UiPop()
 	
-	return currentSettingIndex
+	return currentSettingIndex, mouseInRect
 end

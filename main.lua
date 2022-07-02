@@ -13,7 +13,8 @@ toolName = "minecraftbuildtool"
 toolReadableName = "Minecraft Tool"
 local toolSlot = nil
 
--- TODO: Block Name above inventory, scrollable creative inventory.
+-- TODO: Block Name above inventory.
+-- TODO: Mouse over names.
 -- TODO: Add dropping items.
 -- TODO: Fix "block of ___" insides to be random.
 -- TODO: Block break particles.
@@ -37,7 +38,7 @@ local gridModulo = blockSize / 10
 local modDisabled = false
 local drawPlayerLine = false
 local dynamicBlock = false
-local checkCollision = true
+local checkCollision = false
 creativeMode = true
 
 local holdTimer = 0
@@ -311,7 +312,8 @@ function PlaceBlock()
 	
 	local blockRot = Quat()
 	
-	local playerPos = GetPlayerCameraTransform().pos
+	local playerCameraTransform = GetPlayerCameraTransform()
+	local playerPos = playerCameraTransform.pos
 	
 	playerPos[2] = playerPos[2] - gridModulo / 2
 	
@@ -322,26 +324,62 @@ function PlaceBlock()
 	
 	--blockRot = QuatLookAt(gridAligned, playerPos)
 	
-	if selectedBlockData[3].x ~= 0 or selectedBlockData[3].y ~= 0 or selectedBlockData[3].z ~= 0 then
-		local blockEulerX = 0
-		local blockEulerY = 0
-		local blockEulerZ = 0
-		local blockPosOffset = Vec()
-		
-		if playerPos[2] == gridAligned[2] then
-			if selectedBlockData[3].x ~= 0 or selectedBlockData[3].z ~= 0 then
-				if playerPos[1] == gridAligned[1] then
-					--blockRot = QuatEuler(90 * selectedBlockData[3].x, 0, 0)
-					blockEulerX = 90 * selectedBlockData[3].x
-					blockPosOffset[2] = blockPosOffset[2] + gridModulo
-				elseif playerPos[3] == gridAligned[3] then
-					--blockRot = QuatEuler(0, 0, 90 * selectedBlockData[3].z)
-					blockEulerZ = 90 * selectedBlockData[3].z
+	local blockEulerX = 0
+	local blockEulerY = 0
+	local blockEulerZ = 0
+	local blockPosOffset = Vec()
+	
+	if GetValue("OldRotationMethod") then
+		if selectedBlockData[3].x ~= 0 or selectedBlockData[3].y ~= 0 or selectedBlockData[3].z ~= 0 then
+			if playerPos[2] == gridAligned[2] then
+				if selectedBlockData[3].x ~= 0 or selectedBlockData[3].z ~= 0 then
+					if playerPos[1] == gridAligned[1] then
+						--blockRot = QuatEuler(90 * selectedBlockData[3].x, 0, 0)
+						blockEulerX = 90 * selectedBlockData[3].x
+						blockPosOffset[2] = blockPosOffset[2] + gridModulo
+					elseif playerPos[3] == gridAligned[3] then
+						--blockRot = QuatEuler(0, 0, 90 * selectedBlockData[3].z)
+						blockEulerZ = 90 * selectedBlockData[3].z
+						blockPosOffset[1] = blockPosOffset[1] + gridModulo
+					end
+				end
+			end
+				
+			if selectedBlockData[3].y ~= 0 then
+				if playerPos[1] == gridAligned[1] and playerPos[3] < gridAligned[3] then
+					--blockRot = QuatEuler(0, 180 * selectedBlockData[3].y, 0)
+					blockEulerY = 180 * selectedBlockData[3].y
 					blockPosOffset[1] = blockPosOffset[1] + gridModulo
+					blockPosOffset[3] = blockPosOffset[3] + gridModulo
+				elseif playerPos[3] == gridAligned[3] and playerPos[1] < gridAligned[1]  then
+					--blockRot = QuatEuler(0, -90 * selectedBlockData[3].y, 0)
+					blockEulerY = -90 * selectedBlockData[3].y
+					blockPosOffset[1] = blockPosOffset[1] + gridModulo
+				elseif playerPos[3] == gridAligned[3] and playerPos[1] > gridAligned[1]  then
+					--blockRot = QuatEuler(0, 90 * selectedBlockData[3].y, 0)
+					blockEulerY = 90 * selectedBlockData[3].y
+					blockPosOffset[3] = blockPosOffset[3] + gridModulo
 				end
 			end
 		end
+	else
+		if (selectedBlockData[3].x ~= 0 or selectedBlockData[3].z ~= 0) and selectedBlockData[3].y == 0 then
+			local gridAlignedHitPoint = getGridAlignedPos(VecAdd(hitPoint, VecScale(normal, -gridModulo * 0.1)))
 			
+			--DebugWatch("a", gridAligned)
+			--DebugWatch("b", gridAlignedHitPoint)
+			
+			if gridAlignedHitPoint[1] == gridAligned[1] and gridAlignedHitPoint[2] == gridAligned[2] then
+				--blockRot = QuatEuler(90 * selectedBlockData[3].x, 0, 0)
+				blockEulerX = 90 * selectedBlockData[3].x
+				blockPosOffset[2] = blockPosOffset[2] + gridModulo
+			elseif gridAlignedHitPoint[3] == gridAligned[3] and gridAlignedHitPoint[2] == gridAligned[2]  then
+				--blockRot = QuatEuler(0, 0, 90 * selectedBlockData[3].z)
+				blockEulerZ = 90 * selectedBlockData[3].z
+				blockPosOffset[1] = blockPosOffset[1] + gridModulo
+			end
+		end
+	
 		if selectedBlockData[3].y ~= 0 then
 			if playerPos[1] == gridAligned[1] and playerPos[3] < gridAligned[3] then
 				--blockRot = QuatEuler(0, 180 * selectedBlockData[3].y, 0)
@@ -358,9 +396,6 @@ function PlaceBlock()
 				blockPosOffset[3] = blockPosOffset[3] + gridModulo
 			end
 		end
-		
-		gridAligned = VecAdd(gridAligned, blockPosOffset)
-		blockRot = QuatEuler(blockEulerX, blockEulerY, blockEulerZ)
 	end
 	
 	--[[
@@ -385,12 +420,46 @@ function PlaceBlock()
 			otherBlockType = blocks[otherBlockId][9]
 		end
 	
-		if selectedBlockData[9] == 2 then
-			local left = TransformToParentPoint(gridAligned, VecAdd(gridAligned, Vec(0, 0, -1)))
-			local right = TransformToParentPoint(gridAligned, VecAdd(gridAligned, Vec(0, 0, 1)))
+		if selectedBlockData[9] == 2 and false then
+			local playerRotX, playerRotY, playerRotZ = GetQuatEuler(playerCameraTransform.rot)
 			
-			--spawnDebugParticle(left)
-			--spawnDebugParticle(right)
+			local tempTransform = Transform(gridAligned, QuatEuler(0, roundToNearest(playerRotY, 90), 0))
+			local left = TransformToParentPoint(tempTransform, Vec(-gridModulo / 2, gridModulo / 2, -gridModulo / 2))
+			--local right = TransformToParentPoint(tempTransform, Vec(gridModulo * 1.5, gridModulo / 2, -gridModulo / 2))
+			
+			spawnDebugParticle(left, 5)
+			--spawnDebugParticle(right, 5, Color4.Green)
+			
+			local searchSize = {gridModulo, gridModulo, gridModulo}
+			
+			local objectsLeft = CollisionCheckCenterPivot(left, searchSize)
+			--local objectsRight = CollisionCheckCenterPivot(right, searchSize)
+			
+			--local doorRotated = false
+			
+			if #objectsLeft > 0 then
+				local filteredObjectsLeft = FilterBlockType(objectsLeft, 2)
+				--DebugPrint("l")
+				
+				if #filteredObjectsLeft > 0 then
+					blockEulerY = blockEulerX + 90
+					
+					local otherShapeTransform = GetShapeWorldTransform(filteredObjectsLeft[1])
+					
+					gridAligned = VecAdd(gridAligned, VecScale(TransformToParentVec(otherShapeTransform, Vec(1, 0, 0)), gridModulo)) --0.1245
+					gridAligned = VecAdd(gridAligned, VecScale(TransformToParentVec(tempTransform, Vec(0, 0, 1)), math.floor(gridModulo / 5.33))) --0.1245
+				end
+			end
+			
+			--[[if not doorRotated and #objectsRight > 0 then
+				local filteredObjectsRight = FilterBlockType(objectsRight, 2)
+				
+				if #filteredObjectsRight > 0 then
+					blockEulerY = blockEulerX + 270
+					--blockPosOffset = VecAdd(blockPosOffset, VecScale(gridModuloTransformToParentVec(tempTransform, Vec(0, 0, 1))
+				end
+			end]]--
+			
 		elseif otherBlockType == selectedBlockData[9] and otherBlockType == 3 and CheckIfPosWithin(VecAdd(hitPoint, VecScale(normal, gridModulo * 0.1)), otherBlockTransform.pos, VecAdd(otherBlockTransform.pos, blockMaxBounds)) then
 			local otherBlockTransform = GetShapeWorldTransform(otherBlock)
 			
@@ -406,6 +475,9 @@ function PlaceBlock()
 		end
 	end
 	
+	gridAligned = VecAdd(gridAligned, blockPosOffset)
+	blockRot = QuatEuler(blockEulerX, blockEulerY, blockEulerZ)
+	
 	--gridAligned = VecAdd(gridAligned[1] + selectedBlockData[6].x, gridAligned[2] + selectedBlockData[6].y, gridAligned[3] + selectedBlockData[6].z)
 	
 	--gridAligned = VecAdd(gridAligned, gridOffset)
@@ -420,11 +492,17 @@ function PlaceBlock()
 	
 	local blockBrushXML = "brush='" .. selectedBlockData[2]
 	
+	--local testList = CollisionCheck(gridAligned, VecScale(blockSizeVec, blockSize / 100))
+	
 	local collCheckPassed = not checkCollision or #CollisionCheck(gridAligned, VecScale(blockSizeVec, blockSize / 100)) <= 0
 	
-	if not collCheckPassed then
+	--[[if not collCheckPassed then
+		DrawShapeOutline(testList[1], 1, 0, 0, 1)
+		
+		local hit, p, n = GetShapeClosestPoint(testList[1], gridAligned)
+		spawnDebugParticle(p, Color4.Green)
 		return
-	end
+	end]]--
 	
 	local extraBlockXML = ""
 	
@@ -500,6 +578,32 @@ function AimLogic()
 	end
 end
 
+function FilterBlockType(shapeList, typeId)
+	local newList = {}
+	
+	for i = 1, #shapeList do
+		local currShape = shapeList[i]
+		
+		local blockId = tonumber(GetTagValue(currShape, "minecraftblockid"))
+		
+		--DebugPrint(blockId)
+		
+		if blockId ~= nil and blockId > 0 then
+			local otherTypeId = blocks[blockId][9]
+			
+			DebugPrint(otherTypeId)
+		
+			if otherTypeId == typeId then
+				newList[#newList + 1] = currShape
+			end
+		end
+	end
+	
+	--DebugPrint(#newList)
+	
+	return newList
+end
+
 function ToolPlaceBlockAnim()
 	SetToolTransform(Transform(Vec(0, 0, -0.05), QuatEuler(-36, 44, 22)))
 end
@@ -519,7 +623,7 @@ function ScrollLogic()
 
 	local scrollDiff = 0
 	
-	if GetValue("ScrollToSelect") then
+	if GetValue("ScrollToSelect") and not getInventoryOpen() then
 		scrollDiff = InputValue(binds["Scroll"])
 	
 		if scrollDiff == 0 then
@@ -591,7 +695,7 @@ function SetOffset()
 							
 	gridOffset = Vec(hitPoint[1] - blockOffset[1], hitPoint[2] - blockOffset[2], hitPoint[3] - blockOffset[3])
 	
-	DebugPrint(VecToString(gridOffset))
+	--DebugPrint(VecToString(gridOffset))
 end
 
 function HandleSpecialBlocks()
@@ -696,7 +800,7 @@ function renderHud()
 		UiAlign("center left")
 		
 		UiTranslate(UiWidth() * 0.5, UiHeight() * (0.96))
-		UiFont("regular.ttf", 26)
+		UiFont("MOD/fonts/MinecraftRegular.ttf", 26)
 		UiTextShadow(0, 0, 0, 0.5, 2.0)
 		
 		if modDisabled then

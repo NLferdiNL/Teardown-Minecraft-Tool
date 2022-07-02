@@ -28,6 +28,15 @@ local inventoryUiSizes = {"Small", "Medium", "Large"}
 
 local buttonWidth = 250
 
+local hoveredBox = 0
+
+local font = "regular.ttf"
+local descriptionBoxMargin = 20
+local defaultDescriptionTextSize = 26
+local descBoxBgColor = {0, 0, 0, 0.75}
+local descBoxTextColor = {1, 1, 1, 1}
+local descBoxBg = "MOD/sprites/square.png"
+
 function menu_init()
 	setupTextBoxes()
 	
@@ -96,7 +105,7 @@ end
 
 function bottomMenuButtons()
 	UiPush()
-		UiFont("regular.ttf", 26)
+		UiFont(font, 26)
 	
 		UiButtonImageBox("MOD/sprites/square.png", 6, 6, 0, 0, 0, 0.5)
 		
@@ -171,7 +180,7 @@ end
 function customButtons()
 	UiPush()
 		UiTranslate(-90, 0)
-		UiFont("regular.ttf", 20)
+		UiFont(font, 20)
 		UiText("Block Placement Speed")
 		UiTranslate(buttonWidth * 0.65, 0)
 		
@@ -212,7 +221,7 @@ function rightSideMenu()
 		UiPush()
 			UiTranslate(menuWidth / 5, 0)
 			
-			UiFont("regular.ttf", 20)
+			UiFont(font, 20)
 		UiPop()
 	UiPop()
 end
@@ -243,7 +252,7 @@ function menu_draw(dt)
 		
 		--UiTranslate(menuWidth / 10, 0)
 		
-		UiFont("regular.ttf", 26)
+		UiFont(font, 26)
 		UiAlign("center middle")
 		
 		UiTranslate(0, menuMargin + 20)
@@ -261,21 +270,29 @@ function menu_draw(dt)
 		--textboxClass_render(perUnitBox)
 		
 		UiPush()
-		for i = 1, #menuVarOrder do
-			local varName = menuVarOrder[i]
-			local varData = savedVars[varName]
-			local boxId = varData["boxId"]
+		
+			hoveredBox = 0
 			
-			if boxId ~= nil then
-				local currTextBox = textBoxes[boxId]
-			
-				textboxClass_render(currTextBox)
-			else
-				drawToggle(varData["name"] .. ":", varData["current"], function(i) varData["current"] = i end, 300)
+			for i = 1, #menuVarOrder do
+				local varName = menuVarOrder[i]
+				local varData = savedVars[varName]
+				local boxId = varData["boxId"]
+				
+				if boxId ~= nil then
+					local currTextBox = textBoxes[boxId]
+				
+					textboxClass_render(currTextBox)
+				else
+					--Mouse in rect not needed for textboxes, those handle descriptions themselves.
+					local mouseinRect = drawToggle(varData["name"] .. ":", varData["current"], function(i) varData["current"] = i end, 300)
+					
+					if mouseinRect then
+						hoveredBox = i
+					end
+				end
+				
+				UiTranslate(0, 50)
 			end
-			
-			UiTranslate(0, 50)
-		end
 		UiPop()
 		
 		UiTranslate(0, 50 * (#menuVarOrder))
@@ -296,6 +313,8 @@ function menu_draw(dt)
 	UiPop()
 
 	textboxClass_drawDescriptions()
+	
+	drawDescriptions()
 end
 
 function setupTextBoxes()
@@ -410,3 +429,81 @@ end
 function setMenuOpen(val)
 	menuOpened = val
 end
+
+function drawDescriptions()
+	if hoveredBox <= 0 then
+		return
+	end
+	
+	UiPush()
+		UiFont(font, defaultDescriptionTextSize)
+		
+		local varName = menuVarOrder[hoveredBox]
+		local varData = savedVars[varName]
+		local varDesc = varData.boxDescription
+		
+		if varDesc ~= nil and varDesc ~= "" then
+			local mX, mY = UiGetMousePos()
+			
+			UiAlign("top left")
+			
+			UiTranslate(mX, mY)
+			
+			local textWidth, textHeight = UiGetTextSize(varDesc)
+					
+			local boxWidth = mX + textWidth + descriptionBoxMargin
+			
+			local textOffsetX = 10
+			
+			if boxWidth > UiWidth() then
+				UiAlign("top right")
+				textOffsetX = -10
+			end
+			
+			UiColor(descBoxBgColor[1], descBoxBgColor[2], descBoxBgColor[3], descBoxBgColor[4])
+			UiImageBox(descBoxBg, textWidth + descriptionBoxMargin, textHeight + descriptionBoxMargin, 0, 0)
+			
+			UiTranslate(textOffsetX, 10)
+			
+			UiColor(descBoxTextColor[1], descBoxTextColor[2], descBoxTextColor[3], descBoxTextColor[4])
+			UiText(varDesc)
+		end
+	UiPop()
+end
+
+--[[function textboxClass_drawDescriptions()
+	UiPush()
+		UiFont(font, defaultDescriptionTextSize)
+	
+		for i = 1, #textboxes do
+			local currentTextbox = textboxes[i]
+			
+			if currentTextbox.mouseOver then
+				currentTextbox.mouseOver = false
+				
+				local mX, mY = UiGetMousePos()
+				UiAlign("top left")
+				UiTranslate(mX, mY)
+				
+				local textWidth, textHeight = UiGetTextSize(currentTextbox.description)
+				
+				local boxWidth = mX + textWidth + descriptionBoxMargin
+				
+				local textOffsetX = 10
+				
+				if boxWidth > UiWidth() then
+					UiAlign("top right")
+					textOffsetX = -10
+				end
+				
+				UiColor(descBoxBgColor[1], descBoxBgColor[2], descBoxBgColor[3], descBoxBgColor[4])
+				UiImageBox(descBoxBg, textWidth + descriptionBoxMargin, textHeight + descriptionBoxMargin, 10, 10)
+				
+				UiTranslate(textOffsetX, 10)
+				
+				UiColor(descBoxTextColor[1], descBoxTextColor[2], descBoxTextColor[3], descBoxTextColor[4])
+				UiText(currentTextbox.description)
+			end
+		end
+	UiPop()
+end]]--

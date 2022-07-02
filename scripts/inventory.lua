@@ -6,14 +6,31 @@ local creativeInventoryItemsTabImagePath = "MOD/sprites/container/creative_tab_i
 
 local scaling = 1
 local itemIconSize = 30 * scaling
+local creativeInventoryScroll = 0
+local maxCreativeInventoryScroll = 0
+local mouseInInventory = false
 
 function inventory_init(uiScale)
 	setInventoryScaling(uiScale)
+	maxCreativeInventoryScroll = math.floor((#blocks + #blocks % 9) / 9) - 5
 end
 
 function inventory_tick(dt)
 	if not inventoryOpen then
 		return
+	end
+	
+	--DebugWatch("scroll", creativeInventoryScroll)
+	--DebugWatch("max", maxCreativeInventoryScroll)
+	
+	if mouseInInventory then
+		creativeInventoryScroll = creativeInventoryScroll - InputValue(binds["Scroll"])
+		
+		if creativeInventoryScroll < 0 then
+			creativeInventoryScroll = 0
+		elseif creativeInventoryScroll > maxCreativeInventoryScroll then
+			creativeInventoryScroll = maxCreativeInventoryScroll
+		end
 	end
 end
 
@@ -44,12 +61,14 @@ function inventory_draw()
 			UiImageBox(creativeInventoryItemsTabImagePath, bgImageWidth, bgImageHeight, -5, -5)
 			
 			UiPush()
-				UiTranslate(-bgImageWidth / 2, -bgImageHeight / 2)
-				
 				local itemIconOffsetX = marginX + itemIconSize * 0.7
 				local itemIconOffsetY = marginY + itemIconSize * 0.7
 				
+				mouseInInventory = UiIsMouseInRect(bgImageWidth - marginX * 2, bgImageHeight - marginY * 2 - itemIconOffsetY)
+				
 				local itemInventoryOffset = itemIconSize + 7.2 * scaling
+				
+				UiTranslate(-bgImageWidth / 2, -bgImageHeight / 2)
 				
 				UiTranslate(itemIconOffsetX, itemIconOffsetY)
 				
@@ -57,10 +76,10 @@ function inventory_draw()
 					for i = 0, 4 do
 						UiPush()
 							for j = 1, 9 do
-								if i * 9 + j > #blocks then
+								if (i + creativeInventoryScroll) * 9 + j > #blocks then
 									drawCreativeBlockButton(0)
 								else
-									drawCreativeBlockButton(i * 9 + j)
+									drawCreativeBlockButton((i + creativeInventoryScroll) * 9 + j)
 								end
 								UiTranslate(itemInventoryOffset, 0)
 							end
@@ -161,6 +180,11 @@ end
 
 function setInventoryOpen(newValue)
 	inventoryOpen = newValue
+	
+	if not inventoryOpen then
+		mouseInInventory = false
+		creativeInventoryScroll = 0
+	end
 end
 
 function getInventoryOpen()
