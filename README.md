@@ -6,4 +6,4 @@ A tool for Teardown that allows to build with Minecraft blocks.
 Most blocks currently available.
 
 [The Mafia/Prop Guy](https://steamcommunity.com/profiles/76561198044940820)<br>
-Basalt and all 1.16+ blocks.
+Basalt and all 1.17+ blocks.
