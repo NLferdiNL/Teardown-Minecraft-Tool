@@ -1,6 +1,7 @@
 local inventoryWidth = 9
 local inventoryOpen = false
 local inventoryBlockDataOnMouse = {0, 0}
+local inventoryIdMouseOver = 0
 
 local creativeInventoryItemsTabImagePath = "MOD/sprites/container/creative_tab_items.png"
 
@@ -10,9 +11,14 @@ local creativeInventoryScroll = 0
 local maxCreativeInventoryScroll = 0
 local mouseInInventory = false
 
+local font = "MOD/fonts/MinecraftRegular.ttf"
+local fontSize = 26
+local descriptionBoxBg = "MOD/sprites/square.png"
+local descriptionBoxMargin = 20
+
 function inventory_init(uiScale)
 	setInventoryScaling(uiScale)
-	maxCreativeInventoryScroll = math.floor((#blocks + #blocks % 9) / 9) - 5
+	maxCreativeInventoryScroll = math.ceil(#blocks / 9) - 5
 end
 
 function inventory_tick(dt)
@@ -20,8 +26,8 @@ function inventory_tick(dt)
 		return
 	end
 	
-	--DebugWatch("scroll", creativeInventoryScroll)
-	--DebugWatch("max", maxCreativeInventoryScroll)
+	DebugWatch("scroll", creativeInventoryScroll)
+	DebugWatch("max", maxCreativeInventoryScroll)
 	
 	if mouseInInventory then
 		creativeInventoryScroll = creativeInventoryScroll - InputValue(binds["Scroll"])
@@ -72,14 +78,22 @@ function inventory_draw()
 				
 				UiTranslate(itemIconOffsetX, itemIconOffsetY)
 				
+				inventoryIdMouseOver = 0
+				
 				UiPush()
+					
 					for i = 0, 4 do
 						UiPush()
 							for j = 1, 9 do
-								if (i + creativeInventoryScroll) * 9 + j > #blocks then
+								local currItemId = (i + creativeInventoryScroll) * 9 + j
+								if (currItemId > #blocks) then
 									drawCreativeBlockButton(0)
 								else
-									drawCreativeBlockButton((i + creativeInventoryScroll) * 9 + j)
+									drawCreativeBlockButton(currItemId)
+									
+									if UiIsMouseInRect(itemIconSize, itemIconSize) then
+										inventoryIdMouseOver = currItemId
+									end
 								end
 								UiTranslate(itemInventoryOffset, 0)
 							end
@@ -92,7 +106,13 @@ function inventory_draw()
 				UiTranslate(0, 5 * itemInventoryOffset + 10 * scaling)
 				UiPush()
 					for i = 0, 8 do
-						drawSurvivalBlockButton(inventoryHotBarStartIndex + i)
+						local currInvSlot = inventoryHotBarStartIndex + i
+						drawSurvivalBlockButton(currInvSlot)
+						
+						if inventory[currInvSlot][1] ~= 0 and UiIsMouseInRect(itemIconSize, itemIconSize) then
+							inventoryIdMouseOver = inventory[currInvSlot][1]
+						end
+						
 						UiTranslate(itemInventoryOffset, 0)
 					end
 				UiPop()
@@ -103,6 +123,7 @@ function inventory_draw()
 	end
 	
 	drawItemOnMouse()
+	drawItemDescOnMouse()
 end
 
 function drawCreativeBlockButton(blockId)
@@ -170,6 +191,61 @@ function drawItemOnMouse()
 		local blockData = blocks[inventoryBlockDataOnMouse[1]]
 		
 		UiImageBox("MOD/sprites/blocks/" .. blockData[1] .. ".png", itemIconSize, itemIconSize, 0, 0)
+	UiPop()
+end
+
+function drawItemDescOnMouse()
+	if inventoryBlockDataOnMouse[1] ~= 0 or inventoryIdMouseOver == 0 then
+		return
+	end
+	
+	local currBlockData = inventory[inventoryIdMouseOver]
+	
+	local blockData = nil
+	
+	if creativeMode	then
+		blockData = blocks[inventoryIdMouseOver]
+	else
+		blockData = blocks[inventory[inventoryIdMouseOver][1]]
+	end
+	
+	if blockData ~= nil then
+		local blockName = blockData[1]
+		
+		drawDescriptionOnMouse(blockName)
+	end
+end
+
+function drawDescriptionOnMouse(text)
+	UiPush()
+		UiFont(font, fontSize)
+		
+		if text ~= nil and text ~= "" then
+			local mX, mY = UiGetMousePos()
+			
+			UiAlign("top left")
+			
+			UiTranslate(mX, mY)
+			
+			local textWidth, textHeight = UiGetTextSize(text)
+					
+			local boxWidth = mX + textWidth + descriptionBoxMargin
+			
+			local textOffsetX = 10
+			
+			if boxWidth > UiWidth() then
+				UiAlign("top right")
+				textOffsetX = -10
+			end
+			
+			UiColor(0, 0, 0, 1)
+			UiImageBox(descriptionBoxBg, textWidth + descriptionBoxMargin, textHeight + descriptionBoxMargin, 0, 0)
+			
+			UiTranslate(textOffsetX, 10)
+			
+			UiColor(1, 1, 1, 1)
+			UiText(text)
+		end
 	UiPop()
 end
 

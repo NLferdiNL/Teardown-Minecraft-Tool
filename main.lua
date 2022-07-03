@@ -13,8 +13,6 @@ toolName = "minecraftbuildtool"
 toolReadableName = "Minecraft Tool"
 local toolSlot = nil
 
--- TODO: Block Name above inventory.
--- TODO: Mouse over names.
 -- TODO: Add dropping items.
 -- TODO: Fix "block of ___" insides to be random.
 -- TODO: Block break particles.
@@ -55,11 +53,17 @@ local hotbarImagePath = "MOD/sprites/hotbar.png"
 local hotbarSelectorImagePath = "MOD/sprites/hotbar_selector.png"
 local crosshairImagePath = "MOD/sprites/crosshair.png"
 
+local font = "MOD/fonts/MinecraftRegular.ttf"
+
 local hotbarSelectedIndex = 1
 inventory = {}
 
 local mainInventorySize = 9 * 4
 local miscInventorySlots = 4 --Armor
+
+local itemSwitchTimer = 0
+local itemSwitchTimerMax = 10
+local itemSwitchTimerHalf = itemSwitchTimerMax / 2
 
 for i = 1, mainInventorySize + miscInventorySlots do
 	inventory[i] = {0, 0} --{BLOCKID, STACKSIZE}
@@ -131,6 +135,10 @@ function tick(dt)
 	
 	--SetBool("hud.aimdot", false)
 	SetBool("hud.disable", true)
+	
+	if itemSwitchTimer > 0 then
+		itemSwitchTimer = itemSwitchTimer - dt * 8
+	end
 	
 	if modDisabled then
 		return
@@ -512,6 +520,10 @@ function PlaceBlock()
 	
 	local blockXML = "<voxbox " .. blockSizeXML .. " " .. blockOffsetXML .. " prop='" .. tostring(dynamicBlock or selectedBlockData[8]) .. "' " .. blockBrushXML .. "' " .. selectedBlockData[4] .. ">" .. extraBlockXML .. "</voxbox>"
 	
+	if string.find(selectedBlockData[2], "xml") ~= nil then
+		blockXML = selectedBlockData[2]
+	end
+	
 	local block = Spawn(blockXML, blockTransform, not dynamicBlock, true)[1]
 	
 	local hasSpecialData = 0
@@ -664,6 +676,10 @@ function ScrollLogic()
 			hotbarSelectedIndex = 1
 		end
 	end
+	
+	if scrollDiff ~= 0 then
+		itemSwitchTimer = itemSwitchTimerMax
+	end
 end
 
 --[[function GetSpecialBlocks()
@@ -768,7 +784,7 @@ function renderHud()
 		
 		UiPush()
 			UiTranslate(0, selectorHeight / 2)
-			UiFont("MOD/fonts/MinecraftRegular.ttf", 40)
+			UiFont(font, 40)
 			UiTextShadow(0.25, 0.25, 0.25, 1, 2 / 26 * 40, 0)
 			for i = 0, 8 do
 				UiPush()
@@ -800,7 +816,7 @@ function renderHud()
 		UiAlign("center left")
 		
 		UiTranslate(UiWidth() * 0.5, UiHeight() * (0.96))
-		UiFont("MOD/fonts/MinecraftRegular.ttf", 26)
+		UiFont(font, 26)
 		UiTextShadow(0, 0, 0, 0.5, 2.0)
 		
 		if modDisabled then
@@ -816,7 +832,33 @@ function renderHud()
 		end
 		
 		UiTranslate(-75, -30)]]--
-		UiTranslate(-75, -110)
+		
+		UiAlign("center middle")
+		
+		
+		
+		if itemSwitchTimer > 0 then
+			local heldBlock = getCurrentHeldBlockData(index)
+			if heldBlock ~= nil then
+				UiPush()
+					local selectedBlockId = heldBlock[1]
+					local selectedBlockData = blocks[selectedBlockId]
+				
+					local transparancy = itemSwitchTimer / itemSwitchTimerHalf
+					
+					if transparancy > 2 then
+						transparancy = 1
+					end
+					
+					UiTranslate(0, -110)
+					UiFont(font, 30)
+					UiColor(1, 1, 1, transparancy)
+					UiText(selectedBlockData[1])
+					
+				UiPop()
+			end
+		end
+		UiTranslate(-75, 20)
 		drawStatusBox("[" .. binds["Toggle_Dynamic"]:upper() .. "] Dynamic Block", dynamicBlock)
 		--drawToggle("[" .. binds["Toggle_Walk_Mode"]:upper() .. "] to toggle walk speed.", walkModeActive)
 		
