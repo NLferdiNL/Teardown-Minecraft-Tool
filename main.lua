@@ -15,9 +15,7 @@ local toolSlot = nil
 
 -- TODO: Add dropping items.
 -- TODO: Fix "block of ___" insides to be random.
--- TODO: Block break particles.
 -- TODO: Double doors (add mirror next to sametype variable, unique type ids?)
--- TODO: Slab systems (also using unique type ids?)
 -- TODO: Mouse over inventory > number press to hotbar.
 -- TODO: Grab stops working when dist is greater but item still held.
 -- TODO: Fix trapdoor alignment, clips into hinged block.
@@ -276,6 +274,34 @@ function PickBlock()
 	end
 end
 
+function setupBlockBreakParticles()
+	ParticleReset()
+	ParticleType("plain")
+	ParticleTile(6)
+	ParticleRadius(0.05)
+	ParticleGravity(-9.807)
+	ParticleCollide(1)
+end
+
+function spawnBrokenBlockParticles(blockShape)
+	local blockTransform = GetShapeWorldTransform(blockShape) 
+	local blockCenter = VecAdd(blockTransform.pos, Vec(blockSize / 10 / 2, blockSize / 10 / 2, blockSize / 10 / 2))
+	
+	setupBlockBreakParticles()
+	
+	for i = 1, 50 do
+		local randomDir = rndVec(blockSize / 10 / 2)
+		local particlePos = VecAdd(blockCenter, randomDir)
+		local matType, bR, bG, bB, bA = GetShapeMaterialAtPosition(blockShape, particlePos)
+		
+		local particleLifetime = math.abs(math.random() * 0.5 + 2.5)
+		
+		ParticleColor(bR, bG, bB)
+		ParticleAlpha(bA)
+		SpawnParticle(particlePos, Vec(0, 0, 0), particleLifetime)
+	end
+end
+
 function RemoveBlock()
 	if not hit then
 		return
@@ -294,6 +320,8 @@ function RemoveBlock()
 	end
 	
 	PlaySound(interactionSound, hitPoint)
+	
+	spawnBrokenBlockParticles(shape)
 	
 	Delete(shape)
 end
