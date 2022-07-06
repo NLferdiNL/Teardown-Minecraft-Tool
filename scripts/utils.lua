@@ -93,6 +93,10 @@ function VecMag(a)
 	return math.sqrt(a[1]^2 + a[2]^2 + a[3]^2)
 end
 
+function VecAbs(a)
+	return Vec(math.abs(a[1]), math.abs(a[2]), math.abs(a[3]))
+end
+
 function VecToString(vec)
 	return vec[1] .. ", " .. vec[2] .. ", " .. vec[3]
 end

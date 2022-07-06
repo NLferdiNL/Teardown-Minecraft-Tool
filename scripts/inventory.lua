@@ -1,7 +1,7 @@
 local inventoryWidth = 9
 local inventoryOpen = false
 local inventoryBlockDataOnMouse = {0, 0}
-local inventoryIdMouseOver = 0
+local inventoryIdMouseOver = {0, 0}
 
 local creativeInventoryItemsTabImagePath = "MOD/sprites/container/creative_tab_items.png"
 
@@ -26,16 +26,33 @@ function inventory_tick(dt)
 		return
 	end
 	
-	DebugWatch("scroll", creativeInventoryScroll)
-	DebugWatch("max", maxCreativeInventoryScroll)
+	--DebugWatch("scroll", creativeInventoryScroll)
+	--DebugWatch("max", maxCreativeInventoryScroll)
 	
 	if mouseInInventory then
-		creativeInventoryScroll = creativeInventoryScroll - InputValue(binds["Scroll"])
-		
-		if creativeInventoryScroll < 0 then
-			creativeInventoryScroll = 0
-		elseif creativeInventoryScroll > maxCreativeInventoryScroll then
-			creativeInventoryScroll = maxCreativeInventoryScroll
+		if creativeMode then
+			creativeInventoryScroll = creativeInventoryScroll - InputValue(binds["Scroll"])
+			
+			if creativeInventoryScroll < 0 then
+				creativeInventoryScroll = 0
+			elseif creativeInventoryScroll > maxCreativeInventoryScroll then
+				creativeInventoryScroll = maxCreativeInventoryScroll
+			end
+			
+			if inventoryBlockDataOnMouse[1] == 0 and inventoryIdMouseOver[2] ~= 0 then 
+				for i = 1, 9 do
+					if InputPressed(i) then
+						local currSlot = inventoryHotBarStartIndex + i - 1
+						
+						local inventoryData = inventory[currSlot]
+	
+						inventoryData[1] = inventoryIdMouseOver[2]
+						inventoryData[2] = 1
+					end
+				end
+			end
+		else
+			-- Survival inventory
 		end
 	end
 end
@@ -78,7 +95,7 @@ function inventory_draw()
 				
 				UiTranslate(itemIconOffsetX, itemIconOffsetY)
 				
-				inventoryIdMouseOver = 0
+				inventoryIdMouseOver = {0, 0}
 				
 				UiPush()
 					
@@ -87,13 +104,17 @@ function inventory_draw()
 							for j = 1, 9 do
 								local currItemId = (i + creativeInventoryScroll) * 9 + j
 								if (currItemId > #blocks) then
-									drawCreativeBlockButton(0)
+									drawCreativeBlockButton(0, false)
 								else
-									drawCreativeBlockButton(currItemId)
+									local mouseOver = false
 									
 									if UiIsMouseInRect(itemIconSize, itemIconSize) then
-										inventoryIdMouseOver = currItemId
+										inventoryIdMouseOver = {i * 9 + j, currItemId}
+										mouseOver = true
 									end
+									
+									drawCreativeBlockButton(currItemId, mouseOver)
+									
 								end
 								UiTranslate(itemInventoryOffset, 0)
 							end
@@ -107,11 +128,14 @@ function inventory_draw()
 				UiPush()
 					for i = 0, 8 do
 						local currInvSlot = inventoryHotBarStartIndex + i
-						drawSurvivalBlockButton(currInvSlot)
+						local mouseOver = false
 						
-						if inventory[currInvSlot][1] ~= 0 and UiIsMouseInRect(itemIconSize, itemIconSize) then
-							inventoryIdMouseOver = inventory[currInvSlot][1]
+						if UiIsMouseInRect(itemIconSize, itemIconSize) then
+							inventoryIdMouseOver = {i + 1, inventory[currInvSlot][1]}
+							mouseOver = true
 						end
+						
+						drawSurvivalBlockButton(currInvSlot, mouseOver)
 						
 						UiTranslate(itemInventoryOffset, 0)
 					end
@@ -126,7 +150,7 @@ function inventory_draw()
 	drawItemDescOnMouse()
 end
 
-function drawCreativeBlockButton(blockId)
+function drawCreativeBlockButton(blockId, mouseOver)
 	if blockId > 0 then
 		UiImageBox("MOD/sprites/blocks/" .. blocks[blockId][1] .. ".png", itemIconSize, itemIconSize, 0, 0)
 	end
@@ -138,40 +162,155 @@ function drawCreativeBlockButton(blockId)
 			if inventoryBlockDataOnMouse[1] ~= 0 then
 				setInventoryBlockDataOnMouse(0, 0)
 			else
-				setInventoryBlockDataOnMouse(blockId, 1)
+				local stackSize = 1
+				
+				if InputDown("shift") then
+					stackSize = 64
+				end
+				
+				setInventoryBlockDataOnMouse(blockId, stackSize)
 			end
 		end
 	end
 end
 
-function drawSurvivalBlockButton(invId)
+function drawSurvivalBlockButton(invId, mouseOver)
 	local inventoryData = inventory[invId]
 	
 	local blockId = inventoryData[1]
 	local stackCount = inventoryData[2]
+	local blockMaxStackSize = 64
 	
 	if blockId > 0 then
 		UiImageBox("MOD/sprites/blocks/" .. blocks[blockId][1] .. ".png", itemIconSize, itemIconSize, 0, 0)
 	end
 	
-	if UiBlankButton(itemIconSize, itemIconSize) then
-		if inventoryBlockDataOnMouse[1] ~= 0 and blockId > 0 then
-			local mouseData1 = inventoryBlockDataOnMouse[1]
-			local mouseData2 = inventoryBlockDataOnMouse[2]
-			
-			setInventoryBlockDataOnMouse(blockId, stackCount)
-			
-			inventoryData[1] = mouseData1
-			inventoryData[2] = mouseData2
-		elseif inventoryBlockDataOnMouse[1] ~= 0 and blockId <= 0 then
-			inventoryData[1] = inventoryBlockDataOnMouse[1]
-			inventoryData[2] = inventoryBlockDataOnMouse[2]
-			setInventoryBlockDataOnMouse(0, 0)
-		else
-			setInventoryBlockDataOnMouse(blockId, stackCount)
-			inventoryData[1] = 0
-			inventoryData[2] = 0
+	local rmbDown = InputPressed("rmb")
+	
+	if UiBlankButton(itemIconSize, itemIconSize) or (mouseOver and rmbDown) then
+		if blockId == 0 and inventoryBlockDataOnMouse[1] == 0 then
+			return
 		end
+		
+		local lmbDown = not rmbDown
+		
+		if lmbDown then
+			--DebugPrint("0")
+			if inventoryBlockDataOnMouse[1] ~= 0 and blockId ~= inventoryBlockDataOnMouse[1] then
+				--DebugPrint("0-0")
+				local mouseData1 = inventoryBlockDataOnMouse[1]
+				local mouseData2 = inventoryBlockDataOnMouse[2]
+				
+				setInventoryBlockDataOnMouse(blockId, stackCount)
+				
+				inventoryData[1] = mouseData1
+				inventoryData[2] = mouseData2
+			elseif blockId == inventoryBlockDataOnMouse[1] then
+				--DebugPrint("0-1")
+				if inventoryBlockDataOnMouse[2] + stackCount > blockMaxStackSize then
+					local overflow = stackCount + inventoryBlockDataOnMouse[2] - blockMaxStackSize
+					inventoryBlockDataOnMouse[2] = overflow
+					inventoryData[2] = blockMaxStackSize
+				else
+					inventoryData[2] = stackCount + inventoryBlockDataOnMouse[2]
+					
+					setInventoryBlockDataOnMouse(0, 0)
+				end
+			else
+				--DebugPrint("0-2")
+				setInventoryBlockDataOnMouse(blockId, stackCount)
+				inventoryData[1] = 0
+				inventoryData[2] = 0
+			end
+		elseif rmbDown then
+			--DebugPrint("1")
+			if inventoryBlockDataOnMouse[1] ~= 0 and (blockId == inventoryBlockDataOnMouse[1] or blockId == 0) and stackCount < blockMaxStackSize then
+				--DebugPrint("1-0")
+				inventoryData[1] = inventoryBlockDataOnMouse[1]
+				inventoryData[2] = inventoryData[2] + 1
+				
+				if inventoryBlockDataOnMouse[2] - 1 <= 0 then
+					setInventoryBlockDataOnMouse(0, 0)
+				else
+					setInventoryBlockDataOnMouse(inventoryBlockDataOnMouse[1], inventoryBlockDataOnMouse[2] - 1)
+				end
+			elseif inventoryBlockDataOnMouse[1] == 0 and blockId ~= 0 then
+				--DebugPrint("1-1")
+				if stackCount > 1 then
+					local halfStackCount = math.ceil(stackCount / 2)
+					setInventoryBlockDataOnMouse(blockId, halfStackCount)
+					
+					inventoryData[2] = stackCount - halfStackCount
+				else
+					setInventoryBlockDataOnMouse(blockId, stackCount)
+					inventoryData[1] = 0
+					inventoryData[2] = 0
+				end
+			end
+		end
+		
+		--[[
+		if inventoryBlockDataOnMouse[1] ~= 0 and blockId > 0 and (not rmbDown or (lmbDown and inventoryBlockDataOnMouse[1] == blockId)) then
+			DebugPrint("a")
+			if inventoryBlockDataOnMouse[1] == blockId then
+				if inventoryBlockDataOnMouse[2] + stackCount + inventoryBlockDataOnMouse[2] > blockMaxStackSize then
+					local overflow = stackCount + inventoryBlockDataOnMouse[2] - blockMaxStackSize
+					inventoryBlockDataOnMouse[2] = overflow
+					inventoryData[2] = blockMaxStackSize
+				else
+					inventoryData[2] = stackCount + inventoryBlockDataOnMouse[2]
+					
+					setInventoryBlockDataOnMouse(0, 0)
+				end
+			else
+				local mouseData1 = inventoryBlockDataOnMouse[1]
+				local mouseData2 = inventoryBlockDataOnMouse[2]
+				
+				setInventoryBlockDataOnMouse(blockId, stackCount)
+				
+				inventoryData[1] = mouseData1
+				inventoryData[2] = mouseData2
+			end
+		elseif (inventoryBlockDataOnMouse[1] ~= 0 and blockId <= 0) or (inventoryBlockDataOnMouse[1] == blockId) then
+			DebugPrint("b")
+			if rmbDown and stackCount < blockMaxStackSize then
+				DebugPrint("b-a")
+				inventoryData[1] = inventoryBlockDataOnMouse[1]
+				inventoryData[2] = inventoryData[2] + 1
+				
+				inventoryBlockDataOnMouse[2] = inventoryBlockDataOnMouse[2] - 1
+				
+				if inventoryBlockDataOnMouse[2] <= 0 then
+					inventoryBlockDataOnMouse[1] = 0
+				end
+			else
+				DebugPrint("b-b")
+				inventoryData[1] = inventoryBlockDataOnMouse[1]
+				inventoryData[2] = inventoryBlockDataOnMouse[2]
+				setInventoryBlockDataOnMouse(0, 0)
+			end
+		else
+			DebugPrint("c")
+			if rmbDown and stackCount > 1 then
+				local halfStackCount = math.ceil(stackCount / 2)
+				setInventoryBlockDataOnMouse(blockId, halfStackCount)
+				
+				inventoryData[2] = stackCount - halfStackCount
+			else
+				setInventoryBlockDataOnMouse(blockId, stackCount)
+				inventoryData[1] = 0
+				inventoryData[2] = 0
+			end
+		end]]--
+	end
+	
+	if stackCount > 1 then
+		UiPush()
+			UiFont(font, fontSize * 1.5)
+			UiTextShadow(0.25, 0.25, 0.25, 1, 2 / 26 * 40, 0)
+			UiTranslate(itemIconSize / 4, itemIconSize / 4)
+			UiText(stackCount)
+		UiPop()
 	end
 end
 
@@ -191,11 +330,20 @@ function drawItemOnMouse()
 		local blockData = blocks[inventoryBlockDataOnMouse[1]]
 		
 		UiImageBox("MOD/sprites/blocks/" .. blockData[1] .. ".png", itemIconSize, itemIconSize, 0, 0)
+		
+		if inventoryBlockDataOnMouse[2] > 1 then
+			UiPush()
+				UiFont(font, fontSize * 1.5)
+				UiTextShadow(0.25, 0.25, 0.25, 1, 2 / 26 * 40, 0)
+				UiTranslate(itemIconSize / 4, itemIconSize / 4)
+				UiText(inventoryBlockDataOnMouse[2])
+			UiPop()
+		end
 	UiPop()
 end
 
 function drawItemDescOnMouse()
-	if inventoryBlockDataOnMouse[1] ~= 0 or inventoryIdMouseOver == 0 then
+	if inventoryBlockDataOnMouse[1] ~= 0 or inventoryIdMouseOver[1] <= 0 or inventoryIdMouseOver[2] <= 0 then
 		return
 	end
 	
@@ -204,9 +352,9 @@ function drawItemDescOnMouse()
 	local blockData = nil
 	
 	if creativeMode	then
-		blockData = blocks[inventoryIdMouseOver]
+		blockData = blocks[inventoryIdMouseOver[2]]
 	else
-		blockData = blocks[inventory[inventoryIdMouseOver][1]]
+		blockData = blocks[inventory[inventoryIdMouseOver[1]][1]]
 	end
 	
 	if blockData ~= nil then

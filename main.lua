@@ -16,9 +16,10 @@ local toolSlot = nil
 -- TODO: Add dropping items.
 -- TODO: Fix "block of ___" insides to be random.
 -- TODO: Double doors (add mirror next to sametype variable, unique type ids?)
--- TODO: Mouse over inventory > number press to hotbar.
 -- TODO: Grab stops working when dist is greater but item still held.
 -- TODO: Fix trapdoor alignment, clips into hinged block.
+-- TODO: Block break particles: use vox bounds.
+-- TODO: Fix trapdoor hinges being centered.
 
 local toolVox = "MOD/vox/tool.vox"
 
@@ -602,7 +603,19 @@ function AimLogic()
 	--local hitPointBlockOffset = VecAdd(hitPoint, Vec(-0.8, -0.8, -0.8))
 	--local normalOffset = VecAdd(hitPointBlockOffset, VecScale(normal, 0.8))
 	
-	renderBlockOutline(blockOffset, false)
+	local blockSize = nil
+	--[[
+	local blockId = tonumber(GetTagValue(shape, "minecraftblockid"))
+	
+	if blockId ~= nil and blockId > 0 then
+		local shapeBoundsMin, shapeBoundsMax = GetShapeBounds(shape)
+		local absSize = VecAbs(VecSub(shapeBoundsMax, shapeBoundsMin))
+	
+		blockSize = {x = absSize[1], y = absSize[2], z = absSize[3]}
+		--blockOffset = VecAdd(GetShapeWorldTransform(shape).pos, VecScale(Vec(1, 0.5, 1), gridModulo / 2))
+	end]]--
+	
+	renderBlockOutline(blockOffset, blockSize, false)
 	
 	if drawPlayerLine then
 		local playerPos = GetPlayerCameraTransform().pos
@@ -649,6 +662,10 @@ function ToolPlaceBlockAnim()
 end
 
 function ScrollLogic()
+	if getInventoryOpen() then
+		return
+	end
+	
 	if GetValue("NumbersToSelect") and lastFrameTool == toolName then
 		for i = 1, 9 do
 			local numberKeyDown = InputPressed(tostring(i))
@@ -663,7 +680,7 @@ function ScrollLogic()
 
 	local scrollDiff = 0
 	
-	if GetValue("ScrollToSelect") and not getInventoryOpen() then
+	if GetValue("ScrollToSelect") then
 		scrollDiff = InputValue(binds["Scroll"])
 	
 		if scrollDiff == 0 then
@@ -902,9 +919,23 @@ function renderCrosshair()
 	UiPop()
 end
 
-function renderBlockOutline(pos, renderFaces)
-	local minPos = VecAdd(pos, Vec(-gridModulo / 2, -gridModulo / 2, -gridModulo / 2))
-	local maxPos = VecAdd(pos, Vec(gridModulo / 2, gridModulo / 2, gridModulo / 2))
+function renderBlockOutline(pos, size, renderFaces)
+	if size == nil then
+		size = { x = gridModulo, y = gridModulo, z = gridModulo}
+		--DebugWatch("hit", false)
+	else
+		size = deepcopy(size)
+		size.x = size.x
+		size.y = size.y
+		size.z = size.z
+		--DebugWatch("hit", true)
+	end
+	
+	--DebugWatch("size", {size.x, size.y, size.z})
+	
+
+	local minPos = VecAdd(pos, Vec(-size.x / 2, -size.y / 2, -size.z / 2))
+	local maxPos = VecAdd(pos, Vec(size.x / 2, size.y / 2, size.z / 2))
 	
 	local color = 0.1
 
