@@ -144,7 +144,7 @@ function inventory_draw()
 						scrollbarHeld = true
 						
 						
-						local mousePosToScrollBar = math.ceil(mY / creatveInvScrolBarPositionOne)
+						local mousePosToScrollBar = math.ceil((mY - creatveInvScrolBarPositionOne / 2) / creatveInvScrolBarPositionOne)
 						--DebugWatch("pos", mousePosToScrollBar)
 						
 						if mousePosToScrollBar < 0 then
