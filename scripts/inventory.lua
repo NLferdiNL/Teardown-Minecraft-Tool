@@ -4,11 +4,15 @@ local inventoryBlockDataOnMouse = {0, 0}
 local inventoryIdMouseOver = {0, 0}
 
 local creativeInventoryItemsTabImagePath = "MOD/sprites/container/creative_tab_items.png"
+local creativeInventoryScrollBarImagePath = "MOD/sprites/container/scrollbar.png"
+local creativeInventoryScrollBarDownImagePath = "MOD/sprites/container/scrollbar_down.png"
 
 local scaling = 1
 local itemIconSize = 30 * scaling
 local creativeInventoryScroll = 0
 local maxCreativeInventoryScroll = 0
+local scrollbarHeld = false
+local scrollbarMouseOffset = {0, 0}
 local mouseInInventory = false
 
 local font = "MOD/fonts/MinecraftRegular.ttf"
@@ -81,6 +85,11 @@ function inventory_draw()
 			local marginX = 16 * scaling
 			local marginY = 35 * scaling
 			
+			local scrollbarWidth = 120 * scaling / 4.5
+			local scrollbarHeight = 150 * scaling / 4.5
+			
+			local creatveInvScrolBarPositionOne = (bgImageHeight - marginY * 2.7) / maxCreativeInventoryScroll
+			
 			UiImageBox(creativeInventoryItemsTabImagePath, bgImageWidth, bgImageHeight, -5, -5)
 			
 			UiPush()
@@ -97,8 +106,7 @@ function inventory_draw()
 				
 				inventoryIdMouseOver = {0, 0}
 				
-				UiPush()
-					
+				UiPush() -- Creative inv
 					for i = 0, 4 do
 						UiPush()
 							for j = 1, 9 do
@@ -124,8 +132,36 @@ function inventory_draw()
 					end
 				UiPop()
 				
+				UiPush() --Creative scroll bar
+					UiTranslate(bgImageWidth - itemIconOffsetX * 1.95, creatveInvScrolBarPositionOne * creativeInventoryScroll)
+					local mouseInScrollBar = UiIsMouseInRect(scrollbarWidth, scrollbarHeight)
+					if (mouseInScrollBar or scrollbarHeld) and InputDown("lmb") then
+						UiImageBox(creativeInventoryScrollBarDownImagePath, scrollbarWidth, scrollbarHeight, 0, 0)
+						
+						UiTranslate(0, -creatveInvScrolBarPositionOne * creativeInventoryScroll)
+						local mX, mY = UiGetMousePos()
+						
+						scrollbarHeld = true
+						
+						
+						local mousePosToScrollBar = math.ceil(mY / creatveInvScrolBarPositionOne)
+						--DebugWatch("pos", mousePosToScrollBar)
+						
+						if mousePosToScrollBar < 0 then
+							mousePosToScrollBar = 0
+						elseif mousePosToScrollBar > maxCreativeInventoryScroll then
+							mousePosToScrollBar = maxCreativeInventoryScroll
+						end
+						
+						creativeInventoryScroll = mousePosToScrollBar
+					else
+						scrollbarHeld = false
+						UiImageBox(creativeInventoryScrollBarImagePath, scrollbarWidth, scrollbarHeight, 0, 0)
+					end
+				UiPop()
+				
 				UiTranslate(0, 5 * itemInventoryOffset + 10 * scaling)
-				UiPush()
+				UiPush() -- Hotbar
 					for i = 0, 8 do
 						local currInvSlot = inventoryHotBarStartIndex + i
 						local mouseOver = false
