@@ -58,7 +58,7 @@ blocks =
 		{"Cobbled Deepslate",  					"MOD/vox/blocks/cobbleddeepslate.vox",	  			{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil},
 		{"Copper Block",  						"MOD/vox/blocks/copperblock.vox",	  				{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil},
 		{"Cut Copper",  						"MOD/vox/blocks/cutcopper.vox",	  					{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil},
-		{"Cut Copper Stairs",  					"MOD/vox/blocks/cutcopperstairs.vox",	  			{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		5, nil},
+		{"Cut Copper Stairs",  					"MOD/vox/blocks/cutcopperstairs.vox",	  			{x = 0, y = 1,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		5, nil},
 		{"Exposed Copper", 						"MOD/vox/blocks/exposedcopper.vox",					{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil},
 		{"Exposed Cut Copper", 					"MOD/vox/blocks/exposedcutcopper.vox",				{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil},				
 		{"Weathered Copper Block", 				"MOD/vox/blocks/weatheredcopper.vox",				{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil},
