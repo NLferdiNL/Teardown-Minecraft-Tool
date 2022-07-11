@@ -20,6 +20,8 @@ local toolSlot = nil
 -- TODO: Fix trapdoor alignment, clips into hinged block.
 -- TODO: Block break particles: use vox bounds.
 -- TODO: Fix trapdoor hinges being centered.
+-- TODO: Fix Mangrove trapdoor hinges.
+-- TODO: Fix Y rot to use nearest rot rather than defaulting.
 
 local toolVox = "MOD/vox/tool.vox"
 
@@ -407,11 +409,9 @@ function PlaceBlock()
 			--DebugWatch("b", gridAlignedHitPoint)
 			
 			if gridAlignedHitPoint[1] == gridAligned[1] and gridAlignedHitPoint[2] == gridAligned[2] then
-				--blockRot = QuatEuler(90 * selectedBlockData[3].x, 0, 0)
 				blockEulerX = 90 * selectedBlockData[3].x
 				blockPosOffset[2] = blockPosOffset[2] + gridModulo
-			elseif gridAlignedHitPoint[3] == gridAligned[3] and gridAlignedHitPoint[2] == gridAligned[2]  then
-				--blockRot = QuatEuler(0, 0, 90 * selectedBlockData[3].z)
+			elseif gridAlignedHitPoint[3] == gridAligned[3] and gridAlignedHitPoint[2] == gridAligned[2] then
 				blockEulerZ = 90 * selectedBlockData[3].z
 				blockPosOffset[1] = blockPosOffset[1] + gridModulo
 			end

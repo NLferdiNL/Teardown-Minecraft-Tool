@@ -43,6 +43,8 @@ function inventory_tick(dt)
 				creativeInventoryScroll = maxCreativeInventoryScroll
 			end
 			
+			DebugWatch("id", inventoryIdMouseOver[2])
+			
 			if inventoryBlockDataOnMouse[1] == 0 and inventoryIdMouseOver[2] ~= 0 then 
 				for i = 1, 9 do
 					if InputPressed(i) then
@@ -96,7 +98,7 @@ function inventory_draw()
 				local itemIconOffsetX = marginX + itemIconSize * 0.7
 				local itemIconOffsetY = marginY + itemIconSize * 0.7
 				
-				mouseInInventory = UiIsMouseInRect(bgImageWidth - marginX * 2, bgImageHeight - marginY * 2 - itemIconOffsetY)
+				mouseInInventory = UiIsMouseInRect(bgImageWidth - marginX * 2, bgImageHeight - marginY * 2)
 				
 				local itemInventoryOffset = itemIconSize + 7.2 * scaling
 				
