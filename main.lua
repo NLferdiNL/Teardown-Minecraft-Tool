@@ -465,26 +465,28 @@ function PlaceBlock()
 	--blockRot = QuatRotateQuat(blockRot, QuatEuler(0, 180, 0)
 	--gridAligned = VecAdd(gridAligned, alignOffset)
 	]]--
+	
+	local mirrorJointLimits = false
+	
 	if selectedBlockData[9] > 1 then
 		local otherBlock = shape
 		local otherBlockId = 0
 		local otherBlockType = 1
 		local otherBlockTransform = GetShapeWorldTransform(otherBlock)
-		local blockMaxBounds = Vec(blockSize / 10, blockSize / 10, blockSize / 10)
 		
 		if HasTag(shape, "minecraftblockid") then
 			otherBlockId = tonumber(GetTagValue(shape, "minecraftblockid"))
 			otherBlockType = blocks[otherBlockId][9]
 		end
 	
-		if selectedBlockData[9] == 2 and false then
+		if selectedBlockData[9] == 2 then
 			local playerRotX, playerRotY, playerRotZ = GetQuatEuler(playerCameraTransform.rot)
 			
 			local tempTransform = Transform(gridAligned, QuatEuler(0, roundToNearest(playerRotY, 90), 0))
 			local left = TransformToParentPoint(tempTransform, Vec(-gridModulo / 2, gridModulo / 2, -gridModulo / 2))
 			--local right = TransformToParentPoint(tempTransform, Vec(gridModulo * 1.5, gridModulo / 2, -gridModulo / 2))
 			
-			spawnDebugParticle(left, 5)
+			--spawnDebugParticle(left, 5)
 			--spawnDebugParticle(right, 5, Color4.Green)
 			
 			local searchSize = {gridModulo, gridModulo, gridModulo}
@@ -503,8 +505,10 @@ function PlaceBlock()
 					
 					local otherShapeTransform = GetShapeWorldTransform(filteredObjectsLeft[1])
 					
-					gridAligned = VecAdd(gridAligned, VecScale(TransformToParentVec(otherShapeTransform, Vec(1, 0, 0)), gridModulo)) --0.1245
-					gridAligned = VecAdd(gridAligned, VecScale(TransformToParentVec(tempTransform, Vec(0, 0, 1)), math.floor(gridModulo / 5.33))) --0.1245
+					gridAligned = VecAdd(gridAligned, Vec(-gridModulo + gridModulo / 16 * 14, 0, gridModulo))
+					mirrorJointLimits = true
+					--gridAligned = VecAdd(gridAligned, VecScale(TransformToParentVec(tempTransform, Vec(1, 0, 0)), gridModulo)) --0.1245
+					--gridAligned = VecAdd(gridAligned, VecScale(TransformToParentVec(tempTransform, Vec(0, 0, 1)), -math.floor(gridModulo / 16 * 2))) --0.1245
 				end
 			end
 			
@@ -565,6 +569,10 @@ function PlaceBlock()
 	
 	if selectedBlockData[10] ~= nil then
 		extraBlockXML = selectedBlockData[10]
+		
+		if mirrorJointLimits then
+			extraBlockXML = string.gsub(extraBlockXML, "limits='%-90 0", "limits='0 90")
+		end
 	end
 	
 	local blockXML = "<voxbox " .. blockSizeXML .. " " .. blockOffsetXML .. " prop='" .. tostring(dynamicBlock or selectedBlockData[8]) .. "' " .. blockBrushXML .. "' " .. selectedBlockData[4] .. ">" .. extraBlockXML .. "</voxbox>"
