@@ -21,7 +21,6 @@ local toolSlot = nil
 -- TODO: Block break particles: use vox bounds.
 -- TODO: Fix trapdoor hinges being centered.
 -- TODO: Fix Mangrove trapdoor hinges.
--- TODO: Fix Y rot to use nearest rot rather than defaulting.
 
 local toolVox = "MOD/vox/tool.vox"
 
@@ -362,6 +361,12 @@ function PlaceBlock()
 					playerPos[3] + 0.8)]]--
 	
 	--blockRot = QuatLookAt(gridAligned, playerPos)
+	
+	if math.abs(gridAligned[1] - playerPos[1]) < math.abs(gridAligned[3] - playerPos[3]) then
+		playerPos[1] = gridAligned[1]
+	else
+		playerPos[3] = gridAligned[3]
+	end
 	
 	local blockEulerX = 0
 	local blockEulerY = 0
