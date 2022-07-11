@@ -416,21 +416,36 @@ function PlaceBlock()
 				blockPosOffset[1] = blockPosOffset[1] + gridModulo
 			end
 		end
-	
+		
 		if selectedBlockData[3].y ~= 0 then
-			if playerPos[1] == gridAligned[1] and playerPos[3] < gridAligned[3] then
-				--blockRot = QuatEuler(0, 180 * selectedBlockData[3].y, 0)
-				blockEulerY = 180 * selectedBlockData[3].y
-				blockPosOffset[1] = blockPosOffset[1] + gridModulo
-				blockPosOffset[3] = blockPosOffset[3] + gridModulo
-			elseif playerPos[3] == gridAligned[3] and playerPos[1] < gridAligned[1]  then
-				--blockRot = QuatEuler(0, -90 * selectedBlockData[3].y, 0)
-				blockEulerY = -90 * selectedBlockData[3].y
-				blockPosOffset[1] = blockPosOffset[1] + gridModulo
-			elseif playerPos[3] == gridAligned[3] and playerPos[1] > gridAligned[1]  then
-				--blockRot = QuatEuler(0, 90 * selectedBlockData[3].y, 0)
-				blockEulerY = 90 * selectedBlockData[3].y
-				blockPosOffset[3] = blockPosOffset[3] + gridModulo
+			if selectedBlockData[9] == 5 and hitPoint[2] + normal[2] * 0.01 > gridAligned[2] + blockSize / 10 / 2 then
+				blockEulerZ = blockEulerZ - 180
+				if playerPos[1] == gridAligned[1] and playerPos[3] < gridAligned[3] then
+					blockEulerY = 180 * selectedBlockData[3].y
+					blockPosOffset[3] = blockPosOffset[3] + gridModulo
+				elseif playerPos[3] == gridAligned[3] and playerPos[1] < gridAligned[1] then
+					blockEulerY = -90 * selectedBlockData[3].y
+					blockPosOffset[1] = blockPosOffset[1] + gridModulo
+					blockPosOffset[3] = blockPosOffset[3] + gridModulo
+				elseif playerPos[3] == gridAligned[3] and playerPos[1] > gridAligned[1] then
+					blockEulerY = 90 * selectedBlockData[3].y
+				else
+					blockPosOffset[1] = blockPosOffset[1] + gridModulo
+				end
+				
+				gridAligned = VecAdd(gridAligned, Vec(0, gridModulo, 0))
+			else
+				if playerPos[1] == gridAligned[1] and playerPos[3] < gridAligned[3] then
+					blockEulerY = 180 * selectedBlockData[3].y
+					blockPosOffset[1] = blockPosOffset[1] + gridModulo
+					blockPosOffset[3] = blockPosOffset[3] + gridModulo
+				elseif playerPos[3] == gridAligned[3] and playerPos[1] < gridAligned[1]  then
+					blockEulerY = -90 * selectedBlockData[3].y
+					blockPosOffset[1] = blockPosOffset[1] + gridModulo
+				elseif playerPos[3] == gridAligned[3] and playerPos[1] > gridAligned[1]  then
+					blockEulerY = 90 * selectedBlockData[3].y
+					blockPosOffset[3] = blockPosOffset[3] + gridModulo
+				end
 			end
 		end
 	end
