@@ -15,12 +15,9 @@ local toolSlot = nil
 
 -- TODO: Add dropping items.
 -- TODO: Fix "block of ___" insides to be random.
--- TODO: Double doors (add mirror next to sametype variable, unique type ids?)
--- TODO: Grab stops working when dist is greater but item still held.
--- TODO: Fix trapdoor alignment, clips into hinged block.
 -- TODO: Block break particles: use vox bounds.
--- TODO: Fix trapdoor hinges being centered.
--- TODO: Fix Mangrove trapdoor hinges.
+-- TODO: Fix trapdoor alignment, clips into hinged block, hinges being incorrectly placed.
+-- MAYBE: Trapdoor use log alignment?
 
 local toolVox = "MOD/vox/tool.vox"
 
@@ -197,7 +194,7 @@ function tick(dt)
 		return
 	end
 	
-	if InputPressed(binds["Place"]) or InputDown(binds["Place"]) then
+	if (InputPressed(binds["Place"]) or InputDown(binds["Place"])) and (GetPlayerGrabBody() == 0 or GetPlayerGrabShape() == 0) then
 		if InputDown(binds["Place"]) then
 			holdTimer = holdTimer - dt
 			
