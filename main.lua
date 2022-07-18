@@ -482,30 +482,43 @@ function PlaceBlock()
 		if selectedBlockData[9] == 2 then
 			local playerRotX, playerRotY, playerRotZ = GetQuatEuler(playerCameraTransform.rot)
 			
-			local tempTransform = Transform(gridAligned, QuatEuler(0, roundToNearest(playerRotY, 90), 0))
-			local left = TransformToParentPoint(tempTransform, Vec(-gridModulo / 2, gridModulo / 2, -gridModulo / 2))
-			--local right = TransformToParentPoint(tempTransform, Vec(gridModulo * 1.5, gridModulo / 2, -gridModulo / 2))
+			DebugWatch("yrot", playerRotY)
+			DebugWatch("yrot round", roundToNearest(playerRotY, 90))
 			
-			--spawnDebugParticle(left, 5)
-			--spawnDebugParticle(right, 5, Color4.Green)
+			local tempPos = VecAdd(gridAligned, Vec(gridModulo / 2, gridModulo / 2, gridModulo / 2))
+			local tempTransform = Transform(tempPos, QuatEuler(0, roundToNearest(playerRotY, 90), 0))
+			local left = TransformToParentPoint(tempTransform, Vec(-gridModulo, 0, 0))
+			local forward = TransformToParentVec(tempTransform, Vec(0, 0, -1))
+			local right = TransformToParentPoint(tempTransform, Vec(gridModulo, 0, 0))
+			
+			spawnDebugParticle(left, 1)
+			spawnDebugParticle(tempPos, 1, Color4.Yellow)
+			spawnDebugParticle(right, 1, Color4.Green)
 			
 			local searchSize = {gridModulo, gridModulo, gridModulo}
 			
 			local objectsLeft = CollisionCheckCenterPivot(left, searchSize)
-			--local objectsRight = CollisionCheckCenterPivot(right, searchSize)
+			local objectsRight = CollisionCheckCenterPivot(right, searchSize)
 			
 			--local doorRotated = false
 			
-			if #objectsLeft > 0 then
-				local filteredObjectsLeft = FilterBlockType(objectsLeft, 2)
+			if #objectsLeft > 0 or #objectsRight > 0 then
+				local selectedObjects = nil
+				
+				if #objectsLeft > 0 then
+					selectedObjects = FilterBlockType(objectsLeft, 2)
+				else
+					selectedObjects = FilterBlockType(objectsRight, 2, true)
+				end
 				--DebugPrint("l")
 				
-				if #filteredObjectsLeft > 0 then
-					blockEulerY = blockEulerX + 90
+				if #selectedObjects > 0 then
+					blockEulerY = blockEulerY + 180
 					
-					local otherShapeTransform = GetShapeWorldTransform(filteredObjectsLeft[1])
+					local otherShapeTransform = GetShapeWorldTransform(selectedObjects[1])
 					
-					gridAligned = VecAdd(gridAligned, Vec(-gridModulo + gridModulo / 16 * 14, 0, gridModulo))
+					gridAligned = VecAdd(right, VecScale(Vec(-gridModulo / 2, -gridModulo / 2, -gridModulo / 2), 1))
+					gridAligned = VecAdd(gridAligned, VecScale(forward, -gridModulo / 16 * 2))
 					mirrorJointLimits = true
 					--gridAligned = VecAdd(gridAligned, VecScale(TransformToParentVec(tempTransform, Vec(1, 0, 0)), gridModulo)) --0.1245
 					--gridAligned = VecAdd(gridAligned, VecScale(TransformToParentVec(tempTransform, Vec(0, 0, 1)), -math.floor(gridModulo / 16 * 2))) --0.1245
@@ -659,8 +672,9 @@ function AimLogic()
 	end
 end
 
-function FilterBlockType(shapeList, typeId)
+function FilterBlockType(shapeList, typeId, blacklist)
 	local newList = {}
+	blacklist = blacklist or false
 	
 	for i = 1, #shapeList do
 		local currShape = shapeList[i]
@@ -672,9 +686,9 @@ function FilterBlockType(shapeList, typeId)
 		if blockId ~= nil and blockId > 0 then
 			local otherTypeId = blocks[blockId][9]
 			
-			DebugPrint(otherTypeId)
+			--DebugPrint(otherTypeId)
 		
-			if otherTypeId == typeId then
+			if (otherTypeId == typeId and not blacklist) or (otherTypeId ~= typeId and blacklist) then
 				newList[#newList + 1] = currShape
 			end
 		end

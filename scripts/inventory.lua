@@ -43,7 +43,7 @@ function inventory_tick(dt)
 				creativeInventoryScroll = maxCreativeInventoryScroll
 			end
 			
-			DebugWatch("id", inventoryIdMouseOver[2])
+			--DebugWatch("id", inventoryIdMouseOver[2])
 			
 			if inventoryBlockDataOnMouse[1] == 0 and inventoryIdMouseOver[2] ~= 0 then 
 				for i = 1, 9 do
