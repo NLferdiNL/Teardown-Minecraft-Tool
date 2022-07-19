@@ -16,7 +16,6 @@ local toolSlot = nil
 -- TODO: Add dropping items.
 -- TODO: Fix "block of ___" insides to be random.
 -- TODO: Block break particles: use vox bounds.
--- TODO: Fix trapdoor alignment, clips into hinged block, hinges being incorrectly placed.
 -- MAYBE: Trapdoor use log alignment?
 
 local toolVox = "MOD/vox/tool.vox"
@@ -463,7 +462,7 @@ function PlaceBlock()
 	--gridAligned = VecAdd(gridAligned, alignOffset)
 	]]--
 	
-	local mirrorJointLimits = false
+	local mirrorJointLimits = nil
 	
 	if selectedBlockData[9] > 1 then
 		local otherBlock = shape
@@ -479,8 +478,8 @@ function PlaceBlock()
 		if selectedBlockData[9] == 2 then
 			local playerRotX, playerRotY, playerRotZ = GetQuatEuler(playerCameraTransform.rot)
 			
-			DebugWatch("yrot", playerRotY)
-			DebugWatch("yrot round", roundToNearest(playerRotY, 90))
+			--DebugWatch("yrot", playerRotY)
+			--DebugWatch("yrot round", roundToNearest(playerRotY, 90))
 			
 			local tempPos = VecAdd(gridAligned, Vec(gridModulo / 2, gridModulo / 2, gridModulo / 2))
 			local tempTransform = Transform(tempPos, QuatEuler(0, roundToNearest(playerRotY, 90), 0))
@@ -488,9 +487,9 @@ function PlaceBlock()
 			local forward = TransformToParentVec(tempTransform, Vec(0, 0, -1))
 			local right = TransformToParentPoint(tempTransform, Vec(gridModulo, 0, 0))
 			
-			spawnDebugParticle(left, 1)
-			spawnDebugParticle(tempPos, 1, Color4.Yellow)
-			spawnDebugParticle(right, 1, Color4.Green)
+			--spawnDebugParticle(left, 1)
+			--spawnDebugParticle(tempPos, 1, Color4.Yellow)
+			--spawnDebugParticle(right, 1, Color4.Green)
 			
 			local searchSize = {gridModulo, gridModulo, gridModulo}
 			
@@ -516,7 +515,7 @@ function PlaceBlock()
 					
 					gridAligned = VecAdd(right, VecScale(Vec(-gridModulo / 2, -gridModulo / 2, -gridModulo / 2), 1))
 					gridAligned = VecAdd(gridAligned, VecScale(forward, -gridModulo / 16 * 2))
-					mirrorJointLimits = true
+					mirrorJointLimits = {"limits='%-90 0", "limits='0 90"}
 					--gridAligned = VecAdd(gridAligned, VecScale(TransformToParentVec(tempTransform, Vec(1, 0, 0)), gridModulo)) --0.1245
 					--gridAligned = VecAdd(gridAligned, VecScale(TransformToParentVec(tempTransform, Vec(0, 0, 1)), -math.floor(gridModulo / 16 * 2))) --0.1245
 				end
@@ -530,7 +529,6 @@ function PlaceBlock()
 					--blockPosOffset = VecAdd(blockPosOffset, VecScale(gridModuloTransformToParentVec(tempTransform, Vec(0, 0, 1))
 				end
 			end]]--
-			
 		elseif otherBlockType == selectedBlockData[9] and otherBlockType == 3 and CheckIfPosWithin(VecAdd(hitPoint, VecScale(normal, gridModulo * 0.1)), otherBlockTransform.pos, VecAdd(otherBlockTransform.pos, blockMaxBounds)) then
 			local otherBlockTransform = GetShapeWorldTransform(otherBlock)
 			
@@ -542,6 +540,14 @@ function PlaceBlock()
 		elseif selectedBlockData[9] == 3 then
 			if hitPoint[2] + normal[2] * 0.01 > gridAligned[2] + blockSize / 10 / 2 then
 				gridAligned = VecAdd(gridAligned, Vec(0, blockSize / 10 / 2, 0))
+			end
+		elseif selectedBlockData[9] == 6 then
+			--DebugWatch("a", hitPoint[2] + normal[2] * 0.01)
+			--DebugWatch("a", gridAligned[2])
+			if hitPoint[2] + normal[2] * 0.01 > gridAligned[2] + blockSize / 10 / 2 then
+				gridAligned = VecAdd(gridAligned, Vec(0, gridModulo / 16 * 13, 0))
+				
+				mirrorJointLimits = "alt"
 			end
 		end
 	end
@@ -580,8 +586,12 @@ function PlaceBlock()
 	if selectedBlockData[10] ~= nil then
 		extraBlockXML = selectedBlockData[10]
 		
-		if mirrorJointLimits then
-			extraBlockXML = string.gsub(extraBlockXML, "limits='%-90 0", "limits='0 90")
+		if mirrorJointLimits ~= nil then
+			if mirrorJointLimits == "alt" then
+				extraBlockXML = selectedBlockData[11]
+			else
+				extraBlockXML = string.gsub(extraBlockXML, mirrorJointLimits[1], mirrorJointLimits[2])
+			end
 		end
 	end
 	
