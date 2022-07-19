@@ -15,7 +15,6 @@ local toolSlot = nil
 
 -- TODO: Add dropping items.
 -- TODO: Fix "block of ___" insides to be random.
--- TODO: Block break particles: use vox bounds.
 -- MAYBE: Trapdoor use log alignment?
 
 local toolVox = "MOD/vox/tool.vox"
@@ -278,18 +277,22 @@ function setupBlockBreakParticles()
 	ParticleTile(6)
 	ParticleRadius(0.05)
 	ParticleGravity(-9.807)
+	ParticleStretch(0)
 	ParticleCollide(1)
 end
 
 function spawnBrokenBlockParticles(blockShape)
 	local blockTransform = GetShapeWorldTransform(blockShape) 
 	local blockCenter = VecAdd(blockTransform.pos, Vec(blockSize / 10 / 2, blockSize / 10 / 2, blockSize / 10 / 2))
+	local blockBoundsMin, blockBoundsMax = GetShapeBounds(blockShape)
+	
+	local dist = VecDist(blockBoundsMin, blockBoundsMax)
 	
 	setupBlockBreakParticles()
 	
-	for i = 1, 50 do
-		local randomDir = rndVec(blockSize / 10 / 2)
-		local particlePos = VecAdd(blockCenter, randomDir)
+	for i = 1, math.ceil(50 / 2.8 * dist) do
+		--local randomDir = rndVec(blockSize / 10 / 2)
+		local particlePos = GetRandomPosBetween(blockBoundsMin, blockBoundsMax) --VecAdd(blockCenter, randomDir)
 		local matType, bR, bG, bB, bA = GetShapeMaterialAtPosition(blockShape, particlePos)
 		
 		local particleLifetime = math.abs(math.random() * 0.5 + 2.5)

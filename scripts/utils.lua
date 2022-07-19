@@ -252,6 +252,14 @@ function spawnDebugParticle(pos, lifetime, color4)
 	SpawnParticle(pos, Vec(), 10)
 end
 
+function GetRandomPosBetween(a, b)
+	local rX = math.random() * (b[1] - a[1]) + a[1]
+	local rY = math.random() * (b[2] - a[2]) + a[2]
+	local rZ = math.random() * (b[3] - a[3]) + a[3]
+
+	return Vec(rX, rY, rZ)
+end
+
 function CheckIfPosWithin(pos, minBounds, maxBounds)
 	local xCheck = pos[1] > minBounds[1] and pos[1] < maxBounds[1]
 	
