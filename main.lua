@@ -279,6 +279,7 @@ function setupBlockBreakParticles()
 	ParticleGravity(-9.807)
 	ParticleStretch(0)
 	ParticleCollide(1)
+	ParticleSticky(0.25)
 end
 
 function spawnBrokenBlockParticles(blockShape)
@@ -287,6 +288,8 @@ function spawnBrokenBlockParticles(blockShape)
 	local blockBoundsMin, blockBoundsMax = GetShapeBounds(blockShape)
 	
 	local dist = VecDist(blockBoundsMin, blockBoundsMax)
+	
+	--spawnDebugParticle(blockCenter, 2, Color4.Red)
 	
 	setupBlockBreakParticles()
 	
@@ -297,9 +300,11 @@ function spawnBrokenBlockParticles(blockShape)
 		
 		local particleLifetime = math.abs(math.random() * 0.5 + 2.5)
 		
+		local particleVel = VecDir(blockCenter, particlePos)
+		
 		ParticleColor(bR, bG, bB)
 		ParticleAlpha(bA)
-		SpawnParticle(particlePos, Vec(0, 0, 0), particleLifetime)
+		SpawnParticle(particlePos, particleVel, particleLifetime)
 	end
 end
 
