@@ -105,6 +105,24 @@ function VecInvert(vec)
 	return Vec(-vec[1], -vec[2], -vec[3])
 end
 
+function VecCompare(a, b)
+	return a[1] == b[1], a[2] == b[2], a[3] == b[3]
+end
+
+function VecCross(a, b)
+	local xC = a[2] * b[3] - a[3] * b[2]
+	local yC = a[3] * b[1] - a[1] * b[3]
+	local zC = a[1] * b[2] - a[2] * b[1]
+	
+	return Vec(xC, yC, zC)
+end
+
+--[[function VecRotate(origin, point, angle)
+	local centeredPoint = VecSub(point, origin)
+	
+	
+end]]--
+
 function raycast(origin, direction, maxDistance, radius, rejectTransparant)
 	maxDistance = maxDistance or 500 -- Make this arguement optional, it is usually not required to raycast further than this.
 	local hit, distance, normal, shape = QueryRaycast(origin, direction, maxDistance, radius, rejectTransparant)
@@ -314,3 +332,39 @@ function CollisionCheck(pos, size, margin)
 	
 	return shapes
 end
+
+--[[glm::vec3 CreateAngledPoint(glm::vec3 rotation_point, float radius, float angle, glm::vec3 normal)
+{
+    // Normalize the normal (axis to rotate on)
+    normal = glm::normalize(normal);
+    // Create a vector that will be used for the dot product
+    glm::vec3 to_cross = glm::normalize(glm::vec3(0.0f,1.0f,0.0f));
+    // Make sure that the normal and cross vector are not the same, if they are change the cross vector
+    if (to_cross == normal) to_cross = glm::normalize(glm::vec3(0.0f, 0.0f, 1.0f));
+    // Get the cross product
+    glm::vec3 to_return = glm::normalize(glm::cross(normal,to_cross));
+    // Rotate point around the axis
+    to_return = glm::rotate(to_return, angle* RAD_TO_DEG, normal);
+    // Scale the point up from the origin
+    to_return *= radius;
+    // Apply it to the point in space we are rotating around
+    return rotation_point + to_return;
+}
+
+function CreateAngledVec(rotation_point, radius, angle, normal)
+	normal = VecNormalize(normal)
+	
+	local to_cross = VecNormalize(Vec(0, 1, 0))
+	
+	local xC, yC, zC = VecCompare(to_cross, normal)
+	
+	local vecSame = xC and yC and zC
+	
+	if vecSame then
+		to_cross = VecNormalize(Vec(0, 0, 1))
+	end
+	
+	local cross = VecNormalize(VecCross(a, b))
+	
+	
+end]]--

@@ -17,6 +17,8 @@ local toolSlot = nil
 -- TODO: Fix "block of ___" insides to be random.
 -- TODO: Fix fence connection positioning.
 -- TODO: Half fence connection when connecting to a block to prevent overlap.
+-- TODO: Make blocks check for fences around them and trigger an update.
+-- TODO: Fix block break particles moving one way, sometimes.
 -- MAYBE: Trapdoor use log alignment?
 
 local toolVox = "MOD/vox/tool.vox"
@@ -85,7 +87,7 @@ local distance = 0
 local normal = Vec()
 local shape = 0
 
-local fencePosOffset = gridModulo / 16 * 8
+local fencePosOffset = gridModulo / 16 * 7
 
 local canGrabObject = false
 
@@ -577,24 +579,16 @@ function PlaceBlock()
 			local tempPos = VecAdd(gridAligned, Vec(fencePosOffset, 0, fencePosOffset))
 			local tempTransform = Transform(tempPos, Quat())
 			
-			local forward = TransformToParentPoint(tempTransform, Vec(0, gridModulo / 2, -gridModulo))
-			local backward = TransformToParentPoint(tempTransform, Vec(0, gridModulo / 2, gridModulo))
 			
-			local left = TransformToParentPoint(tempTransform, Vec(-gridModulo, gridModulo / 2, 0))
-			local right = TransformToParentPoint(tempTransform, Vec(gridModulo, gridModulo / 2, 0))
-			
-			local searchSpots = {forward, backward, left, right}
-			local searchSize = {gridModulo, gridModulo, gridModulo}
 			
 			spawnDebugParticle(gridAligned, 5, Color4.Yellow)
 			spawnDebugParticle(tempPos, 5, Color4.Blue)
 			
-			for i = 1, #searchSpots do
-				local shapeList = CollisionCheckCenterPivot(searchSpots[i], searchSize)
-				shapeList = FilterNonBlocks(shapeList)
-				
-				if shapeList[1] ~= nil then
-					local otherShape = shapeList[1]
+			local blocks = FindAdjecentBlocks(tempTransform)
+			
+			for i = 1, #blocks do
+				if blocks[i] ~= -1 then
+					local otherShape = blocks[i]
 					local otherShapeTransform = GetShapeWorldTransform(otherShape)
 					local shapePos = otherShapeTransform.pos
 					
@@ -602,7 +596,7 @@ function PlaceBlock()
 						connectedShapesTag = connectedShapesTag .. " "
 					end
 					
-					local currPieces = SpawnFenceConnector(selectedBlockData, tempPos, otherShape, shapePos, i > 2)
+					local currPieces = SpawnFenceConnector(selectedBlockData, tempPos, otherShape, shapePos, i * 90)
 					
 					connectedShapesTag = connectedShapesTag .. currPieces
 					
@@ -800,6 +794,32 @@ function FilterNonBlocks(shapeList)
 	return newList
 end
 
+function FindAdjecentBlocks(blockTransform)
+	local forward = TransformToParentPoint(blockTransform, Vec(0, gridModulo / 2, -gridModulo))
+	local backward = TransformToParentPoint(blockTransform, Vec(0, gridModulo / 2, gridModulo))
+	
+	local left = TransformToParentPoint(blockTransform, Vec(-gridModulo, gridModulo / 2, 0))
+	local right = TransformToParentPoint(blockTransform, Vec(gridModulo, gridModulo / 2, 0))
+	
+	local searchSpots = {forward, left, backward, right}
+	local searchSize = {gridModulo, gridModulo, gridModulo}
+	
+	local blocks = {}
+	
+	for i = 1, #searchSpots do
+		local shapeList = CollisionCheckCenterPivot(searchSpots[i], searchSize)
+		shapeList = FilterNonBlocks(shapeList)
+		
+		if #shapeList > 0 then
+			blocks[#blocks + 1] = shapeList[1]
+		else
+			blocks[#blocks + 1] = -1
+		end
+	end
+	
+	return blocks
+end
+
 function ToolPlaceBlockAnim()
 	SetToolTransform(Transform(Vec(0, 0, -0.05), QuatEuler(-36, 44, 22)))
 end
@@ -870,7 +890,7 @@ function ScrollLogic()
 	end
 end
 
-function SpawnFenceConnector(selectedBlockData, shapePos, otherShape, otherShapePos, leftOrRight)
+function SpawnFenceConnector(selectedBlockData, shapePos, otherShape, otherShapePos, rot)
 	local dir = VecDir(shapePos, otherShapePos)
 	
 	--[[for i = 1, #dir do
@@ -903,13 +923,9 @@ function SpawnFenceConnector(selectedBlockData, shapePos, otherShape, otherShape
 	
 	fencePos[2] = shapePos[2] + gridModulo / 16 * 6
 	
-	DebugWatch("dir", dir)
+	DebugWatch("rot", rot)
 	
-	local rot = 90
-	
-	if leftOrRight then
-		rot = 0
-	end
+	--rot = 
 	
 	local fenceMiddleTransform = Transform(fencePos, QuatEuler(0, rot, 0))
 	
