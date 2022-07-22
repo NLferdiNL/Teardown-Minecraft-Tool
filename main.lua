@@ -15,6 +15,8 @@ local toolSlot = nil
 
 -- TODO: Add dropping items.
 -- TODO: Fix "block of ___" insides to be random.
+-- TODO: Fix fence connection positioning.
+-- TODO: Half fence connection when connecting to a block to prevent overlap.
 -- MAYBE: Trapdoor use log alignment?
 
 local toolVox = "MOD/vox/tool.vox"
@@ -65,6 +67,10 @@ for i = 1, mainInventorySize + miscInventorySlots do
 	
 	if i >= 32 then
 		inventory[i] = {i - 31, 1}
+		
+		if i == 32 then
+			inventory[i][1] = 40
+		end
 	end
 end
 
@@ -79,7 +85,12 @@ local distance = 0
 local normal = Vec()
 local shape = 0
 
+local fencePosOffset = gridModulo / 16 * 8
+
 local canGrabObject = false
+
+local debugstart = true
+local debugstarted = false
 
 function init()
 	saveFileInit(savedVars)
@@ -107,6 +118,11 @@ function init()
 end
 
 function tick(dt)
+	if debugstart and not debugstarted then
+		debugstarted = true
+		SetString("game.player.tool", toolName)
+	end
+
 	HandleSpecialBlocks()
 	
 	if not menu_disabled then
@@ -314,10 +330,17 @@ function RemoveBlock()
 	end
 	
 	local blockTag = GetTagValue(shape, "minecraftblockid")
-	local blockSpecialData = GetTagValue(shape, "minecraftspecialdata")
 	
 	if blockTag == "" then
 		return
+	end
+	
+	local blockSpecialData = GetTagValue(shape, "minecraftspecialdata")
+	
+	local blockConnectedShapes = GetTagValue(shape, "minecraftconnectedshapes")
+	
+	if blockConnectedShapes ~= nil and blockConnectedShapes ~= "" then
+		RemoveConnectedShapes(blockConnectedShapes)
 	end
 	
 	if blockSpecialData ~= "" then
@@ -471,6 +494,7 @@ function PlaceBlock()
 	]]--
 	
 	local mirrorJointLimits = nil
+	local connectedShapesTag = ""
 	
 	if selectedBlockData[9] > 1 then
 		local otherBlock = shape
@@ -548,6 +572,48 @@ function PlaceBlock()
 		elseif selectedBlockData[9] == 3 then
 			if hitPoint[2] + normal[2] * 0.01 > gridAligned[2] + blockSize / 10 / 2 then
 				gridAligned = VecAdd(gridAligned, Vec(0, blockSize / 10 / 2, 0))
+			end
+		elseif selectedBlockData[9] == 4 and not dynamicBlock then
+			local tempPos = VecAdd(gridAligned, Vec(fencePosOffset, 0, fencePosOffset))
+			local tempTransform = Transform(tempPos, Quat())
+			
+			local forward = TransformToParentPoint(tempTransform, Vec(0, gridModulo / 2, -gridModulo))
+			local backward = TransformToParentPoint(tempTransform, Vec(0, gridModulo / 2, gridModulo))
+			
+			local left = TransformToParentPoint(tempTransform, Vec(-gridModulo, gridModulo / 2, 0))
+			local right = TransformToParentPoint(tempTransform, Vec(gridModulo, gridModulo / 2, 0))
+			
+			local searchSpots = {forward, backward, left, right}
+			local searchSize = {gridModulo, gridModulo, gridModulo}
+			
+			spawnDebugParticle(gridAligned, 5, Color4.Yellow)
+			spawnDebugParticle(tempPos, 5, Color4.Blue)
+			
+			for i = 1, #searchSpots do
+				local shapeList = CollisionCheckCenterPivot(searchSpots[i], searchSize)
+				shapeList = FilterNonBlocks(shapeList)
+				
+				if shapeList[1] ~= nil then
+					local otherShape = shapeList[1]
+					local otherShapeTransform = GetShapeWorldTransform(otherShape)
+					local shapePos = otherShapeTransform.pos
+					
+					if i > 1 then
+						connectedShapesTag = connectedShapesTag .. " "
+					end
+					
+					local currPieces = SpawnFenceConnector(selectedBlockData, tempPos, otherShape, shapePos, i > 2)
+					
+					connectedShapesTag = connectedShapesTag .. currPieces
+					
+					local otherShapeConnectedTag = GetTagValue(otherShape, "minecraftconnectedshapes")
+					
+					if otherShapeConnectedTag == nil or otherShapeConnectedTag == "" then
+						SetTag(otherShape, "minecraftconnectedshapes", connectedShapesTag)
+					else
+						SetTag(otherShape, "minecraftconnectedshapes", otherShapeConnectedTag .. " " .. currPieces)
+					end
+				end
 			end
 		elseif selectedBlockData[9] == 6 then
 			--DebugWatch("a", hitPoint[2] + normal[2] * 0.01)
@@ -627,6 +693,10 @@ function PlaceBlock()
 	SetTag(block, "minecraftblockid", selectedBlockId)
 	if hasSpecialData > 0 then
 		SetTag(block, "minecraftspecialdata", hasSpecialData)
+	end
+	
+	if connectedShapesTag ~= "" then
+		SetTag(block, "minecraftconnectedshapes", connectedShapesTag)
 	end
 	
 	if not creativeMode then
@@ -714,6 +784,22 @@ function FilterBlockType(shapeList, typeId, blacklist)
 	return newList
 end
 
+function FilterNonBlocks(shapeList)
+	local newList = {}
+	
+	for i = 1, #shapeList do
+		local currShape = shapeList[i]
+		
+		local blockId = tonumber(GetTagValue(currShape, "minecraftblockid"))
+		
+		if blockId ~= nil and blockId > 0 then
+			newList[#newList + 1] = currShape
+		end
+	end
+	
+	return newList
+end
+
 function ToolPlaceBlockAnim()
 	SetToolTransform(Transform(Vec(0, 0, -0.05), QuatEuler(-36, 44, 22)))
 end
@@ -781,6 +867,77 @@ function ScrollLogic()
 	
 	if scrollDiff ~= 0 then
 		itemSwitchTimer = itemSwitchTimerMax
+	end
+end
+
+function SpawnFenceConnector(selectedBlockData, shapePos, otherShape, otherShapePos, leftOrRight)
+	local dir = VecDir(shapePos, otherShapePos)
+	
+	--[[for i = 1, #dir do
+		if dir[i] < -0.5 then
+			dir[i] = -1
+		elseif dir[i] > 0.5 then
+			dir[i] = 1
+		else
+			dir[i] = 0
+		end
+	end]]--
+	
+	dir[2] = 0
+	
+	--otherShapePos = VecAdd(otherShapePos, VecScale(dir, fencePosOffset / 2))
+	
+	DebugWatch("dir", dir)
+	--DebugWatch("shapePos", shapePos)
+	--DebugWatch("otherShapePos", otherShapePos)
+	
+	--spawnDebugParticle(otherShapePos, 2, Color4.Green)
+
+	--local dist = VecDist(shapePos, shapePos)
+	
+	--local middle = Vec((otherShapePos[1] + shapePos[1]) / 2, (otherShapePos[2] + shapePos[2]) / 2, (otherShapePos[3] + shapePos[3]) / 2)
+	
+	--middle = VecAdd(middle, VecScale(dir, -gridModulo / 16 * 1.5))
+	
+	local fencePos = VecAdd(shapePos, VecScale(dir, gridModulo / 16 * 2))
+	
+	fencePos[2] = shapePos[2] + gridModulo / 16 * 6
+	
+	DebugWatch("dir", dir)
+	
+	local rot = 90
+	
+	if leftOrRight then
+		rot = 0
+	end
+	
+	local fenceMiddleTransform = Transform(fencePos, QuatEuler(0, rot, 0))
+	
+	local blockBrushXML = "brush='" .. string.gsub(selectedBlockData[2], "%.vox", "_c%.vox")
+	
+	local blockSizeVec = Vec(blockSize / 16 * 12, blockSize / 16 * 9, blockSize / 16 * 2)
+	--local blockSizeVec = Vec(1.2, 1.5, 0.2)
+	
+	local blockSizeXML = "size='" .. blockSizeVec[1] .. " " .. blockSizeVec[2] .. " " .. blockSizeVec[3] .. "'"
+	
+	local blockXML = "<voxbox " .. blockSizeXML .. " prop='false' " .. blockBrushXML .. "' " .. selectedBlockData[4] .. "></voxbox>"
+	
+	local connectionPiece = Spawn(blockXML, fenceMiddleTransform, true, true)[1]
+	
+	if GetEntityType(connectionPiece) == "body" then
+		local bodyShapes = GetBodyShapes(connectionPiece)
+		
+		for i = 1, #bodyShapes do
+			connectionPiece = connectionPiece .. " " .. bodyShapes[i]
+		end
+	end
+	
+	return connectionPiece
+end
+
+function RemoveConnectedShapes(shapeList)
+	for shape in string.gmatch(shapeList, "%d+") do
+		Delete(shape)
 	end
 end
 
