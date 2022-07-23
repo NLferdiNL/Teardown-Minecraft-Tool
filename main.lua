@@ -7,6 +7,7 @@
 #include "datascripts/inputList.lua"
 #include "datascripts/color4.lua"
 #include "datascripts/blockData.lua"
+#include "datascripts/blockConnectorSizing.lua"
 #include "datascripts/savedVars.lua"
 
 toolName = "minecraftbuildtool"
@@ -593,7 +594,7 @@ function PlaceBlock()
 						connectedShapesTag = connectedShapesTag .. " "
 					end
 					
-					local currPieces = SpawnFenceConnectors(selectedBlockData, tempPos, otherShape, shapePos, i * 90)
+					local currPieces = SpawnFenceConnectors(selectedBlockData, tempPos, shapePos, i * 90)
 					
 					connectedShapesTag = connectedShapesTag .. currPieces
 					
@@ -887,17 +888,44 @@ function ScrollLogic()
 	end
 end
 
-function SpawnFenceConnector(selectedBlockData, fenceConnectionTransform)
+function GetFenceConnectionTransform(shapePos, otherShapePos, rot)
+	local dir = VecDir(shapePos, otherShapePos)
+	
+	dir[2] = 0
+	
+	DebugWatch("dir", dir)
+	DebugWatch("rot", rot)
+	
+	local fencePos = VecAdd(shapePos, VecScale(dir, gridModulo / 16 * 2))
+	
+	fencePos[2] = shapePos[2] + gridModulo / 16 * 6
+	
+	local fenceConnectionTransform = Transform(fencePos, QuatEuler(0, rot, 0))
+	
+	local offsetDir = TransformToParentVec(fenceConnectionTransform, Vec(0, 0, -1))
+	
+	if rot == 180 or rot == 270 then -- Magical numbers... I'm sorry.
+		fenceConnectionTransform.pos = VecAdd(fenceConnectionTransform.pos, VecScale(offsetDir, gridModulo / 16 * 1.22))
+	else
+		fenceConnectionTransform.pos = VecAdd(fenceConnectionTransform.pos, VecScale(offsetDir, gridModulo / 16 * 0.765))
+	end
+	
+	return fenceConnectionTransform
+end
+
+function SpawnBlockConnector(selectedBlockData, connectionTransform)
 	local blockBrushXML = "brush='" .. string.gsub(selectedBlockData[2], "%.vox", "_c%.vox")
 	
-	local blockSizeVec = Vec(blockSize / 16 * 12, blockSize / 16 * 9, blockSize / 16 * 2)
+	local blockConnectorSize = blockConnectorSizing[selectedBlockData[9]]
+	
+	local blockSizeVec = Vec(blockSize / 16 * blockConnectorSize.x, blockSize / 16 * blockConnectorSize.y, blockSize / 16 * blockConnectorSize.z)
 	--local blockSizeVec = Vec(1.2, 1.5, 0.2)
 	
 	local blockSizeXML = "size='" .. blockSizeVec[1] .. " " .. blockSizeVec[2] .. " " .. blockSizeVec[3] .. "'"
 	
 	local blockXML = "<voxbox " .. blockSizeXML .. " prop='false' " .. blockBrushXML .. "' " .. selectedBlockData[4] .. "></voxbox>"
 	
-	local connectionPiece = Spawn(blockXML, fenceConnectionTransform, true, true)[1]
+	local connectionPiece = Spawn(blockXML, connectionTransform, true, true)[1]
 	
 	if GetEntityType(connectionPiece) == "body" then
 		local bodyShapes = GetBodyShapes(connectionPiece)
@@ -910,51 +938,10 @@ function SpawnFenceConnector(selectedBlockData, fenceConnectionTransform)
 	return connectionPiece
 end
 
-function SpawnFenceConnectors(selectedBlockData, shapePos, otherShape, otherShapePos, rot)
-	local dir = VecDir(shapePos, otherShapePos)
+function SpawnFenceConnectors(selectedBlockData, shapePos, otherShapePos, rot)
+	local fenceConnectionTransform = GetFenceConnectionTransform(shapePos, otherShapePos, rot)
 	
-	--[[for i = 1, #dir do
-		if dir[i] < -0.5 then
-			dir[i] = -1
-		elseif dir[i] > 0.5 then
-			dir[i] = 1
-		else
-			dir[i] = 0
-		end
-	end]]--
-	
-	dir[2] = 0
-	
-	--otherShapePos = VecAdd(otherShapePos, VecScale(dir, blockCenterPosOffset / 2))
-	
-	DebugWatch("dir", dir)
-	DebugWatch("rot", rot)
-	--DebugWatch("shapePos", shapePos)
-	--DebugWatch("otherShapePos", otherShapePos)
-	
-	--spawnDebugParticle(otherShapePos, 2, Color4.Green)
-
-	--local dist = VecDist(shapePos, shapePos)
-	
-	--local middle = Vec((otherShapePos[1] + shapePos[1]) / 2, (otherShapePos[2] + shapePos[2]) / 2, (otherShapePos[3] + shapePos[3]) / 2)
-	
-	--middle = VecAdd(middle, VecScale(dir, -gridModulo / 16 * 1.5))
-	
-	local fencePos = VecAdd(shapePos, VecScale(dir, gridModulo / 16 * 2))
-	
-	fencePos[2] = shapePos[2] + gridModulo / 16 * 6
-	
-	local fenceConnectionTransform = Transform(fencePos, QuatEuler(0, rot, 0))
-	
-	local offsetDir = TransformToParentVec(fenceConnectionTransform, Vec(0, 0, -1))
-	
-	if rot == 180 or rot == 270 then
-		fenceConnectionTransform.pos = VecAdd(fenceConnectionTransform.pos, VecScale(offsetDir, gridModulo / 16 * 1.22))
-	else
-		fenceConnectionTransform.pos = VecAdd(fenceConnectionTransform.pos, VecScale(offsetDir, gridModulo / 16 * 0.765))
-	end
-	
-	local connectionPiece = SpawnFenceConnector(selectedBlockData, fenceConnectionTransform)
+	local connectionPiece = SpawnBlockConnector(selectedBlockData, fenceConnectionTransform)
 	
 	return connectionPiece
 end
