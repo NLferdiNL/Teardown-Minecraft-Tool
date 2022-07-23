@@ -16,9 +16,14 @@ local toolSlot = nil
 
 -- TODO: Add dropping items.
 -- TODO: Fix "block of ___" insides to be random.
--- TODO: Half fence connection when connecting to a block to prevent overlap.
--- TODO: Make blocks check for fences around them and trigger an update.
 -- TODO: Fix block break particles moving one way, sometimes.
+-- TODO: Add corner stairs.
+-- TODO: Add sideways torches. (Use joints or just merge?)
+
+--       Might require a massive rework of the position finding.
+-- TODO: Fix fence connector positioning on non fence blocks.
+-- TODO: Fix fence connector positioning from block update.
+
 -- MAYBE: Trapdoor use log alignment?
 
 local toolVox = "MOD/vox/tool.vox"
@@ -374,7 +379,7 @@ function PlaceBlock()
 	--local hitPointBlockOffset = VecAdd(hitPoint, Vec(-0.8, -0.8, -0.8))
 	--local normalOffset = VecAdd(hitPointBlockOffset, VecScale(normal, 0.8))
 	
-	local normalOffset = VecAdd(hitPoint, VecScale(normal, gridModulo * 0.1))
+	local normalOffset = VecAdd(hitPoint, VecScale(normal, gridModulo * 0.5))
 	local gridAligned = getGridAlignedPos(normalOffset)
 	
 	local blockRot = Quat()
@@ -590,11 +595,20 @@ function PlaceBlock()
 					local otherShapeTransform = GetShapeWorldTransform(otherShape)
 					local shapePos = otherShapeTransform.pos
 					
+					local blockMin, blockMax = GetShapeBounds(otherShape)
+					
+					blockMin[2] = 0
+					blockMax[2] = 0
+					
+					local offset = VecSub(blockMax, blockMin)
+					
+					shapePos = VecAdd(shapePos, offset)
+					
 					if i > 1 then
 						connectedShapesTag = connectedShapesTag .. " "
 					end
 					
-					local currPieces = SpawnFenceConnectors(selectedBlockData, tempPos, shapePos, i * 90)
+					local currPieces = SpawnFenceConnector(selectedBlockData, tempPos, otherShape, shapePos, i * 90)
 					
 					connectedShapesTag = connectedShapesTag .. currPieces
 					
@@ -687,6 +701,34 @@ function PlaceBlock()
 		SetTag(block, "minecraftspecialdata", hasSpecialData)
 	end
 	
+	if selectedBlockData[9] ~= 4 then
+		for i = 1, #adjecentBlocks do
+			local currBlock = adjecentBlocks[i]
+			local currBlockId = tonumber(GetTagValue(currBlock, "minecraftblockid"))
+			
+			if currBlockId ~= nil then
+				local blockTransform = GetShapeWorldTransform(currBlock)
+				local currBlockData = blocks[currBlockId]
+				local currBlockType = currBlockData[9]
+				
+				if currBlockType == 4 then
+					local otherBlockCenter = blockTransform.pos
+					
+					local currPieces = SpawnFenceConnector(currBlockData, otherBlockCenter, block, tempPos, (4 - i) * 90)
+						
+					connectedShapesTag = connectedShapesTag .. currPieces
+					
+					local otherShapeConnectedTag = GetTagValue(currBlock, "minecraftconnectedshapes")
+					
+					if otherShapeConnectedTag == nil or otherShapeConnectedTag == "" then
+						SetTag(currBlock, "minecraftconnectedshapes", connectedShapesTag)
+					else
+						SetTag(currBlock, "minecraftconnectedshapes", otherShapeConnectedTag .. " " .. currPieces)
+					end
+				end
+			end
+		end
+	end
 	if connectedShapesTag ~= "" then
 		SetTag(block, "minecraftconnectedshapes", connectedShapesTag)
 	end
@@ -904,21 +946,31 @@ function GetFenceConnectionTransform(shapePos, otherShapePos, rot)
 	
 	local offsetDir = TransformToParentVec(fenceConnectionTransform, Vec(0, 0, -1))
 	
+	fenceConnectionTransform.pos = VecAdd(fenceConnectionTransform.pos, VecScale(offsetDir, gridModulo / 16))
+	
+	local magicalNumber = 1
+	
 	if rot == 180 or rot == 270 then -- Magical numbers... I'm sorry.
-		fenceConnectionTransform.pos = VecAdd(fenceConnectionTransform.pos, VecScale(offsetDir, gridModulo / 16 * 1.22))
+		magicalNumber = -0.25
 	else
-		fenceConnectionTransform.pos = VecAdd(fenceConnectionTransform.pos, VecScale(offsetDir, gridModulo / 16 * 0.765))
+		magicalNumber = 0.25
 	end
 	
-	return fenceConnectionTransform
+	fenceConnectionTransform.pos = VecAdd(fenceConnectionTransform.pos, VecScale(offsetDir, gridModulo / 16 * magicalNumber))
+	
+	return fenceConnectionTransform, dir
 end
 
-function SpawnBlockConnector(selectedBlockData, connectionTransform)
+function SpawnBlockConnector(selectedBlockData, connectionTransform, sizeModifier)
+	if sizeModifier == nil then
+		sizeModifier = Vec(1, 1, 1)
+	end
+	
 	local blockBrushXML = "brush='" .. string.gsub(selectedBlockData[2], "%.vox", "_c%.vox")
 	
 	local blockConnectorSize = blockConnectorSizing[selectedBlockData[9]]
 	
-	local blockSizeVec = Vec(blockSize / 16 * blockConnectorSize.x, blockSize / 16 * blockConnectorSize.y, blockSize / 16 * blockConnectorSize.z)
+	local blockSizeVec = Vec(blockSize / 16 * blockConnectorSize.x * sizeModifier[1], blockSize / 16 * blockConnectorSize.y * sizeModifier[2], blockSize / 16 * blockConnectorSize.z * sizeModifier[3])
 	--local blockSizeVec = Vec(1.2, 1.5, 0.2)
 	
 	local blockSizeXML = "size='" .. blockSizeVec[1] .. " " .. blockSizeVec[2] .. " " .. blockSizeVec[3] .. "'"
@@ -938,10 +990,45 @@ function SpawnBlockConnector(selectedBlockData, connectionTransform)
 	return connectionPiece
 end
 
-function SpawnFenceConnectors(selectedBlockData, shapePos, otherShapePos, rot)
-	local fenceConnectionTransform = GetFenceConnectionTransform(shapePos, otherShapePos, rot)
+-- To get rot for update, 4 - i * 90
+function SpawnFenceConnector(selectedBlockData, shapePos, otherShape, otherShapePos, rot)
+	local fenceConnectionTransform, dir = GetFenceConnectionTransform(shapePos, otherShapePos, rot)
 	
-	local connectionPiece = SpawnBlockConnector(selectedBlockData, fenceConnectionTransform)
+	local otherBlockId = GetTagValue(otherShape, "minecraftblockid")
+	
+	if otherBlockId == nil then
+		DebugPrint(toolName .. " WARNING: invalid otherShape passed in SpawnFenceConnector()")
+	end
+	
+	otherBlockId = tonumber(otherBlockId)
+	
+	local sizeModifier = Vec(1, 1, 1)
+	
+	if otherBlockId == nil or otherBlockId == 0 then
+		DebugPrint(toolName .. " WARNING: invalid block id from otherShape in SpawnFenceConnector()")
+	else
+		local otherShapeBlockType = blocks[otherBlockId][9]
+		
+		for i = 1, #dir do
+			if dir[i] < -0.5 then
+				dir[i] = -1
+			elseif dir[i] > 0.5 then
+				dir[i] = 1
+			else
+				dir[i] = 0
+			end
+			
+			local isValidBlockType = otherShapeBlockType == 1 or
+									 otherShapeBlockType == 3 or
+									 otherShapeBlockType == 5
+			
+			if math.abs(dir[i]) == 1 and isValidBlockType then
+				sizeModifier[1] = 0.5
+			end
+		end
+	end
+	
+	local connectionPiece = SpawnBlockConnector(selectedBlockData, fenceConnectionTransform, sizeModifier)
 	
 	return connectionPiece
 end
