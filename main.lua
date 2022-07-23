@@ -15,7 +15,6 @@ local toolSlot = nil
 
 -- TODO: Add dropping items.
 -- TODO: Fix "block of ___" insides to be random.
--- TODO: Fix fence connection positioning.
 -- TODO: Half fence connection when connecting to a block to prevent overlap.
 -- TODO: Make blocks check for fences around them and trigger an update.
 -- TODO: Fix block break particles moving one way, sometimes.
@@ -87,7 +86,7 @@ local distance = 0
 local normal = Vec()
 local shape = 0
 
-local fencePosOffset = gridModulo / 16 * 7
+local blockCenterPosOffset = gridModulo / 16 * 8
 
 local canGrabObject = false
 
@@ -498,6 +497,11 @@ function PlaceBlock()
 	local mirrorJointLimits = nil
 	local connectedShapesTag = ""
 	
+	local tempPos = VecAdd(gridAligned, Vec(blockCenterPosOffset, 0, blockCenterPosOffset))
+	local tempTransform = Transform(tempPos, Quat())
+	
+	local adjecentBlocks = FindAdjecentBlocks(tempTransform)
+
 	if selectedBlockData[9] > 1 then
 		local otherBlock = shape
 		local otherBlockId = 0
@@ -576,19 +580,12 @@ function PlaceBlock()
 				gridAligned = VecAdd(gridAligned, Vec(0, blockSize / 10 / 2, 0))
 			end
 		elseif selectedBlockData[9] == 4 and not dynamicBlock then
-			local tempPos = VecAdd(gridAligned, Vec(fencePosOffset, 0, fencePosOffset))
-			local tempTransform = Transform(tempPos, Quat())
-			
-			
-			
 			spawnDebugParticle(gridAligned, 5, Color4.Yellow)
 			spawnDebugParticle(tempPos, 5, Color4.Blue)
 			
-			local blocks = FindAdjecentBlocks(tempTransform)
-			
-			for i = 1, #blocks do
-				if blocks[i] ~= -1 then
-					local otherShape = blocks[i]
+			for i = 1, #adjecentBlocks do
+				if adjecentBlocks[i] ~= -1 then
+					local otherShape = adjecentBlocks[i]
 					local otherShapeTransform = GetShapeWorldTransform(otherShape)
 					local shapePos = otherShapeTransform.pos
 					
@@ -596,7 +593,7 @@ function PlaceBlock()
 						connectedShapesTag = connectedShapesTag .. " "
 					end
 					
-					local currPieces = SpawnFenceConnector(selectedBlockData, tempPos, otherShape, shapePos, i * 90)
+					local currPieces = SpawnFenceConnectors(selectedBlockData, tempPos, otherShape, shapePos, i * 90)
 					
 					connectedShapesTag = connectedShapesTag .. currPieces
 					
@@ -890,7 +887,30 @@ function ScrollLogic()
 	end
 end
 
-function SpawnFenceConnector(selectedBlockData, shapePos, otherShape, otherShapePos, rot)
+function SpawnFenceConnector(selectedBlockData, fenceConnectionTransform)
+	local blockBrushXML = "brush='" .. string.gsub(selectedBlockData[2], "%.vox", "_c%.vox")
+	
+	local blockSizeVec = Vec(blockSize / 16 * 12, blockSize / 16 * 9, blockSize / 16 * 2)
+	--local blockSizeVec = Vec(1.2, 1.5, 0.2)
+	
+	local blockSizeXML = "size='" .. blockSizeVec[1] .. " " .. blockSizeVec[2] .. " " .. blockSizeVec[3] .. "'"
+	
+	local blockXML = "<voxbox " .. blockSizeXML .. " prop='false' " .. blockBrushXML .. "' " .. selectedBlockData[4] .. "></voxbox>"
+	
+	local connectionPiece = Spawn(blockXML, fenceConnectionTransform, true, true)[1]
+	
+	if GetEntityType(connectionPiece) == "body" then
+		local bodyShapes = GetBodyShapes(connectionPiece)
+		
+		for i = 1, #bodyShapes do
+			connectionPiece = connectionPiece .. " " .. bodyShapes[i]
+		end
+	end
+	
+	return connectionPiece
+end
+
+function SpawnFenceConnectors(selectedBlockData, shapePos, otherShape, otherShapePos, rot)
 	local dir = VecDir(shapePos, otherShapePos)
 	
 	--[[for i = 1, #dir do
@@ -905,9 +925,10 @@ function SpawnFenceConnector(selectedBlockData, shapePos, otherShape, otherShape
 	
 	dir[2] = 0
 	
-	--otherShapePos = VecAdd(otherShapePos, VecScale(dir, fencePosOffset / 2))
+	--otherShapePos = VecAdd(otherShapePos, VecScale(dir, blockCenterPosOffset / 2))
 	
 	DebugWatch("dir", dir)
+	DebugWatch("rot", rot)
 	--DebugWatch("shapePos", shapePos)
 	--DebugWatch("otherShapePos", otherShapePos)
 	
@@ -923,30 +944,17 @@ function SpawnFenceConnector(selectedBlockData, shapePos, otherShape, otherShape
 	
 	fencePos[2] = shapePos[2] + gridModulo / 16 * 6
 	
-	DebugWatch("rot", rot)
+	local fenceConnectionTransform = Transform(fencePos, QuatEuler(0, rot, 0))
 	
-	--rot = 
+	local offsetDir = TransformToParentVec(fenceConnectionTransform, Vec(0, 0, -1))
 	
-	local fenceMiddleTransform = Transform(fencePos, QuatEuler(0, rot, 0))
-	
-	local blockBrushXML = "brush='" .. string.gsub(selectedBlockData[2], "%.vox", "_c%.vox")
-	
-	local blockSizeVec = Vec(blockSize / 16 * 12, blockSize / 16 * 9, blockSize / 16 * 2)
-	--local blockSizeVec = Vec(1.2, 1.5, 0.2)
-	
-	local blockSizeXML = "size='" .. blockSizeVec[1] .. " " .. blockSizeVec[2] .. " " .. blockSizeVec[3] .. "'"
-	
-	local blockXML = "<voxbox " .. blockSizeXML .. " prop='false' " .. blockBrushXML .. "' " .. selectedBlockData[4] .. "></voxbox>"
-	
-	local connectionPiece = Spawn(blockXML, fenceMiddleTransform, true, true)[1]
-	
-	if GetEntityType(connectionPiece) == "body" then
-		local bodyShapes = GetBodyShapes(connectionPiece)
-		
-		for i = 1, #bodyShapes do
-			connectionPiece = connectionPiece .. " " .. bodyShapes[i]
-		end
+	if rot == 180 or rot == 270 then
+		fenceConnectionTransform.pos = VecAdd(fenceConnectionTransform.pos, VecScale(offsetDir, gridModulo / 16 * 1.22))
+	else
+		fenceConnectionTransform.pos = VecAdd(fenceConnectionTransform.pos, VecScale(offsetDir, gridModulo / 16 * 0.765))
 	end
+	
+	local connectionPiece = SpawnFenceConnector(selectedBlockData, fenceConnectionTransform)
 	
 	return connectionPiece
 end
