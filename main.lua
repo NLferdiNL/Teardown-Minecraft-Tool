@@ -19,12 +19,6 @@ local toolSlot = nil
 -- TODO: Fix block break particles moving one way, sometimes.
 -- TODO: Add corner stairs.
 -- TODO: Add sideways torches. (Use joints or just merge?)
-
---       Might require a massive rework of the position finding.
---		 Probably worthwhile given the complexity of the system
---		 and the sheer amount of bugs it causes.
--- TODO: Fix fence connector positioning from block update.
-
 -- MAYBE: Trapdoor use log alignment?
 
 local toolVox = "MOD/vox/tool.vox"
@@ -587,45 +581,26 @@ function PlaceBlock()
 				gridAligned = VecAdd(gridAligned, Vec(0, blockSize / 10 / 2, 0))
 			end
 		elseif selectedBlockData[9] == 4 and not dynamicBlock then
-			spawnDebugParticle(gridAligned, 5, Color4.Yellow)
-			spawnDebugParticle(tempPos, 5, Color4.Blue)
+			--spawnDebugParticle(gridAligned, 5, Color4.Yellow)
+			--spawnDebugParticle(tempPos, 5, Color4.Blue)
 			
 			for i = 1, #adjecentBlocks do
 				if adjecentBlocks[i] ~= -1 then
 					local otherShape = adjecentBlocks[i]
 					local otherShapeTransform = GetShapeWorldTransform(otherShape)
-					local shapePos = otherShapeTransform.pos
 					
 					local blockMin, blockMax = GetShapeBounds(otherShape)
 					
 					blockMin[2] = 0
 					blockMax[2] = 0
 					
-					local offset = VecSub(blockMax, blockMin)
-					
-					local center = Vec((blockMin[1] + blockMax[1]) / 2, (blockMin[2] + blockMax[2]) / 2, (blockMin[3] + blockMax[3]) / 2)
-					
-					--offset = VecNormalize(offset)
-					
-					--offset = VecScale(offset, blockCenterPosOffset * 1.4)
-					
-					--shapePos = VecAdd(shapePos, offset)
-					
-					--local debugtest = shapePos[2]
-					
-					--shapePos[2] = gridModulo + 0.1
-					
-					--spawnDebugParticle(shapePos, 2, Color4.Yellow)
-					spawnDebugParticle(center, 2, Color4.Yellow)
-					--shapePos[2] = debugtest
-					
-					shapePos = center
+					local center = VecCenter(blockMin, blockMax)
 					
 					if i > 1 then
 						connectedShapesTag = connectedShapesTag .. " "
 					end
 					
-					local currPieces = SpawnFenceConnector(selectedBlockData, tempPos, otherShape, shapePos, i * 90)
+					local currPieces = SpawnFenceConnector(selectedBlockData, tempPos, otherShape, center, i * 90)
 					
 					connectedShapesTag = connectedShapesTag .. currPieces
 					
@@ -729,9 +704,22 @@ function PlaceBlock()
 				local currBlockType = currBlockData[9]
 				
 				if currBlockType == 4 then
-					local otherBlockCenter = blockTransform.pos
+					local otherBlockMin, otherBlockMax = GetShapeBounds(currBlock)
 					
-					local currPieces = SpawnFenceConnector(currBlockData, otherBlockCenter, block, tempPos, (4 - i) * 90)
+					otherBlockMin[2] = 0
+					otherBlockMax[2] = 0
+					
+					local otherBlockCenter = VecCenter(otherBlockMin, otherBlockMax)
+					
+					local rot = (4 - i) * 90
+					
+					if rot == 0 then
+						rot = 180
+					elseif rot == 180 then
+						rot = 0
+					end
+					
+					local currPieces = SpawnFenceConnector(currBlockData, otherBlockCenter, block, tempPos, rot)
 						
 					connectedShapesTag = connectedShapesTag .. currPieces
 					
@@ -746,6 +734,7 @@ function PlaceBlock()
 			end
 		end
 	end
+	
 	if connectedShapesTag ~= "" then
 		SetTag(block, "minecraftconnectedshapes", connectedShapesTag)
 	end
@@ -965,20 +954,6 @@ function GetFenceConnectionTransform(shapePos, otherShapePos, rot)
 	local offsetDir = TransformToParentVec(fenceConnectionTransform, Vec(0, 0, -1))
 	
 	fenceConnectionTransform.pos = VecAdd(fenceConnectionTransform.pos, VecScale(offsetDir, gridModulo / 16))
-	
-	local magicalNumber = 1
-	
-	if rot == 180 or rot == 270 then -- Magical numbers... I'm sorry.
-		magicalNumber = -0.25
-	elseif rot == 90 then
-		magicalNumber = 0.35
-	else
-		magicalNumber = 0.25
-	end
-	
-	magicalNumber = 0
-	
-	fenceConnectionTransform.pos = VecAdd(fenceConnectionTransform.pos, VecScale(offsetDir, gridModulo / 16 * magicalNumber))
 	
 	return fenceConnectionTransform, dir
 end

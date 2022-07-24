@@ -57,6 +57,10 @@ function VecDir(a, b)
 	return VecNormalize(VecSub(b, a))
 end
 
+function VecCenter(a, b)
+	return Vec((a[1] + b[1]) / 2, (a[2] + b[2]) / 2, (a[3] + b[3]) / 2)
+end
+
 function roundToDecimal(num, numDecimalPlaces)
 	local mult = 10^(numDecimalPlaces or 0)
 	return math.floor(num * mult + 0.5) / mult
