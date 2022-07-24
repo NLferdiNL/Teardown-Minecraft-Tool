@@ -19,6 +19,7 @@ local toolSlot = nil
 -- TODO: Fix block break particles moving one way, sometimes.
 -- TODO: Add corner stairs.
 -- TODO: Add sideways torches. (Use joints or just merge?)
+-- TODO: Add fence gates for the Fence Update.
 -- MAYBE: Trapdoor use log alignment?
 
 local toolVox = "MOD/vox/tool.vox"
@@ -370,7 +371,9 @@ function PlaceBlock()
 	--local hitPointBlockOffset = VecAdd(hitPoint, Vec(-0.8, -0.8, -0.8))
 	--local normalOffset = VecAdd(hitPointBlockOffset, VecScale(normal, 0.8))
 	
-	local normalOffset = VecAdd(hitPoint, VecScale(normal, gridModulo * 0.5))
+	local normalOffset = 0.45
+	
+	local normalOffset = VecAdd(hitPoint, VecScale(normal, gridModulo * normalOffset))
 	local gridAligned = getGridAlignedPos(normalOffset)
 	
 	local blockRot = Quat()
@@ -587,8 +590,7 @@ function PlaceBlock()
 					
 					local blockMin, blockMax = GetShapeBounds(otherShape)
 					
-					blockMin[2] = 0
-					blockMax[2] = 0
+					blockMax[2] = blockMin[2]
 					
 					local center = VecCenter(blockMin, blockMax)
 					
@@ -702,8 +704,7 @@ function PlaceBlock()
 				if currBlockType == 4 then
 					local otherBlockMin, otherBlockMax = GetShapeBounds(currBlock)
 					
-					otherBlockMin[2] = 0
-					otherBlockMax[2] = 0
+					otherBlockMax[2] = otherBlockMin[2]
 					
 					local otherBlockCenter = VecCenter(otherBlockMin, otherBlockMax)
 					
