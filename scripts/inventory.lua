@@ -14,6 +14,7 @@ local maxCreativeInventoryScroll = 0
 local scrollbarHeld = false
 local scrollbarMouseOffset = {0, 0}
 local mouseInInventory = false
+local mouseInCreativeInventory = false
 
 local font = "MOD/fonts/MinecraftRegular.ttf"
 local fontSize = 26
@@ -46,14 +47,28 @@ function inventory_tick(dt)
 			--DebugWatch("id", inventoryIdMouseOver[2])
 			
 			if inventoryBlockDataOnMouse[1] == 0 and inventoryIdMouseOver[2] ~= 0 then 
-				for i = 1, 9 do
-					if InputPressed(i) then
-						local currSlot = inventoryHotBarStartIndex + i - 1
-						
-						local inventoryData = inventory[currSlot]
-	
-						inventoryData[1] = inventoryIdMouseOver[2]
-						inventoryData[2] = 1
+				for i = 0, 8 do
+					--if InputPressed(i + 1) then
+					
+					local currSlotId = inventoryHotBarStartIndex + i
+					local toInvSlot = inventory[currSlotId]
+					
+					if InputPressed(i + 1) then
+						if inventoryIdMouseOver[1] >= inventoryHotBarStartIndex and not mouseInCreativeInventory then
+							local fromInvSlot = inventory[inventoryIdMouseOver[1]]
+							
+							local backupId = toInvSlot[1]
+							local backupCount = toInvSlot[2]
+							
+							toInvSlot[1] = fromInvSlot[1]
+							toInvSlot[2] = fromInvSlot[2]
+							
+							fromInvSlot[1] = backupId
+							fromInvSlot[2] = backupCount
+						else
+							toInvSlot[1] = inventoryIdMouseOver[2]
+							toInvSlot[2] = 1
+						end
 					end
 				end
 			end
@@ -106,7 +121,9 @@ function inventory_draw()
 				
 				UiTranslate(itemIconOffsetX, itemIconOffsetY)
 				
-				inventoryIdMouseOver = {0, 0}
+				inventoryIdMouseOver[1] = 0
+				inventoryIdMouseOver[2] = 0
+				mouseInCreativeInventory = false
 				
 				UiPush() -- Creative inv
 					for i = 0, 4 do
@@ -119,8 +136,10 @@ function inventory_draw()
 									local mouseOver = false
 									
 									if UiIsMouseInRect(itemIconSize, itemIconSize) then
-										inventoryIdMouseOver = {i * 9 + j, currItemId}
+										inventoryIdMouseOver[1] = i * 9 + j
+										inventoryIdMouseOver[2] = currItemId
 										mouseOver = true
+										mouseInCreativeInventory = true
 									end
 									
 									drawCreativeBlockButton(currItemId, mouseOver)
@@ -169,7 +188,8 @@ function inventory_draw()
 						local mouseOver = false
 						
 						if UiIsMouseInRect(itemIconSize, itemIconSize) then
-							inventoryIdMouseOver = {i + 1, inventory[currInvSlot][1]}
+							inventoryIdMouseOver[1] = currInvSlot
+							inventoryIdMouseOver[2] = inventory[currInvSlot][1]
 							mouseOver = true
 						end
 						

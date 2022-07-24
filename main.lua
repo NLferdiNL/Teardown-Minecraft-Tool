@@ -69,10 +69,6 @@ for i = 1, mainInventorySize + miscInventorySlots do
 	
 	if i >= 32 then
 		inventory[i] = {i - 31, 1}
-		
-		if i == 32 then
-			inventory[i][1] = 40
-		end
 	end
 end
 
@@ -942,8 +938,8 @@ function GetFenceConnectionTransform(shapePos, otherShapePos, rot)
 	
 	dir[2] = 0
 	
-	DebugWatch("dir", dir)
-	DebugWatch("rot", rot)
+	--DebugWatch("dir", dir)
+	--DebugWatch("rot", rot)
 	
 	local fencePos = VecAdd(shapePos, VecScale(dir, gridModulo / 16 * 2))
 	
