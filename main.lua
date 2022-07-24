@@ -21,7 +21,8 @@ local toolSlot = nil
 -- TODO: Add sideways torches. (Use joints or just merge?)
 
 --       Might require a massive rework of the position finding.
--- TODO: Fix fence connector positioning on non fence blocks.
+--		 Probably worthwhile given the complexity of the system
+--		 and the sheer amount of bugs it causes.
 -- TODO: Fix fence connector positioning from block update.
 
 -- MAYBE: Trapdoor use log alignment?
@@ -92,7 +93,7 @@ local distance = 0
 local normal = Vec()
 local shape = 0
 
-local blockCenterPosOffset = gridModulo / 16 * 8
+local blockCenterPosOffset = gridModulo / 2
 
 local canGrabObject = false
 
@@ -602,7 +603,23 @@ function PlaceBlock()
 					
 					local offset = VecSub(blockMax, blockMin)
 					
-					shapePos = VecAdd(shapePos, offset)
+					local center = Vec((blockMin[1] + blockMax[1]) / 2, (blockMin[2] + blockMax[2]) / 2, (blockMin[3] + blockMax[3]) / 2)
+					
+					--offset = VecNormalize(offset)
+					
+					--offset = VecScale(offset, blockCenterPosOffset * 1.4)
+					
+					--shapePos = VecAdd(shapePos, offset)
+					
+					--local debugtest = shapePos[2]
+					
+					--shapePos[2] = gridModulo + 0.1
+					
+					--spawnDebugParticle(shapePos, 2, Color4.Yellow)
+					spawnDebugParticle(center, 2, Color4.Yellow)
+					--shapePos[2] = debugtest
+					
+					shapePos = center
 					
 					if i > 1 then
 						connectedShapesTag = connectedShapesTag .. " "
@@ -869,11 +886,14 @@ function ScrollLogic()
 		return
 	end
 	
+	local scrollDiff = 0
+	
 	if GetValue("NumbersToSelect") and lastFrameTool == toolName then
 		for i = 1, 9 do
 			local numberKeyDown = InputPressed(tostring(i))
 			
 			if numberKeyDown then
+				itemSwitchTimer = itemSwitchTimerMax
 				hotbarSelectedIndex = i
 				SetString("game.player.tool", toolName)
 				return
@@ -881,8 +901,6 @@ function ScrollLogic()
 		end
 	end
 
-	local scrollDiff = 0
-	
 	if GetValue("ScrollToSelect") then
 		scrollDiff = InputValue(binds["Scroll"])
 	
@@ -952,9 +970,13 @@ function GetFenceConnectionTransform(shapePos, otherShapePos, rot)
 	
 	if rot == 180 or rot == 270 then -- Magical numbers... I'm sorry.
 		magicalNumber = -0.25
+	elseif rot == 90 then
+		magicalNumber = 0.35
 	else
 		magicalNumber = 0.25
 	end
+	
+	magicalNumber = 0
 	
 	fenceConnectionTransform.pos = VecAdd(fenceConnectionTransform.pos, VecScale(offsetDir, gridModulo / 16 * magicalNumber))
 	
