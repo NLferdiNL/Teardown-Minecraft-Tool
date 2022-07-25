@@ -1,6 +1,6 @@
 	
 blocks = 
-	{ --Block Name, 				      		Vox Path, 							      			Axis Rotation, 		  		Block Properties,			Block Size,					Offset,						specialFeatures(shape), alwaysProp, blockType (block, door, slab, fence, stairs, trapdoor), ExtraXML, AltXML}
+	{ --Block Name, 				      		Vox Path, 							      			Axis Rotation, 		  		Block Properties,			Block Size,					Offset,						specialFeatures(shape), alwaysProp, blockType (block, door, slab, fence, stairs, trapdoor, redstone), ExtraXML, AltXML}
 		{"Grass", 			      				"MOD/vox/blocks/grass.vox", 			      		{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil},
 		{"Dirt", 			    	  			"MOD/vox/blocks/dirt.vox", 			     			{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil},
 		{"Stone", 	  		      				"MOD/vox/blocks/stone.vox", 			     		{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil},
@@ -11,7 +11,7 @@ blocks =
 		{"Oak Log", 		  	    			"MOD/vox/blocks/oaklog.vox", 		          		{x = 1, y = 0,  z = 1}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil},
 		{"Oak Leaves",   		      			"MOD/vox/blocks/oakleaves.vox", 	          		{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil},
 		{"Oak Planks", 	          				"MOD/vox/blocks/oakplanks.vox", 	          		{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil},
-		{"Oak Plank Slab",        				"MOD/vox/blocks/oakplanks.vox",   		  			{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 8,  z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		3, nil},
+		{"Oak Plank Slab",        				"MOD/vox/blocks/oakplankslab.vox",   		  		{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 8,  z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		3, nil},
 		{"TNT", 				     			"MOD/vox/blocks/tnt.vox", 				  			{x = 0, y = 0,  z = 0}, 	"tags='explosive=2'", 		{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil}, 
 		{"Crafting Table", 	     				"MOD/vox/blocks/craftingtable.vox", 	     		{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil}, 
 		{"Smithing Table", 	      				"MOD/vox/blocks/smithingtable.vox", 	      		{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil},
@@ -123,4 +123,5 @@ blocks =
 		{"Sculk Shrieker", 						"MOD/vox/blocks/sculkshrieker.vox",					{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 15, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil},
 		{"Tuff", 								"MOD/vox/blocks/tuff.vox",							{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil},
 		{"Tinted Glass", 						"MOD/vox/blocks/tintedglass.vox",					{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil},
+		{"Redstone Dust", 						"MOD/vox/blocks/redstonedust.vox",					{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 1,  z = 16},	{x = 15, y = 16, z = 15},	nil, 					false, 		7, nil},
 	}

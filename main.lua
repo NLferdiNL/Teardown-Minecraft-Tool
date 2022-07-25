@@ -20,6 +20,7 @@ local toolSlot = nil
 -- TODO: Add corner stairs.
 -- TODO: Add sideways torches. (Use joints or just merge?)
 -- TODO: Add fence gates for the Fence Update.
+-- TODO: Fix redstone connector positioning.
 -- MAYBE: Trapdoor use log alignment?
 
 local toolVox = "MOD/vox/tool.vox"
@@ -71,6 +72,10 @@ for i = 1, mainInventorySize + miscInventorySlots do
 	if i >= 32 then
 		inventory[i] = {i - 31, 1}
 	end
+	
+	if i == 32 then
+		inventory[i][1] = 123
+	end
 end
 
 inventoryHotBarStartIndex = #inventory - 8
@@ -85,6 +90,8 @@ local normal = Vec()
 local shape = 0
 
 local blockCenterPosOffset = gridModulo / 2
+local fenceOffset = Vec(0, gridModulo / 16 * 6, 0)
+local redstoneOffset = Vec(0, 0, gridModulo / 16 * -2)
 
 local canGrabObject = false
 
@@ -583,34 +590,7 @@ function PlaceBlock()
 			--spawnDebugParticle(gridAligned, 5, Color4.Yellow)
 			--spawnDebugParticle(tempPos, 5, Color4.Blue)
 			
-			for i = 1, #adjecentBlocks do
-				if adjecentBlocks[i] ~= -1 then
-					local otherShape = adjecentBlocks[i]
-					local otherShapeTransform = GetShapeWorldTransform(otherShape)
-					
-					local blockMin, blockMax = GetShapeBounds(otherShape)
-					
-					blockMax[2] = blockMin[2]
-					
-					local center = VecCenter(blockMin, blockMax)
-					
-					if i > 1 then
-						connectedShapesTag = connectedShapesTag .. " "
-					end
-					
-					local currPieces = SpawnFenceConnector(selectedBlockData, tempPos, otherShape, center, i * 90)
-					
-					connectedShapesTag = connectedShapesTag .. currPieces
-					
-					local otherShapeConnectedTag = GetTagValue(otherShape, "minecraftconnectedshapes")
-					
-					if otherShapeConnectedTag == nil or otherShapeConnectedTag == "" then
-						SetTag(otherShape, "minecraftconnectedshapes", connectedShapesTag)
-					else
-						SetTag(otherShape, "minecraftconnectedshapes", otherShapeConnectedTag .. " " .. currPieces)
-					end
-				end
-			end
+			connectedShapesTag = ConnectToAdjecentBlocks(selectedBlockData, adjecentBlocks, tempPos, fenceOffset, nil, 2)
 		elseif selectedBlockData[9] == 6 then
 			--DebugWatch("a", hitPoint[2] + normal[2] * 0.01)
 			--DebugWatch("a", gridAligned[2])
@@ -619,6 +599,10 @@ function PlaceBlock()
 				
 				mirrorJointLimits = "alt"
 			end
+		elseif selectedBlockData[9] == 7 then
+			spawnDebugParticle(tempPos, 5, Color4.Blue)
+		
+			connectedShapesTag = ConnectToAdjecentBlocks(selectedBlockData, adjecentBlocks, tempPos, redstoneOffset, nil, 4) -- Vec(-0.155, 0, -0.205)
 		end
 	end
 	
@@ -691,7 +675,7 @@ function PlaceBlock()
 		SetTag(block, "minecraftspecialdata", hasSpecialData)
 	end
 	
-	if selectedBlockData[9] ~= 4 then
+	if selectedBlockData[9] ~= 4 and selectedBlockData[9] ~= 7 then
 		for i = 1, #adjecentBlocks do
 			local currBlock = adjecentBlocks[i]
 			local currBlockId = tonumber(GetTagValue(currBlock, "minecraftblockid"))
@@ -716,7 +700,9 @@ function PlaceBlock()
 						rot = 0
 					end
 					
-					local currPieces = SpawnFenceConnector(currBlockData, otherBlockCenter, block, tempPos, rot)
+					local fenceConnectionTransform, dir = GetBlockConnectionTransform(otherBlockCenter, tempPos, rot, fenceOffset, 2)
+					
+					local currPieces = SpawnAdjustedConnector(currBlockData, block, fenceConnectionTransform, dir)
 						
 					connectedShapesTag = connectedShapesTag .. currPieces
 					
@@ -863,6 +849,57 @@ function FindAdjecentBlocks(blockTransform)
 	return blocks
 end
 
+function IsBlockInFilter(filter, id)
+	for i = 1, #filter do
+		if filter[i] == id then
+			return true
+		end
+	end
+	
+	return false
+end
+
+function ConnectToAdjecentBlocks(selectedBlockData, adjecentBlocks, middlePos, blockOffset, blockFilter, dirMultiplier)
+	local connectedShapesTag = ""
+	
+	for i = 1, #adjecentBlocks do
+		if adjecentBlocks[i] ~= -1 then
+			local otherBlockId = tonumber(GetTagValue(otherShape, "minecraftblockid"))
+			
+			if blockFilter == nil or otherBlockId == blockFilter or IsBlockInFilter(blockFilter, otherBlock) then
+				local otherShape = adjecentBlocks[i]
+				local otherShapeTransform = GetShapeWorldTransform(otherShape)
+				
+				local blockMin, blockMax = GetShapeBounds(otherShape)
+				
+				blockMax[2] = blockMin[2]
+				
+				local center = VecCenter(blockMin, blockMax)
+				
+				if i > 1 then
+					connectedShapesTag = connectedShapesTag .. " "
+				end
+				
+				local fenceConnectionTransform, dir = GetBlockConnectionTransform(middlePos, center, i * 90, blockOffset, dirMultiplier)
+				
+				local currPieces = SpawnAdjustedConnector(selectedBlockData, otherShape, fenceConnectionTransform, dir)
+				
+				connectedShapesTag = connectedShapesTag .. currPieces
+				
+				local otherShapeConnectedTag = GetTagValue(otherShape, "minecraftconnectedshapes")
+				
+				if otherShapeConnectedTag == nil or otherShapeConnectedTag == "" then
+					SetTag(otherShape, "minecraftconnectedshapes", connectedShapesTag)
+				else
+					SetTag(otherShape, "minecraftconnectedshapes", otherShapeConnectedTag .. " " .. currPieces)
+				end
+			end
+		end
+	end
+
+	return connectedShapesTag
+end
+
 function ToolPlaceBlockAnim()
 	SetToolTransform(Transform(Vec(0, 0, -0.05), QuatEuler(-36, 44, 22)))
 end
@@ -934,19 +971,24 @@ function ScrollLogic()
 	end
 end
 
-function GetFenceConnectionTransform(shapePos, otherShapePos, rot)
+function GetBlockConnectionTransform(shapePos, otherShapePos, rot, posOffset, dirMultiplier)
 	local dir = VecDir(shapePos, otherShapePos)
+	
+	spawnDebugParticle(shapePos, 2, Color4.Yellow)
+	spawnDebugParticle(otherShapePos, 2, Color4.Green)
 	
 	dir[2] = 0
 	
 	--DebugWatch("dir", dir)
 	--DebugWatch("rot", rot)
 	
-	local fencePos = VecAdd(shapePos, VecScale(dir, gridModulo / 16 * 2))
+	local blockPos = VecAdd(shapePos, VecScale(dir, gridModulo / 16 * dirMultiplier))
 	
-	fencePos[2] = shapePos[2] + gridModulo / 16 * 6
+	local fenceConnectionTransform = Transform(blockPos, QuatEuler(0, rot, 0))
 	
-	local fenceConnectionTransform = Transform(fencePos, QuatEuler(0, rot, 0))
+	if posOffset ~= nil then
+		fenceConnectionTransform.pos = TransformToParentPoint(fenceConnectionTransform, posOffset)
+	end
 	
 	local offsetDir = TransformToParentVec(fenceConnectionTransform, Vec(0, 0, -1))
 	
@@ -984,14 +1026,11 @@ function SpawnBlockConnector(selectedBlockData, connectionTransform, sizeModifie
 	return connectionPiece
 end
 
--- To get rot for update, 4 - i * 90
-function SpawnFenceConnector(selectedBlockData, shapePos, otherShape, otherShapePos, rot)
-	local fenceConnectionTransform, dir = GetFenceConnectionTransform(shapePos, otherShapePos, rot)
-	
+function SpawnAdjustedConnector(selectedBlockData, otherShape, connectionTransform, dir)
 	local otherBlockId = GetTagValue(otherShape, "minecraftblockid")
 	
 	if otherBlockId == nil then
-		DebugPrint(toolName .. " WARNING: invalid otherShape passed in SpawnFenceConnector()")
+		DebugPrint(toolName .. " WARNING: invalid otherShape passed in SpawnAdjustedConnector()")
 	end
 	
 	otherBlockId = tonumber(otherBlockId)
@@ -999,7 +1038,7 @@ function SpawnFenceConnector(selectedBlockData, shapePos, otherShape, otherShape
 	local sizeModifier = Vec(1, 1, 1)
 	
 	if otherBlockId == nil or otherBlockId == 0 then
-		DebugPrint(toolName .. " WARNING: invalid block id from otherShape in SpawnFenceConnector()")
+		DebugPrint(toolName .. " WARNING: invalid block id from otherShape in SpawnAdjustedConnector()")
 	else
 		local otherShapeBlockType = blocks[otherBlockId][9]
 		
@@ -1022,7 +1061,7 @@ function SpawnFenceConnector(selectedBlockData, shapePos, otherShape, otherShape
 		end
 	end
 	
-	local connectionPiece = SpawnBlockConnector(selectedBlockData, fenceConnectionTransform, sizeModifier)
+	local connectionPiece = SpawnBlockConnector(selectedBlockData, connectionTransform, sizeModifier)
 	
 	return connectionPiece
 end

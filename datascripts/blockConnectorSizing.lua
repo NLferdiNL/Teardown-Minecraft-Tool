@@ -8,4 +8,5 @@ blockConnectorSizing = {
 	--[[fence]] 	{x = 12, y = 9, z = 2},
 	--[[stairs]] 	0,
 	--[[trapdoor]] 	0,
+	--[[redstone]]  {x = 8, y = 1, z = 6},
 }
