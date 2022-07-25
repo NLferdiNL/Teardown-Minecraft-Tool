@@ -61,13 +61,21 @@ function VecCenter(a, b)
 	return Vec((a[1] + b[1]) / 2, (a[2] + b[2]) / 2, (a[3] + b[3]) / 2)
 end
 
-function roundToDecimal(num, numDecimalPlaces)
-	local mult = 10^(numDecimalPlaces or 0)
-	return math.floor(num * mult + 0.5) / mult
+function VecCeil(a)
+	return Vec(math.ceil(a[1]), math.ceil(a[1]), math.ceil(a[1]))
+end
+
+function VecFloor(a)
+	return Vec(math.floor(a[1]), math.floor(a[1]), math.floor(a[1]))
 end
 
 function VecRound(vec, numDecimalPlaces)
 	return Vec(round(vec[1], numDecimalPlaces), round(vec[2], numDecimalPlaces), round(vec[3], numDecimalPlaces))
+end
+
+function roundToDecimal(num, numDecimalPlaces)
+	local mult = 10^(numDecimalPlaces or 0)
+	return math.floor(num * mult + 0.5) / mult
 end
 
 function round(num)

@@ -3,6 +3,7 @@
 #include "scripts/menu.lua"
 #include "scripts/varhandlers.lua"
 #include "scripts/inventory.lua"
+#include "scripts/redstone.lua"
 #include "datascripts/keybinds.lua"
 #include "datascripts/inputList.lua"
 #include "datascripts/color4.lua"
@@ -20,7 +21,8 @@ local toolSlot = nil
 -- TODO: Add corner stairs.
 -- TODO: Add sideways torches. (Use joints or just merge?)
 -- TODO: Add fence gates for the Fence Update.
--- TODO: Fix redstone connector positioning.
+-- TODO: Redstone Positional Table, making collison calls is too intensive.
+-- TODO: Redstone on arbitrary grid to fix adjecent issues?
 -- MAYBE: Trapdoor use log alignment?
 
 local toolVox = "MOD/vox/tool.vox"
@@ -102,6 +104,7 @@ function init()
 	saveFileInit(savedVars)
 	menu_init()
 	inventory_init(inventoryScales[GetValue("InventoryUIScale")])
+	redstone_init()
 	
 	if toolSlot ~= nil then
 		RegisterTool(toolName, toolReadableName, toolVox, toolSlot)
@@ -130,6 +133,7 @@ function tick(dt)
 	end
 
 	HandleSpecialBlocks()
+	redstone_tick(dt)
 	
 	if not menu_disabled then
 		menu_tick(dt)
@@ -237,6 +241,15 @@ end
 function draw(dt)
 	menu_draw(dt)
 	
+	--[[UiPush()
+		UiFont(font, 26)
+		UiTextShadow(0.25, 0.25, 0.25, 1, 2 / 26 * 40, 0)
+		UiAlign("Left Top")
+		UiTranslate(20, 20)
+		
+		UiText(tableToText(redstoneDB, true, false, true, false))
+	UiPop()]]--
+	
 	if not canUseTool() or isMenuOpen() then
 		return
 	end
@@ -335,10 +348,17 @@ function RemoveBlock()
 		return
 	end
 	
-	local blockTag = GetTagValue(shape, "minecraftblockid")
+	local blockTag = tonumber(GetTagValue(shape, "minecraftblockid"))
 	
-	if blockTag == "" then
+	if blockTag == nil or blockTag <= 0 then
 		return
+	end
+	
+	local blockData = blocks[blockTag]
+	local blockPos = GetShapeWorldTransform(shape).pos
+	
+	if blockData[9] == 7 then
+		Redstone_Remove(blockPos)
 	end
 	
 	local blockSpecialData = GetTagValue(shape, "minecraftspecialdata")
@@ -599,9 +619,7 @@ function PlaceBlock()
 				
 				mirrorJointLimits = "alt"
 			end
-		elseif selectedBlockData[9] == 7 then
-			spawnDebugParticle(tempPos, 5, Color4.Blue)
-		
+		elseif selectedBlockData[9] == 7 and selectedBlockData[1] == "Redstone Dust" then
 			connectedShapesTag = ConnectToAdjecentBlocks(selectedBlockData, adjecentBlocks, tempPos, redstoneOffset, nil, 4) -- Vec(-0.155, 0, -0.205)
 		end
 	end
@@ -662,6 +680,10 @@ function PlaceBlock()
 	if selectedBlockData[7] ~= nil then
 		specialBlocks[#specialBlocks + 1] = {block, selectedBlockId}
 		hasSpecialData = #specialBlocks
+	end
+	
+	if selectedBlockData[9] == 7 then
+		Redstone_Add(selectedBlockData[9], block, GetShapeWorldTransform(block).pos)
 	end
 	
 	PlaySound(interactionSound, gridAligned)
@@ -974,8 +996,8 @@ end
 function GetBlockConnectionTransform(shapePos, otherShapePos, rot, posOffset, dirMultiplier)
 	local dir = VecDir(shapePos, otherShapePos)
 	
-	spawnDebugParticle(shapePos, 2, Color4.Yellow)
-	spawnDebugParticle(otherShapePos, 2, Color4.Green)
+	--spawnDebugParticle(shapePos, 2, Color4.Yellow)
+	--spawnDebugParticle(otherShapePos, 2, Color4.Green)
 	
 	dir[2] = 0
 	
