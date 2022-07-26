@@ -21,8 +21,6 @@ local toolSlot = nil
 -- TODO: Add corner stairs.
 -- TODO: Add sideways torches. (Use joints or just merge?) (Redstone torches too!!)
 -- TODO: Add fence gates for the Fence Update.
--- TODO: Code cleanup, remove old commented out code.
--- TODO: Implement Redstone_Update(shape, connections)
 -- MAYBE: Trapdoor use log alignment?
 
 local toolVox = "MOD/vox/tool.vox"
@@ -113,8 +111,6 @@ function init()
 	end
 	SetBool("game.tool." .. toolName .. ".enabled", true)
 	
-	--SetString("game.player.tool", toolName)
-	
 	if Spawn == nil then
 		DebugPrint("Minecraft Building Tool requires the experimental build of Teardown.")
 		modDisabled = true
@@ -154,7 +150,6 @@ function tick(dt)
 		return
 	end
 	
-	--SetBool("hud.aimdot", false)
 	SetBool("hud.disable", true)
 	
 	if itemSwitchTimer > 0 then
@@ -241,15 +236,6 @@ end
 function draw(dt)
 	menu_draw(dt)
 	
-	--[[UiPush()
-		UiFont(font, 26)
-		UiTextShadow(0.25, 0.25, 0.25, 1, 2 / 26 * 40, 0)
-		UiAlign("Left Top")
-		UiTranslate(20, 20)
-		
-		UiText(tableToText(redstoneDB, true, false, true, false))
-	UiPop()]]--
-	
 	if not canUseTool() or isMenuOpen() then
 		return
 	end
@@ -324,8 +310,6 @@ function spawnBrokenBlockParticles(blockShape)
 	
 	local dist = VecDist(blockBoundsMin, blockBoundsMax)
 	
-	--spawnDebugParticle(blockCenter, 2, Color4.Red)
-	
 	setupBlockBreakParticles()
 	
 	for i = 1, math.ceil(50 / 2.8 * dist) do
@@ -394,9 +378,6 @@ function PlaceBlock()
 	local selectedBlockId = selectedBlockInvData[1]
 	local selectedBlockData = blocks[selectedBlockId]
 	
-	--local hitPointBlockOffset = VecAdd(hitPoint, Vec(-0.8, -0.8, -0.8))
-	--local normalOffset = VecAdd(hitPointBlockOffset, VecScale(normal, 0.8))
-	
 	local normalOffset = 0.45
 	
 	local normalOffset = VecAdd(hitPoint, VecScale(normal, gridModulo * normalOffset))
@@ -410,11 +391,6 @@ function PlaceBlock()
 	playerPos[2] = playerPos[2] - gridModulo / 2
 	
 	playerPos = getGridAlignedPos(playerPos, 1)
-	--[[playerPos = Vec(playerPos[1] + 0.8,
-					playerPos[2] + 0.8,
-					playerPos[3] + 0.8)]]--
-	
-	--blockRot = QuatLookAt(gridAligned, playerPos)
 	
 	if math.abs(gridAligned[1] - playerPos[1]) < math.abs(gridAligned[3] - playerPos[3]) then
 		playerPos[1] = gridAligned[1]
@@ -432,11 +408,11 @@ function PlaceBlock()
 			if playerPos[2] == gridAligned[2] then
 				if selectedBlockData[3].x ~= 0 or selectedBlockData[3].z ~= 0 then
 					if playerPos[1] == gridAligned[1] then
-						--blockRot = QuatEuler(90 * selectedBlockData[3].x, 0, 0)
+					
 						blockEulerX = 90 * selectedBlockData[3].x
 						blockPosOffset[2] = blockPosOffset[2] + gridModulo
 					elseif playerPos[3] == gridAligned[3] then
-						--blockRot = QuatEuler(0, 0, 90 * selectedBlockData[3].z)
+					
 						blockEulerZ = 90 * selectedBlockData[3].z
 						blockPosOffset[1] = blockPosOffset[1] + gridModulo
 					end
@@ -445,16 +421,16 @@ function PlaceBlock()
 				
 			if selectedBlockData[3].y ~= 0 then
 				if playerPos[1] == gridAligned[1] and playerPos[3] < gridAligned[3] then
-					--blockRot = QuatEuler(0, 180 * selectedBlockData[3].y, 0)
+				
 					blockEulerY = 180 * selectedBlockData[3].y
 					blockPosOffset[1] = blockPosOffset[1] + gridModulo
 					blockPosOffset[3] = blockPosOffset[3] + gridModulo
 				elseif playerPos[3] == gridAligned[3] and playerPos[1] < gridAligned[1]  then
-					--blockRot = QuatEuler(0, -90 * selectedBlockData[3].y, 0)
+				
 					blockEulerY = -90 * selectedBlockData[3].y
 					blockPosOffset[1] = blockPosOffset[1] + gridModulo
 				elseif playerPos[3] == gridAligned[3] and playerPos[1] > gridAligned[1]  then
-					--blockRot = QuatEuler(0, 90 * selectedBlockData[3].y, 0)
+				
 					blockEulerY = 90 * selectedBlockData[3].y
 					blockPosOffset[3] = blockPosOffset[3] + gridModulo
 				end
@@ -463,9 +439,6 @@ function PlaceBlock()
 	else
 		if (selectedBlockData[3].x ~= 0 or selectedBlockData[3].z ~= 0) and selectedBlockData[3].y == 0 then
 			local gridAlignedHitPoint = getGridAlignedPos(VecAdd(hitPoint, VecScale(normal, -gridModulo * 0.1)))
-			
-			--DebugWatch("a", gridAligned)
-			--DebugWatch("b", gridAlignedHitPoint)
 			
 			if gridAlignedHitPoint[1] == gridAligned[1] and gridAlignedHitPoint[2] == gridAligned[2] then
 				blockEulerX = 90 * selectedBlockData[3].x
@@ -509,17 +482,6 @@ function PlaceBlock()
 		end
 	end
 	
-	--[[
-	local alignOffset = Vec()
-			
-	--if otherBlockTransform.pos[1] == gridAligned.po
-	DebugPrint(VecToString(gridAligned))
-	DebugPrint(VecToString(otherBlockTransform.pos))
-	
-	--blockRot = QuatRotateQuat(blockRot, QuatEuler(0, 180, 0)
-	--gridAligned = VecAdd(gridAligned, alignOffset)
-	]]--
-	
 	local mirrorJointLimits = nil
 	local connectedShapesTag = ""
 	
@@ -542,25 +504,16 @@ function PlaceBlock()
 		if selectedBlockData[9] == 2 then
 			local playerRotX, playerRotY, playerRotZ = GetQuatEuler(playerCameraTransform.rot)
 			
-			--DebugWatch("yrot", playerRotY)
-			--DebugWatch("yrot round", roundToNearest(playerRotY, 90))
-			
 			local tempPos = VecAdd(gridAligned, Vec(gridModulo / 2, gridModulo / 2, gridModulo / 2))
 			local tempTransform = Transform(tempPos, QuatEuler(0, roundToNearest(playerRotY, 90), 0))
 			local left = TransformToParentPoint(tempTransform, Vec(-gridModulo, 0, 0))
 			local forward = TransformToParentVec(tempTransform, Vec(0, 0, -1))
 			local right = TransformToParentPoint(tempTransform, Vec(gridModulo, 0, 0))
 			
-			--spawnDebugParticle(left, 1)
-			--spawnDebugParticle(tempPos, 1, Color4.Yellow)
-			--spawnDebugParticle(right, 1, Color4.Green)
-			
 			local searchSize = {gridModulo, gridModulo, gridModulo}
 			
 			local objectsLeft = CollisionCheckCenterPivot(left, searchSize)
 			local objectsRight = CollisionCheckCenterPivot(right, searchSize)
-			
-			--local doorRotated = false
 			
 			if #objectsLeft > 0 or #objectsRight > 0 then
 				local selectedObjects = nil
@@ -570,7 +523,6 @@ function PlaceBlock()
 				else
 					selectedObjects = FilterBlockType(objectsRight, 2, true)
 				end
-				--DebugPrint("l")
 				
 				if #selectedObjects > 0 then
 					blockEulerY = blockEulerY + 180
@@ -580,20 +532,12 @@ function PlaceBlock()
 					gridAligned = VecAdd(right, VecScale(Vec(-gridModulo / 2, -gridModulo / 2, -gridModulo / 2), 1))
 					gridAligned = VecAdd(gridAligned, VecScale(forward, -gridModulo / 16 * 2))
 					mirrorJointLimits = {"limits='%-90 0", "limits='0 90"}
-					--gridAligned = VecAdd(gridAligned, VecScale(TransformToParentVec(tempTransform, Vec(1, 0, 0)), gridModulo)) --0.1245
-					--gridAligned = VecAdd(gridAligned, VecScale(TransformToParentVec(tempTransform, Vec(0, 0, 1)), -math.floor(gridModulo / 16 * 2))) --0.1245
 				end
 			end
 			
-			--[[if not doorRotated and #objectsRight > 0 then
-				local filteredObjectsRight = FilterBlockType(objectsRight, 2)
-				
-				if #filteredObjectsRight > 0 then
-					blockEulerY = blockEulerX + 270
-					--blockPosOffset = VecAdd(blockPosOffset, VecScale(gridModuloTransformToParentVec(tempTransform, Vec(0, 0, 1))
-				end
-			end]]--
-		elseif otherBlockType == selectedBlockData[9] and otherBlockType == 3 and CheckIfPosWithin(VecAdd(hitPoint, VecScale(normal, gridModulo * 0.1)), otherBlockTransform.pos, VecAdd(otherBlockTransform.pos, blockMaxBounds)) then
+		elseif otherBlockType == selectedBlockData[9] and otherBlockType == 3 and 
+			   CheckIfPosWithin(VecAdd(hitPoint, VecScale(normal, gridModulo * 0.1)), otherBlockTransform.pos, VecAdd(otherBlockTransform.pos, blockMaxBounds)) then
+			
 			local otherBlockTransform = GetShapeWorldTransform(otherBlock)
 			
 			if otherBlockTransform.pos[2] < gridAligned[2] + blockSize / 2 then
@@ -602,17 +546,15 @@ function PlaceBlock()
 				gridAligned = VecAdd(otherBlockTransform.pos, Vec(0, -blockSize / 10 / 2, 0))
 			end
 		elseif selectedBlockData[9] == 3 then
+		
 			if hitPoint[2] + normal[2] * 0.01 > gridAligned[2] + blockSize / 10 / 2 then
 				gridAligned = VecAdd(gridAligned, Vec(0, blockSize / 10 / 2, 0))
 			end
 		elseif selectedBlockData[9] == 4 and not dynamicBlock then
-			--spawnDebugParticle(gridAligned, 5, Color4.Yellow)
-			--spawnDebugParticle(tempPos, 5, Color4.Blue)
-			
+		
 			connectedShapesTag = ConnectToAdjecentBlocks(selectedBlockData, adjecentBlocks, tempPos, fenceOffset, nil, 2)
 		elseif selectedBlockData[9] == 6 then
-			--DebugWatch("a", hitPoint[2] + normal[2] * 0.01)
-			--DebugWatch("a", gridAligned[2])
+		
 			if hitPoint[2] + normal[2] * 0.01 > gridAligned[2] + blockSize / 10 / 2 then
 				gridAligned = VecAdd(gridAligned, Vec(0, gridModulo / 16 * 13, 0))
 				
@@ -626,10 +568,6 @@ function PlaceBlock()
 	gridAligned = VecAdd(gridAligned, blockPosOffset)
 	blockRot = QuatEuler(blockEulerX, blockEulerY, blockEulerZ)
 	
-	--gridAligned = VecAdd(gridAligned[1] + selectedBlockData[6].x, gridAligned[2] + selectedBlockData[6].y, gridAligned[3] + selectedBlockData[6].z)
-	
-	--gridAligned = VecAdd(gridAligned, gridOffset)
-	
 	local blockTransform = Transform(gridAligned, blockRot)
 	
 	local blockSizeVec = Vec(selectedBlockData[5].x / 16 * blockSize, selectedBlockData[5].y / 16 * blockSize, selectedBlockData[5].z / 16 * blockSize)
@@ -640,17 +578,7 @@ function PlaceBlock()
 	
 	local blockBrushXML = "brush='" .. selectedBlockData[2]
 	
-	--local testList = CollisionCheck(gridAligned, VecScale(blockSizeVec, blockSize / 100))
-	
 	local collCheckPassed = not checkCollision or #CollisionCheck(gridAligned, VecScale(blockSizeVec, blockSize / 100)) <= 0
-	
-	--[[if not collCheckPassed then
-		DrawShapeOutline(testList[1], 1, 0, 0, 1)
-		
-		local hit, p, n = GetShapeClosestPoint(testList[1], gridAligned)
-		spawnDebugParticle(p, Color4.Green)
-		return
-	end]]--
 	
 	local extraBlockXML = ""
 	
@@ -768,22 +696,8 @@ function AimLogic()
 							gridAligned[2] + gridModulo / 2,
 							gridAligned[3] + gridModulo / 2)
 							
-	--blockOffset = VecAdd(blockOffset, gridOffset)
-	
-	--local hitPointBlockOffset = VecAdd(hitPoint, Vec(-0.8, -0.8, -0.8))
-	--local normalOffset = VecAdd(hitPointBlockOffset, VecScale(normal, 0.8))
 	
 	local blockSize = nil
-	--[[
-	local blockId = tonumber(GetTagValue(shape, "minecraftblockid"))
-	
-	if blockId ~= nil and blockId > 0 then
-		local shapeBoundsMin, shapeBoundsMax = GetShapeBounds(shape)
-		local absSize = VecAbs(VecSub(shapeBoundsMax, shapeBoundsMin))
-	
-		blockSize = {x = absSize[1], y = absSize[2], z = absSize[3]}
-		--blockOffset = VecAdd(GetShapeWorldTransform(shape).pos, VecScale(Vec(1, 0.5, 1), gridModulo / 2))
-	end]]--
 	
 	renderBlockOutline(blockOffset, blockSize, false)
 	
@@ -810,20 +724,14 @@ function FilterBlockType(shapeList, typeId, blacklist)
 		
 		local blockId = tonumber(GetTagValue(currShape, "minecraftblockid"))
 		
-		--DebugPrint(blockId)
-		
 		if blockId ~= nil and blockId > 0 then
 			local otherTypeId = blocks[blockId][9]
 			
-			--DebugPrint(otherTypeId)
-		
 			if (otherTypeId == typeId and not blacklist) or (otherTypeId ~= typeId and blacklist) then
 				newList[#newList + 1] = currShape
 			end
 		end
 	end
-	
-	--DebugPrint(#newList)
 	
 	return newList
 end
@@ -966,21 +874,13 @@ function ScrollLogic()
 	end
 	
 	if scrollDiff > 0 then
-		--selectedBlock = selectedBlock + 1
 		hotbarSelectedIndex = hotbarSelectedIndex - 1
-		--[[if selectedBlock > #blocks then
-			selectedBlock = 1
-		end]]--
 		
 		if hotbarSelectedIndex < 1 then
 			hotbarSelectedIndex = 9
 		end
 	elseif scrollDiff < 0 then
-		--selectedBlock = selectedBlock - 1
 		hotbarSelectedIndex = hotbarSelectedIndex + 1
-		--[[if selectedBlock < 1 then
-			selectedBlock = #blocks
-		end]]--
 		
 		if hotbarSelectedIndex > 9 then
 			hotbarSelectedIndex = 1
@@ -995,13 +895,7 @@ end
 function GetBlockConnectionTransform(shapePos, otherShapePos, rot, posOffset, dirMultiplier)
 	local dir = VecDir(shapePos, otherShapePos)
 	
-	--spawnDebugParticle(shapePos, 2, Color4.Yellow)
-	--spawnDebugParticle(otherShapePos, 2, Color4.Green)
-	
 	dir[2] = 0
-	
-	--DebugWatch("dir", dir)
-	--DebugWatch("rot", rot)
 	
 	local blockPos = VecAdd(shapePos, VecScale(dir, gridModulo / 16 * dirMultiplier))
 	
@@ -1028,7 +922,6 @@ function SpawnBlockConnector(selectedBlockData, connectionTransform, sizeModifie
 	local blockConnectorSize = blockConnectorSizing[selectedBlockData[9]]
 	
 	local blockSizeVec = Vec(blockSize / 16 * blockConnectorSize.x * sizeModifier[1], blockSize / 16 * blockConnectorSize.y * sizeModifier[2], blockSize / 16 * blockConnectorSize.z * sizeModifier[3])
-	--local blockSizeVec = Vec(1.2, 1.5, 0.2)
 	
 	local blockSizeXML = "size='" .. blockSizeVec[1] .. " " .. blockSizeVec[2] .. " " .. blockSizeVec[3] .. "'"
 	
@@ -1121,8 +1014,6 @@ function SetOffset()
 							gridAligned[3] + gridModulo / 2)
 							
 	gridOffset = Vec(hitPoint[1] - blockOffset[1], hitPoint[2] - blockOffset[2], hitPoint[3] - blockOffset[3])
-	
-	--DebugPrint(VecToString(gridOffset))
 end
 
 function HandleSpecialBlocks()
@@ -1215,7 +1106,6 @@ function renderHud()
 								UiTranslate(selectorHeight / 4, selectorHeight / 4)
 								UiText(currBlockStackSize)
 							end
-							--UiText(blocks[currBlockId][1])
 						end
 					end
 				UiPop()
@@ -1234,15 +1124,7 @@ function renderHud()
 			UiTranslate(0, -150)
 			UiText("Minecraft Building Tool requires the experimental build of Teardown.")
 			return
-		end--[[else
-			if GetValue("ScrollToSelect") then
-				UiText(blocks[selectedBlock][1])
-			else
-				UiText("<[" .. binds["Prev_Block"]:upper() .. "] - " .. blocks[selectedBlock][1] .. " - [" .. binds["Next_Block"]:upper() .. "]>")
-			end
 		end
-		
-		UiTranslate(-75, -30)]]--
 		
 		UiAlign("center middle")
 		
@@ -1288,17 +1170,13 @@ end
 function renderBlockOutline(pos, size, renderFaces)
 	if size == nil then
 		size = { x = gridModulo, y = gridModulo, z = gridModulo}
-		--DebugWatch("hit", false)
+		
 	else
 		size = deepcopy(size)
 		size.x = size.x
 		size.y = size.y
 		size.z = size.z
-		--DebugWatch("hit", true)
 	end
-	
-	--DebugWatch("size", {size.x, size.y, size.z})
-	
 
 	local minPos = VecAdd(pos, Vec(-size.x / 2, -size.y / 2, -size.z / 2))
 	local maxPos = VecAdd(pos, Vec(size.x / 2, size.y / 2, size.z / 2))
