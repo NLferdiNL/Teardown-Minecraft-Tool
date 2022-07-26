@@ -19,10 +19,9 @@ local toolSlot = nil
 -- TODO: Fix "block of ___" insides to be random.
 -- TODO: Fix block break particles moving one way, sometimes.
 -- TODO: Add corner stairs.
--- TODO: Add sideways torches. (Use joints or just merge?)
+-- TODO: Add sideways torches. (Use joints or just merge?) (Redstone torches too!!)
 -- TODO: Add fence gates for the Fence Update.
--- TODO: Redstone Positional Table, making collison calls is too intensive.
--- TODO: Redstone on arbitrary grid to fix adjecent issues?
+-- TODO: Code cleanup, remove old commented out code.
 -- MAYBE: Trapdoor use log alignment?
 
 local toolVox = "MOD/vox/tool.vox"

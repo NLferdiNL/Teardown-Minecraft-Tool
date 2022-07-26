@@ -3,15 +3,16 @@ redstoneDB = {}
 -- TNT = 12
 -- Block = 46
 -- Dust = 123
+-- Repeater = 124
 
 -- rsBlockData = {shape, blockId, power}
 -- Origin = first block, then rest is pos + origin
 local mult = 100
 local blockSize = 1.6 * mult
 --local origin = nil
-local rsCount = 0
-local dupeRs = 0
-local test = 0
+--local rsCount = 0
+--local dupeRs = 0
+--local test = 0
 
 function redstone_init()
 
@@ -21,8 +22,8 @@ function redstone_tick(dt)
 	--local ax = 0
 	--local ay = 0
 	--local az = 0
-	test = 0
-	local liveCount = 0
+	--test = 0
+	--local liveCount = 0
 	for x, xArray in pairs(redstoneDB) do
 		--ax = ax + 1
 		for y, yArray in pairs(xArray) do
@@ -35,7 +36,7 @@ function redstone_tick(dt)
 				
 				else
 					HandleRedstone(x, y, z, rsBlockData)
-					liveCount = liveCount + 1
+					--liveCount = liveCount + 1
 				end
 			end
 		end
@@ -44,12 +45,12 @@ function redstone_tick(dt)
 	--DebugWatch("x", ax)
 	--DebugWatch("y", ay)
 	--DebugWatch("z", az)
-	DebugWatch("recorded", rsCount)
-	DebugWatch("live", liveCount)
+	--DebugWatch("recorded", rsCount)
+	--DebugWatch("live", liveCount)
 end
 
 function Redstone_Add(id, shape)
-	rsCount = rsCount + 1
+	--rsCount = rsCount + 1
 	--pos = VecRound(pos, 2)
 	--pos = Vec(pos[1] / blockSize, pos[2] / blockSize, pos[3] / blockSize)
 	local pos = GetBlockCenter(shape)
@@ -69,14 +70,20 @@ function Redstone_Add(id, shape)
 		redstoneDB[pos[1]][pos[2]] = {}
 	end
 	
-	if redstoneDB[pos[1]][pos[2]][pos[3]] ~= nil then
+	--[[if redstoneDB[pos[1]*][pos[2]*][pos[3]*] ~= nil then
 		rsCount = rsCount - 1
 		dupeRs = dupeRs + 1
+	end]]--
+	
+	local power = 0
+	
+	if id == 46 then
+		power = 16
 	end
 	
-	redstoneDB[pos[1]][pos[2]][pos[3]] = {shape, id, 0}
+	redstoneDB[pos[1]][pos[2]][pos[3]] = {shape, id, power}
 	
-	DebugPrint("Spawn: " .. VecToString(pos))
+	--DebugPrint("Spawn: " .. VecToString(pos))
 end
 
 function Redstone_Remove(shape)
@@ -84,11 +91,11 @@ function Redstone_Remove(shape)
 	--pos = Vec(pos[1] / blockSize, pos[2] / blockSize, pos[3] / blockSize)
 	local pos = GetBlockCenter(shape)
 	
-	if dupeRs > 0 then
+	--[[if dupeRs > 0 then
 		dupeRs = dupeRs - 1
 	else
 		rsCount = rsCount - 1
-	end
+	end]]--
 	
 	if redstoneDB[pos[1]] == nil then
 		return
@@ -98,7 +105,7 @@ function Redstone_Remove(shape)
 		return
 	end
 	
-	DebugPrint("Destroy operation success: " .. tostring(redstoneDB[pos[1]][pos[2]][pos[3]] ~= nil))
+	--DebugPrint("Destroy operation success: " .. tostring(redstoneDB[pos[1]][pos[2]][pos[3]] ~= nil))
 	redstoneDB[pos[1]][pos[2]][pos[3]] = nil
 end
 
@@ -137,8 +144,8 @@ function GetAdjecent(x, y, z)
 		end
 	end
 	
-	test = test + 1
-	DebugWatch("a", test)
+	--test = test + 1
+	--DebugWatch("a", test)
 		--[[for aY = y - blockSize, y + blockSize, blockSize * 2 do
 			aY = y
 			for aZ = z - blockSize, z + blockSize, blockSize * 2 do
@@ -251,19 +258,19 @@ function roundOne(a)
 end
 
 function HandleRedstone(x, y, z, rsBlockData)
-	DebugWatch("ahh", GetTime())
+	--DebugWatch("ahh", GetTime())
 	local adjecentRs = GetAdjecent(x, y, z); -- {RSDATA, POS}
 	
 	local rsShape = rsBlockData[1]
 	local rsBlockId = rsBlockData[2]
 	local rsPower = rsBlockData[3]
 	
-	if rsPower >= 1 then
+	if rsBlockId ~= 46 then
 		SetShapeEmissiveScale(rsShape, 1 / 15 * rsPower)
-		DrawShapeHighlight(rsShape, 1 / 15 * rsPower)
+		--DrawShapeHighlight(rsShape, 1 / 15 * rsPower)
 	end
 	
-	if rsBlockData[2] == 46 then
+	--[[if rsBlockData[2] == 46 then
 		for i = 1, #adjecentRs do
 			local currAdjData = adjecentRs[i]
 			
@@ -283,27 +290,29 @@ function HandleRedstone(x, y, z, rsBlockData)
 				end
 			end
 		end
-	elseif rsBlockData[2] == 123 then
-		for i = 1, #adjecentRs do
-			local currAdjData = adjecentRs[i]
+	elseif rsBlockData[2] == 123 then]]--
+	for i = 1, #adjecentRs do
+		local currAdjData = adjecentRs[i]
+		
+		local currRsData = currAdjData[1]
+		
+		local currRsShape = currRsData[1]
+		local currRsBlockId = currRsData[2]
+		local currRsPower = currRsData[3]
+		
+		if currRsData[2] == 12 and rsPower >= 1 then
+			local shapePos = GetRealBlockCenter(currRsShape)
 			
-			local currRsData = currAdjData[1]
-			
-			local currRsShape = currRsData[1]
-			local currRsBlockId = currRsData[2]
-			local currRsPower = currRsData[3]
-			
-			if currRsData[2] == 12 and rsPower >= 1 then
-				local shapePos = GetRealBlockCenter(currRsShape)
-				
-				MakeHole(shapePos, 0.2, 0.2, 0.2, true)
-			elseif currRsBlockId == 123 then
-				if currRsPower < rsPower - 1 then
-					currRsData[3] = rsPower - 1
-				end
+			MakeHole(shapePos, 0.2, 0.2, 0.2, true)
+		elseif currRsBlockId == 123 then
+			if currRsPower < rsPower - 1 then
+				currRsData[3] = rsPower - 1
 			end
 		end
 	end
 	
-	rsBlockData[3] = 0
+	if rsBlockId ~= 46 then
+		rsBlockData[3] = 0
+	end
+	--end
 end
