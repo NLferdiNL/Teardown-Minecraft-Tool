@@ -355,10 +355,9 @@ function RemoveBlock()
 	end
 	
 	local blockData = blocks[blockTag]
-	local blockPos = GetShapeWorldTransform(shape).pos
 	
 	if blockData[9] == 7 then
-		Redstone_Remove(blockPos)
+		Redstone_Remove(shape)
 	end
 	
 	local blockSpecialData = GetTagValue(shape, "minecraftspecialdata")
@@ -683,7 +682,7 @@ function PlaceBlock()
 	end
 	
 	if selectedBlockData[9] == 7 then
-		Redstone_Add(selectedBlockData[9], block, GetShapeWorldTransform(block).pos)
+		Redstone_Add(selectedBlockId, block)
 	end
 	
 	PlaySound(interactionSound, gridAligned)

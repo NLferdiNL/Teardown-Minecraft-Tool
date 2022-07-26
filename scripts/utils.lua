@@ -279,7 +279,7 @@ function spawnDebugParticle(pos, lifetime, color4)
 	ParticleTile(4)
 	ParticleColor(color4.r, color4.g, color4.b)
 	ParticleRadius(0.25)
-	SpawnParticle(pos, Vec(), 10)
+	SpawnParticle(pos, Vec(), lifetime)
 end
 
 function GetRandomPosBetween(a, b)
