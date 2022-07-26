@@ -5,7 +5,7 @@ redstoneDB = {}
 -- Dust = 123
 -- Repeater = 124
 
--- rsBlockData = {shape, blockId, power}
+-- rsBlockData = {shape, blockId, power, connectionShapes}
 -- Origin = first block, then rest is pos + origin
 local mult = 100
 local blockSize = 1.6 * mult
@@ -49,7 +49,7 @@ function redstone_tick(dt)
 	--DebugWatch("live", liveCount)
 end
 
-function Redstone_Add(id, shape)
+function Redstone_Add(id, shape, connections)
 	--rsCount = rsCount + 1
 	--pos = VecRound(pos, 2)
 	--pos = Vec(pos[1] / blockSize, pos[2] / blockSize, pos[3] / blockSize)
@@ -81,9 +81,27 @@ function Redstone_Add(id, shape)
 		power = 16
 	end
 	
-	redstoneDB[pos[1]][pos[2]][pos[3]] = {shape, id, power}
+	redstoneDB[pos[1]][pos[2]][pos[3]] = {shape, id, power, ConnectionToTable(connections)}
 	
 	--DebugPrint("Spawn: " .. VecToString(pos))
+end
+
+function Redstone_Update(shape, connections)
+	local pos = GetBlockCenter(shape)
+	
+	if redstoneDB[pos[1]] == nil then
+		return
+	end
+	
+	if redstoneDB[pos[1]][pos[2]] == nil then
+		return
+	end
+	
+	if redstoneDB[pos[1]][pos[2]][pos[3]] == nil then
+		return
+	end
+	
+	redstoneDB[pos[1]][pos[2]][pos[3]][4] = ConnectionToTable(connections)
 end
 
 function Redstone_Remove(shape)
@@ -107,6 +125,16 @@ function Redstone_Remove(shape)
 	
 	--DebugPrint("Destroy operation success: " .. tostring(redstoneDB[pos[1]][pos[2]][pos[3]] ~= nil))
 	redstoneDB[pos[1]][pos[2]][pos[3]] = nil
+end
+
+function ConnectionToTable(str)
+	local returnTable = {}
+
+	for shape in string.gmatch(str, "%d+") do
+		returnTable[#returnTable + 1] = tonumber(shape)
+	end
+	
+	return returnTable
 end
 
 function GetAdjecent(x, y, z)
@@ -264,10 +292,27 @@ function HandleRedstone(x, y, z, rsBlockData)
 	local rsShape = rsBlockData[1]
 	local rsBlockId = rsBlockData[2]
 	local rsPower = rsBlockData[3]
+	local rsConnections = rsBlockData[4]
 	
 	if rsBlockId ~= 46 then
 		SetShapeEmissiveScale(rsShape, 1 / 15 * rsPower)
 		--DrawShapeHighlight(rsShape, 1 / 15 * rsPower)
+	end
+	
+	for i = 1, #rsConnections do
+		local currConn = rsConnections[i]
+		local currPower = tonumber(GetTagValue(currConn, "minecraftpower"))
+		
+		if currPower == nil then
+			currPower = 0
+		end
+		
+		if currPower < rsPower then
+			currPower = rsPower
+		end
+		
+		SetTag(currConn, "minecraftpower", 0)
+		SetShapeEmissiveScale(currConn, 1 / 15 * currPower)
 	end
 	
 	--[[if rsBlockData[2] == 46 then

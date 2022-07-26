@@ -22,6 +22,7 @@ local toolSlot = nil
 -- TODO: Add sideways torches. (Use joints or just merge?) (Redstone torches too!!)
 -- TODO: Add fence gates for the Fence Update.
 -- TODO: Code cleanup, remove old commented out code.
+-- TODO: Implement Redstone_Update(shape, connections)
 -- MAYBE: Trapdoor use log alignment?
 
 local toolVox = "MOD/vox/tool.vox"
@@ -681,7 +682,7 @@ function PlaceBlock()
 	end
 	
 	if selectedBlockData[9] == 7 then
-		Redstone_Add(selectedBlockId, block)
+		Redstone_Add(selectedBlockId, block, connectedShapesTag)
 	end
 	
 	PlaySound(interactionSound, gridAligned)
