@@ -21,6 +21,8 @@ local toolSlot = nil
 -- TODO: Add corner stairs.
 -- TODO: Add sideways torches. (Use joints or just merge?) (Redstone torches too!!)
 -- TODO: Add fence gates for the Fence Update.
+-- TODO: Update Redstone to Redstone Connection laying.
+-- TODO: Implement repeater delay toggle.
 -- MAYBE: Trapdoor use log alignment?
 
 local toolVox = "MOD/vox/tool.vox"
@@ -76,6 +78,18 @@ for i = 1, mainInventorySize + miscInventorySlots do
 	if i == 32 then
 		inventory[i][1] = 123
 	end
+	
+	if i == 33 then
+		inventory[i][1] = 124
+	end
+	
+	if i == 34 then
+		inventory[i][1] = 46
+	end
+	
+	if i == 35 then
+		inventory[i][1] = 125
+	end
 end
 
 inventoryHotBarStartIndex = #inventory - 8
@@ -129,7 +143,6 @@ function tick(dt)
 	end
 
 	HandleSpecialBlocks()
-	redstone_tick(dt)
 	
 	if not menu_disabled then
 		menu_tick(dt)
@@ -231,6 +244,10 @@ function tick(dt)
 	elseif InputReleased(binds["Place"]) then
 		holdTimer = 0
 	end
+end
+
+function update(dt)
+	redstone_update(dt)
 end
 
 function draw(dt)
@@ -560,8 +577,12 @@ function PlaceBlock()
 				
 				mirrorJointLimits = "alt"
 			end
-		elseif selectedBlockData[9] == 7 and selectedBlockData[1] == "Redstone Dust" then
-			connectedShapesTag = ConnectToAdjecentBlocks(selectedBlockData, adjecentBlocks, tempPos, redstoneOffset, nil, 4) -- Vec(-0.155, 0, -0.205)
+		elseif selectedBlockData[9] == 7 then
+			if selectedBlockData[1] == "Redstone Dust" then
+				connectedShapesTag = ConnectToAdjecentBlocks(selectedBlockData, adjecentBlocks, tempPos, redstoneOffset, nil, 4) -- Vec(-0.155, 0, -0.205)
+			else
+				
+			end
 		end
 	end
 	

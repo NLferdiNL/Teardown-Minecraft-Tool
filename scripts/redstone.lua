@@ -5,10 +5,11 @@ redstoneDB = {}
 -- Dust = 123
 -- Repeater = 124
 
--- rsBlockData = {shape, blockId, power, connectionShapes}
+-- rsBlockData = {shape, block id, power, connection shapes, power last tick, extra(repeaterdata)}
 -- Origin = first block, then rest is pos + origin
 local mult = 100
-local blockSize = 1.6 * mult
+local origBlockSize = 1.6
+local blockSize = origBlockSize * mult
 --local origin = nil
 --local rsCount = 0
 --local dupeRs = 0
@@ -18,12 +19,16 @@ function redstone_init()
 
 end
 
-function redstone_tick(dt)
+function redstone_update(dt)
 	--local ax = 0
 	--local ay = 0
 	--local az = 0
 	--test = 0
 	--local liveCount = 0
+	--local repeaterQueue = {}
+	
+	--local repeaterTest = 0
+	
 	for x, xArray in pairs(redstoneDB) do
 		--ax = ax + 1
 		for y, yArray in pairs(xArray) do
@@ -34,13 +39,24 @@ function redstone_tick(dt)
 					Redstone_Remove(Vec(x, y, z))
 				elseif rsBlockData == nil then
 				
+				--elseif rsBlockData[2] == 124 then
+					--repeaterQueue[#repeaterQueue + 1] = {x, y, z, rsBlockData}
 				else
-					HandleRedstone(x, y, z, rsBlockData)
+					--[[if rsBlockData[2] == 124 then
+						repeaterTest = repeaterTest + 1
+					end]]--
+					HandleRedstone(x, y, z, rsBlockData, dt)
 					--liveCount = liveCount + 1
 				end
 			end
 		end
 	end
+	
+	--DebugWatch("repeaterTest", repeaterTest)
+	
+	--[[for i = 1, #repeaterQueue do
+		HandleRedstone(repeaterQueue[i][1], repeaterQueue[i][2], repeaterQueue[i][3], repeaterQueue[i][4])
+	end]]--
 	
 	--DebugWatch("x", ax)
 	--DebugWatch("y", ay)
@@ -76,12 +92,15 @@ function Redstone_Add(id, shape, connections)
 	end]]--
 	
 	local power = 0
+	local extra = nil
 	
 	if id == 46 then
 		power = 16
+	elseif id == 124 then
+		extra = {0.4, 0.4, false}
 	end
 	
-	redstoneDB[pos[1]][pos[2]][pos[3]] = {shape, id, power, ConnectionToTable(connections)}
+	redstoneDB[pos[1]][pos[2]][pos[3]] = {shape, id, power, ConnectionToTable(connections), power, extra}
 	
 	--DebugPrint("Spawn: " .. VecToString(pos))
 end
@@ -263,6 +282,22 @@ function GetBlockCenter(shape)
 	return vec
 end
 
+function GetFromDB(x, y, z)
+	if redstoneDB[x] == nil then
+		return nil
+	end
+	
+	if redstoneDB[x][y] == nil then
+		return nil
+	end
+	
+	if redstoneDB[x][y][z] == nil then
+		return nil
+	end
+	
+	return redstoneDB[x][y][z]
+end
+
 function GetRealBlockCenter(shape)
 	local sMin, sMax = GetShapeBounds(shape)
 	
@@ -285,14 +320,107 @@ function roundOne(a)
 	--return math.floor(a * 10)/10
 end
 
-function HandleRedstone(x, y, z, rsBlockData)
-	--DebugWatch("ahh", GetTime())
-	local adjecentRs = GetAdjecent(x, y, z); -- {RSDATA, POS}
-	
+function HandleRedstone(x, y, z, rsBlockData, dt)
 	local rsShape = rsBlockData[1]
 	local rsBlockId = rsBlockData[2]
 	local rsPower = rsBlockData[3]
 	local rsConnections = rsBlockData[4]
+	local rsPowerLastTick = rsBlockData[6]
+	local rsExtra = rsBlockData[6]
+	
+	if rsBlockId == 124 then -- Don't need adjecent for this. Calculate manually.
+		local shapeTransform = GetShapeWorldTransform(rsShape)
+		
+		local frontObject = TransformToParentPoint(shapeTransform, Vec(0.8, 0, -origBlockSize / 2))
+		local rearObject = TransformToParentPoint(shapeTransform, Vec(0.8, 0, origBlockSize * 1.5))
+		
+		--spawnDebugParticle(frontObject, 2, Color4.Yellow)
+		--spawnDebugParticle(rearObject, 2, Color4.Red)
+		
+		--DebugPrint("PRE " .. VecToString(rearObject))
+		
+		--rearObject = VecScale(rearObject, mult)
+		frontObject[1] = roundOne(frontObject[1])
+		frontObject[2] = y
+		frontObject[3] = roundOne(frontObject[3])
+		
+		rearObject[1] = roundOne(rearObject[1])
+		rearObject[2] = y
+		rearObject[3] = roundOne(rearObject[3])
+		
+		local frontRsData = GetFromDB(frontObject[1], frontObject[2], frontObject[3])
+		local rearRsData = GetFromDB(rearObject[1], rearObject[2], rearObject[3])
+		
+		--[[if frontRsData ~= nil then
+			DrawShapeOutline(frontRsData[1], 0.75, 0.75, 0, 1)
+		else
+			DebugPrint("Bark1 " .. GetTime())
+		end
+		
+		if rearRsData ~= nil then
+			DrawShapeOutline(rearRsData[1], 0.75, 0, 0, 1)
+		else
+			DebugPrint("Bark2 " .. GetTime())
+		end]]--
+		
+		--DebugWatch("front", frontRsData == nil)
+		--DebugWatch("back", rearRsData == nil)
+		
+		--[[if rearRsData ~= nil and rearRsData[2] == 124 then
+		DebugPrint(tableToText(rearRsData))
+		end]]--
+		
+		--DebugWatch("extra 1", rsExtra[1])
+		--DebugWatch("extra 2", rsExtra[2])
+		
+		--[[if rsExtra[3] then
+			DebugPrint("1 " .. tostring(frontRsData ~= nil))
+			if frontRsData ~= nil then
+				DebugPrint("2 " .. tostring(frontRsData[2] == 123))
+			end
+		end]]--
+		
+		--DebugWatch("cond 1", rearRsData ~= nil)
+		--DebugWatch("cond 2", rearRsData ~= nil and rearRsData[3] > 0)
+		
+		--[[if rearRsData ~= nil then
+			DebugWatch("cond 2.a", rearRsData[3])
+		end]]--
+		
+		if (rearRsData ~= nil and (rearRsData[3] > 0 or rearRsData[5] > 0)) or rsExtra[3] then
+			SetShapeEmissiveScale(rsShape, 1)
+			if rsExtra[2] > 0 then
+				rsExtra[3] = true
+				rsExtra[2] = rsExtra[2] - dt
+				--DebugWatch("AHH", 2)
+			end
+			
+			if frontRsData ~= nil and frontRsData[2] == 123 and rsExtra[2] <= 0 then
+				--DebugPrint(frontRsData[3])
+				frontRsData[3] = 15
+				--DebugPrint(frontRsData[3])
+				--DrawShapeHighlight(frontRsData[1], 0.5)
+				--DebugPrint("FIRE")
+				--DebugWatch("AHH", 3)
+			end
+			
+			if rsExtra[2] <= 0 then
+				rsBlockData[3] = 15
+				--DebugPrint("BANG")
+				rsExtra[3] = false
+			end
+		else
+			--DebugWatch("AHH", 1)
+			rsExtra[2] = rsExtra[1]
+			SetShapeEmissiveScale(rsShape, 0)
+			--DebugPrint("Bark " .. GetTime())
+			rsBlockData[3] = 0
+		end
+		
+		return
+	end
+	--DebugWatch("ahh", GetTime())
+	local adjecentRs = GetAdjecent(x, y, z); -- {RSDATA, POS}
 	
 	if rsBlockId ~= 46 then
 		SetShapeEmissiveScale(rsShape, 1 / 15 * rsPower)
@@ -340,6 +468,7 @@ function HandleRedstone(x, y, z, rsBlockData)
 		local currAdjData = adjecentRs[i]
 		
 		local currRsData = currAdjData[1]
+		local currRsPos = currAdjData[2]
 		
 		local currRsShape = currRsData[1]
 		local currRsBlockId = currRsData[2]
@@ -357,6 +486,7 @@ function HandleRedstone(x, y, z, rsBlockData)
 	end
 	
 	if rsBlockId ~= 46 then
+		rsBlockData[5] = rsPower
 		rsBlockData[3] = 0
 	end
 	--end
