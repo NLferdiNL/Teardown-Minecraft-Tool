@@ -4,6 +4,9 @@ redstoneDB = {}
 -- Block = 46
 -- Dust = 123
 -- Repeater = 124
+-- Stone Button = 125
+-- Wood Button = 126
+-- Lamp = 127
 
 -- rsBlockData = {shape, block id, power, connection shapes, power last tick, extra(repeaterdata)}
 -- Origin = first block, then rest is pos + origin
@@ -14,6 +17,11 @@ local blockSize = origBlockSize * mult
 --local rsCount = 0
 --local dupeRs = 0
 --local test = 0
+
+--SetTag(switch, "interact", "Turn on")
+--if GetPlayerInteractShape() == switch and InputPressed("interact") then
+
+local font = "MOD/fonts/MinecraftRegular.ttf"
 
 function redstone_init()
 
@@ -37,11 +45,10 @@ function redstone_update(dt)
 				--az = az + 1
 				if IsShapeBroken(rsBlockData[1]) then
 					Redstone_Remove(Vec(x, y, z))
-				elseif rsBlockData == nil then
-				
+				elseif rsBlockData ~= nil then
 				--elseif rsBlockData[2] == 124 then
 					--repeaterQueue[#repeaterQueue + 1] = {x, y, z, rsBlockData}
-				else
+				--else
 					--[[if rsBlockData[2] == 124 then
 						repeaterTest = repeaterTest + 1
 					end]]--
@@ -65,7 +72,22 @@ function redstone_update(dt)
 	--DebugWatch("live", liveCount)
 end
 
-function Redstone_Add(id, shape, connections)
+function Redstone_Draw(dt)
+	local aimHit, aimHitPoint, aimDistance, aimNormal, aimShape = GetAimVariables()
+	for x, xArray in pairs(redstoneDB) do
+		for y, yArray in pairs(xArray) do
+			for z, rsBlockData in pairs(yArray) do
+				if rsBlockData ~= nil then
+					if rsBlockData[2] == 125 or rsBlockData[2] == 126 then
+						DrawInteractText(x, y, z, rsBlockData, dt, aimShape)
+					end
+				end
+			end
+		end
+	end
+end
+
+function Redstone_Add(id, shape, connections, extraData)
 	--rsCount = rsCount + 1
 	--pos = VecRound(pos, 2)
 	--pos = Vec(pos[1] / blockSize, pos[2] / blockSize, pos[3] / blockSize)
@@ -98,6 +120,8 @@ function Redstone_Add(id, shape, connections)
 		power = 16
 	elseif id == 124 then
 		extra = {0.4, 0.4, false}
+	elseif id == 127 then
+		extra = FindLight(extraData, true)
 	end
 	
 	redstoneDB[pos[1]][pos[2]][pos[3]] = {shape, id, power, ConnectionToTable(connections), power, extra}
@@ -298,10 +322,13 @@ function GetFromDB(x, y, z)
 	return redstoneDB[x][y][z]
 end
 
-function GetRealBlockCenter(shape)
+function GetRealBlockCenter(shape, negateY)
+	negateY = negateY or true
 	local sMin, sMax = GetShapeBounds(shape)
 	
-	sMax[2] = sMin[2]
+	if negateY then
+		sMax[2] = sMin[2]
+	end
 	
 	local vec = VecCenter(sMin, sMax)
 	
@@ -320,12 +347,44 @@ function roundOne(a)
 	--return math.floor(a * 10)/10
 end
 
-function HandleRedstone(x, y, z, rsBlockData, dt)
+function DrawInteractText(x, y, z, rsBlockData, dt, aimShape)
 	local rsShape = rsBlockData[1]
 	local rsBlockId = rsBlockData[2]
 	local rsPower = rsBlockData[3]
 	local rsConnections = rsBlockData[4]
 	local rsPowerLastTick = rsBlockData[6]
+	local rsExtra = rsBlockData[6]
+	
+	local interactText = GetTagValue(rsShape, "interact")
+	
+	if interactText == nil or interactText == "" then
+		return
+	end
+	
+	--interactText = "Interact: " .. interactText
+	
+	local shapePos = GetRealBlockCenter(rsShape, false)
+	
+	UiPush()
+		UiTextShadow(0.25, 0.25, 0.25, 1, 2 / 26 * 40, 0)
+		UiFont(font, 26)
+		local posX, posY, dist = UiWorldToPixel(shapePos)
+		local textWidth, textHeight = UiGetTextSize(interactText)
+		
+		if (dist >= 0 and dist <= 3) or (dist <= 3.3 and rsShape == aimShape) then
+			UiTranslate(-textWidth / 2, 0)
+			UiTranslate(posX, posY)
+			UiText(interactText)
+		end
+	UiPop()
+end
+
+function HandleRedstone(x, y, z, rsBlockData, dt)
+	local rsShape = rsBlockData[1]
+	local rsBlockId = rsBlockData[2]
+	local rsPower = rsBlockData[3]
+	local rsConnections = rsBlockData[4]
+	local rsPowerLastTick = rsBlockData[5]
 	local rsExtra = rsBlockData[6]
 	
 	if rsBlockId == 124 then -- Don't need adjecent for this. Calculate manually.
@@ -395,7 +454,7 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 				--DebugWatch("AHH", 2)
 			end
 			
-			if frontRsData ~= nil and frontRsData[2] == 123 and rsExtra[2] <= 0 then
+			if frontRsData ~= nil and (frontRsData[2] == 123 or frontRsData[2] == 127) and rsExtra[2] <= 0 then
 				--DebugPrint(frontRsData[3])
 				frontRsData[3] = 15
 				--DebugPrint(frontRsData[3])
@@ -416,6 +475,19 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 			--DebugPrint("Bark " .. GetTime())
 			rsBlockData[3] = 0
 		end
+		
+		return
+	elseif rsBlockId == 127 then
+		if rsPower >= 1 or rsPowerLastTick >= 1 then
+			SetShapeEmissiveScale(currConn, 1)
+			SetLightEnabled(rsExtra, true)
+		else
+			SetShapeEmissiveScale(currConn, 0)
+			SetLightEnabled(rsExtra, false)
+		end
+		
+		rsBlockData[5] = rsBlockData[3]
+		rsBlockData[3] = 0
 		
 		return
 	end
@@ -475,9 +547,13 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 		local currRsPower = currRsData[3]
 		
 		if currRsData[2] == 12 and rsPower >= 1 then
-			local shapePos = GetRealBlockCenter(currRsShape)
+			local shapePos = GetRealBlockCenter(currRsShape, false)
 			
 			MakeHole(shapePos, 0.2, 0.2, 0.2, true)
+		elseif currRsData[2] == 127 then
+			if rsPower >= 1 then
+				currRsData[3] = rsPower
+			end
 		elseif currRsBlockId == 123 then
 			if currRsPower < rsPower - 1 then
 				currRsData[3] = rsPower - 1

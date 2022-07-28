@@ -23,6 +23,9 @@ local toolSlot = nil
 -- TODO: Add fence gates for the Fence Update.
 -- TODO: Update Redstone to Redstone Connection laying.
 -- TODO: Implement repeater delay toggle.
+-- TODO: Implement repeater locking.
+-- TODO: Implement button functionality.
+-- TODO: Replace dev art for Dust, Repeater, Lamp
 -- MAYBE: Trapdoor use log alignment?
 
 local toolVox = "MOD/vox/tool.vox"
@@ -67,6 +70,7 @@ local miscInventorySlots = 4 --Armor
 local itemSwitchTimer = 0
 local itemSwitchTimerMax = 10
 local itemSwitchTimerHalf = itemSwitchTimerMax / 2
+local uniqueLightId = 0
 
 for i = 1, mainInventorySize + miscInventorySlots do
 	inventory[i] = {0, 0} --{BLOCKID, STACKSIZE}
@@ -89,6 +93,14 @@ for i = 1, mainInventorySize + miscInventorySlots do
 	
 	if i == 35 then
 		inventory[i][1] = 125
+	end
+	
+	if i == 36 then
+		inventory[i][1] = 126
+	end
+	
+	if i == 37 then
+		inventory[i][1] = 127
 	end
 end
 
@@ -226,7 +238,9 @@ function tick(dt)
 		return
 	end
 	
-	if (InputPressed(binds["Place"]) or InputDown(binds["Place"])) and (GetPlayerGrabBody() == 0 or GetPlayerGrabShape() == 0) then
+	local playerInteractingWithAimShape = GetPlayerInteractShape() == shape
+	
+	if (InputPressed(binds["Place"]) or InputDown(binds["Place"])) and (GetPlayerGrabBody() == 0 or GetPlayerGrabShape() == 0) and not playerInteractingWithAimShape then
 		if InputDown(binds["Place"]) then
 			holdTimer = holdTimer - dt
 			
@@ -252,12 +266,15 @@ end
 
 function draw(dt)
 	menu_draw(dt)
+	Redstone_Draw(dt)
 	
 	if not canUseTool() or isMenuOpen() then
 		return
 	end
 	
 	renderHud()
+	
+	--Redstone_Draw(dt)
 	
 	inventory_draw()
 	
@@ -568,7 +585,6 @@ function PlaceBlock()
 				gridAligned = VecAdd(gridAligned, Vec(0, blockSize / 10 / 2, 0))
 			end
 		elseif selectedBlockData[9] == 4 and not dynamicBlock then
-		
 			connectedShapesTag = ConnectToAdjecentBlocks(selectedBlockData, adjecentBlocks, tempPos, fenceOffset, nil, 2)
 		elseif selectedBlockData[9] == 6 then
 		
@@ -577,11 +593,9 @@ function PlaceBlock()
 				
 				mirrorJointLimits = "alt"
 			end
-		elseif selectedBlockData[9] == 7 then
-			if selectedBlockData[1] == "Redstone Dust" then
-				connectedShapesTag = ConnectToAdjecentBlocks(selectedBlockData, adjecentBlocks, tempPos, redstoneOffset, nil, 4) -- Vec(-0.155, 0, -0.205)
-			else
-				
+		elseif selectedBlockData[9] == 7 and not dynamicBlock then
+			if selectedBlockId == 123 then
+				connectedShapesTag = ConnectToAdjecentBlocks(selectedBlockData, adjecentBlocks, tempPos, redstoneOffset, {12, 46, 123, 124, 125, 126, 127}, 4) -- Vec(-0.155, 0, -0.205)
 			end
 		end
 	end
@@ -605,6 +619,10 @@ function PlaceBlock()
 	
 	if selectedBlockData[10] ~= nil then
 		extraBlockXML = selectedBlockData[10]
+		if selectedBlockId == 127 then
+			uniqueLightId = uniqueLightId + 1
+			extraBlockXML = string.gsub(extraBlockXML, "LAMPID", "MCL_" .. tostring(uniqueLightId))
+		end
 		
 		if mirrorJointLimits ~= nil then
 			if mirrorJointLimits == "alt" then
@@ -631,7 +649,11 @@ function PlaceBlock()
 	end
 	
 	if selectedBlockData[9] == 7 then
-		Redstone_Add(selectedBlockId, block, connectedShapesTag)
+		if selectedBlockId == 127 then
+			Redstone_Add(selectedBlockId, block, connectedShapesTag, "MCL_" .. tostring(uniqueLightId))
+		else
+			Redstone_Add(selectedBlockId, block, connectedShapesTag)
+		end
 	end
 	
 	PlaySound(interactionSound, gridAligned)
@@ -645,7 +667,7 @@ function PlaceBlock()
 		SetTag(block, "minecraftspecialdata", hasSpecialData)
 	end
 	
-	if selectedBlockData[9] ~= 4 and selectedBlockData[9] ~= 7 then
+	if selectedBlockData[9] ~= 4 and selectedBlockId ~= 123 and not dynamicBlock then
 		for i = 1, #adjecentBlocks do
 			local currBlock = adjecentBlocks[i]
 			local currBlockId = tonumber(GetTagValue(currBlock, "minecraftblockid"))
@@ -655,7 +677,19 @@ function PlaceBlock()
 				local currBlockData = blocks[currBlockId]
 				local currBlockType = currBlockData[9]
 				
+				local currOffset = nil
+				
+				local skip = false
+				
 				if currBlockType == 4 then
+					currOffset = fenceOffset
+				elseif currBlockType == 7 and selectedBlockData[9] == 7 then
+					currOffset = redstoneOffset
+				else
+					skip = true
+				end
+				
+				if not skip then
 					local otherBlockMin, otherBlockMax = GetShapeBounds(currBlock)
 					
 					otherBlockMax[2] = otherBlockMin[2]
@@ -670,9 +704,13 @@ function PlaceBlock()
 						rot = 0
 					end
 					
-					local fenceConnectionTransform, dir = GetBlockConnectionTransform(otherBlockCenter, tempPos, rot, fenceOffset, 2)
+					local blockConnectionTransform, dir = GetBlockConnectionTransform(otherBlockCenter, tempPos, rot, currOffset, 2)
 					
-					local currPieces = SpawnAdjustedConnector(currBlockData, block, fenceConnectionTransform, dir)
+					local currPieces = SpawnAdjustedConnector(currBlockData, currBlockId, block, blockConnectionTransform, dir)
+					
+					if currPieces == nil then
+						currPieces = ""
+					end
 						
 					connectedShapesTag = connectedShapesTag .. currPieces
 					
@@ -680,8 +718,14 @@ function PlaceBlock()
 					
 					if otherShapeConnectedTag == nil or otherShapeConnectedTag == "" then
 						SetTag(currBlock, "minecraftconnectedshapes", connectedShapesTag)
+						if currBlockType == 7 then
+							Redstone_Update(currBlock, connectedShapesTag)
+						end
 					else
 						SetTag(currBlock, "minecraftconnectedshapes", otherShapeConnectedTag .. " " .. currPieces)
+						if currBlockType == 7 then
+							Redstone_Update(currBlock, otherShapeConnectedTag .. " " .. currPieces)
+						end
 					end
 				end
 			end
@@ -705,6 +749,10 @@ function AimLogic()
 	hit, hitPoint, distance, normal, shape = GetAimTarget()
 	
 	if not hit then
+		hitPoint = Vec()
+		distance = 0
+		normal = Vec()
+		shape = 0
 		return
 	end
 	
@@ -814,10 +862,10 @@ function ConnectToAdjecentBlocks(selectedBlockData, adjecentBlocks, middlePos, b
 	
 	for i = 1, #adjecentBlocks do
 		if adjecentBlocks[i] ~= -1 then
+			local otherShape = adjecentBlocks[i]
 			local otherBlockId = tonumber(GetTagValue(otherShape, "minecraftblockid"))
 			
-			if blockFilter == nil or otherBlockId == blockFilter or IsBlockInFilter(blockFilter, otherBlock) then
-				local otherShape = adjecentBlocks[i]
+			if blockFilter == nil or otherBlockId == blockFilter or IsBlockInFilter(blockFilter, otherBlockId) then
 				local otherShapeTransform = GetShapeWorldTransform(otherShape)
 				
 				local blockMin, blockMax = GetShapeBounds(otherShape)
@@ -832,7 +880,7 @@ function ConnectToAdjecentBlocks(selectedBlockData, adjecentBlocks, middlePos, b
 				
 				local fenceConnectionTransform, dir = GetBlockConnectionTransform(middlePos, center, i * 90, blockOffset, dirMultiplier)
 				
-				local currPieces = SpawnAdjustedConnector(selectedBlockData, otherShape, fenceConnectionTransform, dir)
+				local currPieces = SpawnAdjustedConnector(selectedBlockData, selectedBlockId, otherShape, fenceConnectionTransform, dir)
 				
 				connectedShapesTag = connectedShapesTag .. currPieces
 				
@@ -961,7 +1009,7 @@ function SpawnBlockConnector(selectedBlockData, connectionTransform, sizeModifie
 	return connectionPiece
 end
 
-function SpawnAdjustedConnector(selectedBlockData, otherShape, connectionTransform, dir)
+function SpawnAdjustedConnector(selectedBlockData, selectedBlockId, otherShape, connectionTransform, dir)
 	local otherBlockId = GetTagValue(otherShape, "minecraftblockid")
 	
 	if otherBlockId == nil then
@@ -988,10 +1036,16 @@ function SpawnAdjustedConnector(selectedBlockData, otherShape, connectionTransfo
 			
 			local isValidBlockType = otherShapeBlockType == 1 or
 									 otherShapeBlockType == 3 or
-									 otherShapeBlockType == 5
+									 otherShapeBlockType == 5 or
+									 (otherShapeBlockType == 7 and selectedBlockId == 123 and otherBlockId ~= 123)
 			
 			if math.abs(dir[i]) == 1 and isValidBlockType then
-				sizeModifier[1] = 0.5
+				local selectedBlockType = selectedBlockData[9]
+				if selectedBlockType == 4 then
+					sizeModifier[1] = 0.5
+				elseif selectedBlockType == 7 then
+					sizeModifier[1] = 0.75
+				end
 			end
 		end
 	end
@@ -1177,6 +1231,10 @@ function renderHud()
 		--drawToggle("[" .. binds["Toggle_Walk_Mode"]:upper() .. "] to toggle walk speed.", walkModeActive)
 		
 	UiPop()
+end
+
+function GetAimVariables()
+	return hit, hitPoint, distance, normal, shape
 end
 
 function renderCrosshair()
