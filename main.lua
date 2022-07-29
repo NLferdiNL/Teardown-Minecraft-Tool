@@ -21,10 +21,14 @@ local toolSlot = nil
 -- TODO: Add corner stairs.
 -- TODO: Add sideways torches. (Use joints or just merge?) (Redstone torches too!!)
 -- TODO: Add fence gates for the Fence Update.
--- TODO: Implement repeater delay toggle.
 -- TODO: Implement repeater locking functionality.
+-- TODO: Implement redstone torches.
 -- TODO: Replace dev art for Dust, Repeater, Lamp
+-- TODO: Fix button rotation.
+-- TODO: Add button hard powering.
 -- TODO: Fix redstone connection size on non dust connection.
+-- TODO: Fix button > repeater compare number with boolean.
+-- TODO: Repeater stay on delay?
 -- MAYBE: Trapdoor use log alignment?
 
 local toolVox = "MOD/vox/tool.vox"
@@ -270,7 +274,6 @@ end
 
 function draw(dt)
 	menu_draw(dt)
-	Redstone_Draw(dt)
 	
 	if not canUseTool() or isMenuOpen() then
 		return
@@ -278,7 +281,7 @@ function draw(dt)
 	
 	renderHud()
 	
-	--Redstone_Draw(dt)
+	Redstone_Draw(dt)
 	
 	inventory_draw()
 	

@@ -71,7 +71,7 @@ function Redstone_Draw(dt)
 		for y, yArray in pairs(xArray) do
 			for z, rsBlockData in pairs(yArray) do
 				if rsBlockData ~= nil then
-					if rsBlockData[2] == 125 or rsBlockData[2] == 126 then
+					if rsBlockData[2] == 124 or rsBlockData[2] == 125 or rsBlockData[2] == 126 then
 						DrawInteractText(x, y, z, rsBlockData, dt, aimShape)
 					end
 				end
@@ -112,13 +112,12 @@ function Redstone_Add(id, shape, connections, extraData)
 	if id == 46 then
 		power = 16
 	elseif id == 124 then
-		extra = {0.4, 0.4, false}
+		SetTag(shape, "interact", "Tick: 0.1")
+		extra = {"interact", 0.1, 0.1, false}
 	elseif id == 125 then
 		extra = {"interact", 1.0, 0.0}
-		DebugPrint("A")
 	elseif id == 126 then
 		extra = {"interact", 1.5, 0.0}
-		DebugPrint("B")
 	elseif id == 127 then
 		extra = FindLight(extraData, true)
 	end
@@ -178,8 +177,21 @@ function Redstone_Interact(shape)
 		return nil
 	end
 	
-	rsBlockData[3] = 16
-	rsBlockData[6][3] = rsBlockData[6][2]
+	if rsBlockData[2] == 125 or rsBlockData[2] == 126 then
+		rsBlockData[3] = 16
+		rsBlockData[6][3] = rsBlockData[6][2]
+	elseif rsBlockData[2] == 124 then
+		local rsExtra = rsBlockData[6]
+		local rsTick = rsExtra[2] + 0.1
+		
+		if rsTick >= 0.5 then
+			rsTick = 0.1
+		end
+		
+		rsExtra[2] = rsTick
+		
+		SetTag(rsBlockData[1], "interact", "Tick: " .. rsTick)
+	end
 end
 
 function ConnectionToTable(str)
@@ -415,11 +427,11 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 			rearRsData[3] = rearRsData[7]
 		end
 		
-		if (rearRsData ~= nil and (rearRsData[3] > 0 or rearRsData[5] > 0)) or rsExtra[3] then
+		if (rearRsData ~= nil and (rearRsData[3] > 0 or rearRsData[5] > 0)) or rsExtra[4] then
 			SetShapeEmissiveScale(rsShape, 1)
-			if rsExtra[2] > 0 then
-				rsExtra[3] = true
-				rsExtra[2] = rsExtra[2] - dt
+			if rsExtra[3] > 0 then
+				rsExtra[4] = true
+				rsExtra[3] = rsExtra[3] - dt
 			end
 			
 			local usableBlock = false
@@ -428,7 +440,7 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 				usableBlock = frontRsData[2] ~= 46 and frontRsData[2] ~= 124 and frontRsData[2] ~= 125 and frontRsData[2] ~= 126
 			end
 			
-			if frontRsData ~= nil and usableBlock and rsExtra[2] <= 0 then
+			if frontRsData ~= nil and usableBlock and rsExtra[3] <= 0 then
 				if frontAltBlock ~= nil then
 					SetTag(frontAltBlock, "minecraftredstonehardpower", 16)
 					SetTag(frontAltBlock, "minecraftredstonehardpowerlast", 16)
@@ -438,12 +450,12 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 				end
 			end
 			
-			if rsExtra[2] <= 0 then
+			if rsExtra[3] <= 0 then
 				rsBlockData[3] = 15
-				rsExtra[3] = false
+				rsExtra[4] = false
 			end
 		else
-			rsExtra[2] = rsExtra[1]
+			rsExtra[3] = rsExtra[2]
 			SetShapeEmissiveScale(rsShape, 0)
 			rsBlockData[3] = 0
 		end
