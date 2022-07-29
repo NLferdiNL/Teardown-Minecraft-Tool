@@ -4,6 +4,7 @@ binds = {
 	Mine = "lmb",
 	Pick_Block = "mmb",
 	Place = "rmb",
+	Interact = "interact",
 	Open_Inventory = "i",
 	Scroll = "mousewheel",
 	Prev_Block = "z",
@@ -32,9 +33,10 @@ bindOrder = {
 		
 bindNames = {
 	Mine = "Mine",
+	Pick_Block = "Pick Block",
 	Place = "Place",
+	Interact = "Interact",
 	Open_Inventory = "Open Inventory",
-	Open_Menu = "Open Menu",
 	Scroll = "Scroll",
 	Prev_Block = "Previous Block",
 	Next_Block = "Next Block",
@@ -43,6 +45,7 @@ bindNames = {
 	Quit_Tool = "Quit Tool",
 	--Set_Offset = "Set Offset",
 	--Reset_Special_Blocks = "Reset special blocks",
+	Open_Menu = "Open Menu",
 }
 
 function resetKeybinds()

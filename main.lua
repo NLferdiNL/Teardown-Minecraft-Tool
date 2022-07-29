@@ -21,11 +21,10 @@ local toolSlot = nil
 -- TODO: Add corner stairs.
 -- TODO: Add sideways torches. (Use joints or just merge?) (Redstone torches too!!)
 -- TODO: Add fence gates for the Fence Update.
--- TODO: Update Redstone to Redstone Connection laying.
 -- TODO: Implement repeater delay toggle.
--- TODO: Implement repeater locking.
--- TODO: Implement button functionality.
+-- TODO: Implement repeater locking functionality.
 -- TODO: Replace dev art for Dust, Repeater, Lamp
+-- TODO: Fix redstone connection size on non dust connection.
 -- MAYBE: Trapdoor use log alignment?
 
 local toolVox = "MOD/vox/tool.vox"
@@ -238,7 +237,12 @@ function tick(dt)
 		return
 	end
 	
-	local playerInteractingWithAimShape = GetPlayerInteractShape() == shape
+	local playerInteractShape = GetPlayerInteractShape()
+	local playerInteractingWithAimShape = playerInteractShape == shape
+	
+	if playerInteractingWithAimShape and InputPressed(binds["Interact"]) then
+		Redstone_Interact(playerInteractShape)
+	end
 	
 	if (InputPressed(binds["Place"]) or InputDown(binds["Place"])) and (GetPlayerGrabBody() == 0 or GetPlayerGrabShape() == 0) and not playerInteractingWithAimShape then
 		if InputDown(binds["Place"]) then
