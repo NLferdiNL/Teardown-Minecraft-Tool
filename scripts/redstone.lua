@@ -23,53 +23,46 @@ local blockSize = origBlockSize * mult
 
 local font = "MOD/fonts/MinecraftRegular.ttf"
 
+local fakePoweredBlocks = {}
+
 function redstone_init()
 
 end
 
 function redstone_update(dt)
-	--local ax = 0
-	--local ay = 0
-	--local az = 0
-	--test = 0
-	--local liveCount = 0
-	--local repeaterQueue = {}
-	
-	--local repeaterTest = 0
-	
 	for x, xArray in pairs(redstoneDB) do
-		--ax = ax + 1
 		for y, yArray in pairs(xArray) do
-			--ay = ay + 1
 			for z, rsBlockData in pairs(yArray) do
-				--az = az + 1
 				if IsShapeBroken(rsBlockData[1]) then
 					Redstone_Remove(Vec(x, y, z))
 				elseif rsBlockData ~= nil then
-				--elseif rsBlockData[2] == 124 then
-					--repeaterQueue[#repeaterQueue + 1] = {x, y, z, rsBlockData}
-				--else
-					--[[if rsBlockData[2] == 124 then
-						repeaterTest = repeaterTest + 1
-					end]]--
 					HandleRedstone(x, y, z, rsBlockData, dt)
-					--liveCount = liveCount + 1
 				end
 			end
 		end
 	end
 	
-	--DebugWatch("repeaterTest", repeaterTest)
+	for i = 1, #fakePoweredBlocks do
+		local currFake = fakePoweredBlocks[i]
+		
+		local pos = GetBlockCenter(currFake[1])
+		
+		HandleRedstone(pos[1], pos[2], pos[3], currFake[2], dt)
+		
+		local currSoft = GetTagValue(currFake[2][1], "minecraftredstonesoftpower")
+		local currHard = GetTagValue(currFake[2][1], "minecraftredstonehardpower")
+		
+		local lastSoft = GetTagValue(currFake[2][1], "minecraftredstonesoftpowerlast")
+		local lastHard = GetTagValue(currFake[2][1], "minecraftredstonehardpowerlast")
+		
+		SetTag(currFake[2][1], "minecraftredstonesoftpowerlast", currSoft)
+		SetTag(currFake[2][1], "minecraftredstonehardpowerlast", currHard)
+		
+		SetTag(currFake[2][1], "minecraftredstonesoftpower", 0)
+		SetTag(currFake[2][1], "minecraftredstonehardpower", 0)
+	end
 	
-	--[[for i = 1, #repeaterQueue do
-		HandleRedstone(repeaterQueue[i][1], repeaterQueue[i][2], repeaterQueue[i][3], repeaterQueue[i][4])
-	end]]--
-	
-	--DebugWatch("x", ax)
-	--DebugWatch("y", ay)
-	--DebugWatch("z", az)
-	--DebugWatch("recorded", rsCount)
-	--DebugWatch("live", liveCount)
+	fakePoweredBlocks = {}
 end
 
 function Redstone_Draw(dt)
@@ -179,23 +172,12 @@ end
 function Redstone_Interact(shape)
 	local pos = GetBlockCenter(shape)
 	
-	if redstoneDB[pos[1]] == nil then
-		return
-	end
-	
-	if redstoneDB[pos[1]][pos[2]] == nil then
-		return
-	end
-	
-	if redstoneDB[pos[1]][pos[2]][pos[3]] == nil then
-		return
-	end
+	local rsBlockData = GetFromDB(pos[1], pos[2], pos[3])
 	
 	if rsBlockData[6] == nil or rsBlockData[6][1] ~= "interact" then
-		return
+		return nil
 	end
 	
-	local rsBlockData = redstoneDB[pos[1]][pos[2]][pos[3]]
 	rsBlockData[3] = 16
 	rsBlockData[6][3] = rsBlockData[6][2]
 end
@@ -210,7 +192,30 @@ function ConnectionToTable(str)
 	return returnTable
 end
 
-function GetAdjecent(x, y, z)
+function GetFakeBlockData(shape)
+	if shape == nil then
+		return nil
+	end
+	
+	local softBlockId = tonumber(GetTagValue(shape, "minecraftblockid"))
+	local softPower = tonumber(GetTagValue(shape, "minecraftredstonesoftpowerlast"))
+	local hardPower = tonumber(GetTagValue(shape, "minecraftredstonehardpowerlast"))
+	
+	if softPower == nil then
+		softPower = 0
+	end
+	
+	if hardPower == nil then
+		hardPower = 0
+	end
+	
+	return {shape, softBlockId, hardPower, "", hardPower, nil, softPower}
+end
+
+function GetAdjecent(x, y, z, shape)
+	local frontAltBlock = nil
+	local rearAltBlock = nil
+	
 	local adjecentRs = {}
 	
 	for aX = x - blockSize, x + blockSize, blockSize * 2 do
@@ -219,6 +224,11 @@ function GetAdjecent(x, y, z)
 		if redstoneDB[aX] ~= nil and redstoneDB[aX][y] ~= nil then
 			if redstoneDB[aX][y][z] ~= nil then
 				adjecentRs[#adjecentRs + 1] = {redstoneDB[aX][y][z], {aX, y, z}}
+			else
+				local fakeBlock = GetNonRedstoneBlock(rsShape, Vec(x / mult, y / mult, z / mult))
+				local fakeRsData = GetFakeBlockData(frontAltBlock)
+				
+				adjecentRs[#adjecentRs + 1] = fakeRsData
 			end
 		end
 	end
@@ -229,6 +239,11 @@ function GetAdjecent(x, y, z)
 		if redstoneDB[x] ~= nil and redstoneDB[x][y] ~= nil  then
 			if redstoneDB[x][y][aZ] ~= nil then
 				adjecentRs[#adjecentRs + 1] = {redstoneDB[x][y][aZ], {x, y, aZ}}
+			else
+				local fakeBlock = GetNonRedstoneBlock(rsShape, Vec(x / mult, y / mult, z / mult))
+				local fakeRsData = GetFakeBlockData(frontAltBlock)
+				
+				adjecentRs[#adjecentRs + 1] = fakeRsData
 			end
 		end
 	end
@@ -291,6 +306,24 @@ function roundOne(a)
 	--return math.floor(a * 10)/10
 end
 
+function GetNonRedstoneBlock(shape, localSide)
+	localSide[1] = localSide[1] * origBlockSize
+	localSide[2] = localSide[2] * origBlockSize
+	localSide[3] = localSide[3] * origBlockSize
+	
+	local shapeTransform = GetShapeWorldTransform(shape)
+	
+	local side = TransformToParentPoint(shapeTransform, localSide)
+	
+	local searchSize = {origBlockSize, origBlockSize, origBlockSize}
+	
+	local objectsOnSide = CollisionCheckCenterPivot(side, searchSize)
+	
+	objectsOnSide = FilterNonBlocks(objectsOnSide)
+	
+	return objectsOnSide[1]
+end
+
 function DrawInteractText(x, y, z, rsBlockData, dt, aimShape)
 	local rsShape = rsBlockData[1]
 	local rsBlockId = rsBlockData[2]
@@ -330,6 +363,7 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 	local rsConnections = rsBlockData[4]
 	local rsPowerLastTick = rsBlockData[5]
 	local rsExtra = rsBlockData[6]
+	local rsSoftPower = rsBlockData[7] -- Only valid for fake blocks.
 	
 	if rsBlockId == 12 then
 		if rsPower <= 0 then
@@ -364,16 +398,44 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 		local frontRsData = GetFromDB(frontObject[1], frontObject[2], frontObject[3])
 		local rearRsData = GetFromDB(rearObject[1], rearObject[2], rearObject[3])
 		
+		local frontAltBlock = nil
+		local rearAltBlock = nil
+		
+		if frontRsData == nil then
+			frontAltBlock = GetNonRedstoneBlock(rsShape, Vec(0.5, 0.5, -0.5))
+			frontRsData = GetFakeBlockData(frontAltBlock)
+		end
+		
+		if rearRsData == nil then
+			rearAltBlock = GetNonRedstoneBlock(rsShape, Vec(0.5, 0.5, 1.5))
+			rearRsData = GetFakeBlockData(rearAltBlock)
+		end
+		
+		if rearRsData ~= nil and rearRsData[7] ~= nil and rearRsData[3] <= 0 then
+			rearRsData[3] = rearRsData[7]
+		end
+		
 		if (rearRsData ~= nil and (rearRsData[3] > 0 or rearRsData[5] > 0)) or rsExtra[3] then
 			SetShapeEmissiveScale(rsShape, 1)
 			if rsExtra[2] > 0 then
 				rsExtra[3] = true
 				rsExtra[2] = rsExtra[2] - dt
-				--DebugWatch("AHH", 2)
 			end
 			
-			if frontRsData ~= nil and (frontRsData[2] == 123 or frontRsData[2] == 127) and rsExtra[2] <= 0 then
-				frontRsData[3] = 15
+			local usableBlock = false
+			
+			if frontRsData ~= nil then
+				usableBlock = frontRsData[2] ~= 46 and frontRsData[2] ~= 124 and frontRsData[2] ~= 125 and frontRsData[2] ~= 126
+			end
+			
+			if frontRsData ~= nil and usableBlock and rsExtra[2] <= 0 then
+				if frontAltBlock ~= nil then
+					SetTag(frontAltBlock, "minecraftredstonehardpower", 16)
+					SetTag(frontAltBlock, "minecraftredstonehardpowerlast", 16)
+					fakePoweredBlocks[#fakePoweredBlocks + 1] = {frontAltBlock, frontRsData}
+				else
+					frontRsData[3] = 15
+				end
 			end
 			
 			if rsExtra[2] <= 0 then
@@ -410,7 +472,7 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 		return
 	end
 	
-	local adjecentRs = GetAdjecent(x, y, z); -- {RSDATA, POS}
+	local adjecentRs = GetAdjecent(x, y, z, rsShape); -- {RSDATA, POS}
 	
 	if rsBlockId ~= 46 and rsBlockId ~= 125 and rsBlockId ~= 126 then
 		SetShapeEmissiveScale(rsShape, 1 / 15 * rsPower)
@@ -433,18 +495,42 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 		SetShapeEmissiveScale(currConn, 1 / 15 * currPower)
 	end
 	
+	if rsSoftPower ~= nil then
+		local upRsData = GetFromDB(x, y + blockSize, z)
+		
+		if upRsData ~= nil then
+			adjecentRs[#adjecentRs + 1] = {upRsData, Vec(x, y + blockSize, z), false}
+		end
+		
+		local downRsData = GetFromDB(x, y + blockSize, z)
+	end
+	
+	if rsBlockId == 123 then
+		local fakeDownBlock = GetNonRedstoneBlock(rsShape, Vec(0.5, -0.5, 0.5))
+		local fakeDownRsData = GetFakeBlockData(fakeDownBlock)
+		
+		if fakeDownRsData ~= nil then
+			adjecentRs[#adjecentRs + 1] = {fakeDownRsData, Vec(x, y - blockSize, z), true}
+		end
+	end
 	
 	for i = 1, #adjecentRs do
 		local currAdjData = adjecentRs[i]
 		
 		local currRsData = currAdjData[1]
 		local currRsPos = currAdjData[2]
+		local currRsToSoftPower = currAdjData[3] -- Only valid for fake blocks.
 		
 		local currRsShape = currRsData[1]
 		local currRsBlockId = currRsData[2]
 		local currRsPower = currRsData[3]
+		local currRsSoftPower = currRsData[7] -- Only valid for fake blocks.
 		
-		if currRsData[2] == 12 or currRsData[2] == 127  then
+		if currRsToSoftPower ~= nil and currRsToSoftPower then
+			SetTag(currRsShape, "minecraftredstonesoftpower", rsPower)
+			SetTag(currRsShape, "minecraftredstonesoftpowerlast", rsPower)
+			fakePoweredBlocks[#fakePoweredBlocks + 1] = {currRsShape, currRsData}
+		elseif currRsData[2] == 12 or currRsData[2] == 127  then
 			if rsPower >= 1 then
 				currRsData[3] = rsPower
 			end
