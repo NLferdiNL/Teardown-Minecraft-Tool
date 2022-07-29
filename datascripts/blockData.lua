@@ -1,6 +1,6 @@
 	
 blocks = 
-	{ --Block Name, 				      		Vox Path, 							      			Axis Rotation, 		  		Block Properties,			Block Size,					Offset,						specialFeatures(shape), alwaysProp, blockType (block, door, slab, fence, stairs, trapdoor, redstone), ExtraXML, AltXML}
+	{ --Block Name, 				      		Vox Path, 							      			Axis Rotation, 		  		Block Properties,			Block Size,					Offset,						specialFeatures(shape), alwaysProp, blockType (block, door, slab, fence, stairs, trapdoor, redstone, fencegate), ExtraXML, AltXML}
 		{"Grass", 			      				"MOD/vox/blocks/grass.vox", 			      		{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil},
 		{"Dirt", 			    	  			"MOD/vox/blocks/dirt.vox", 			     			{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil},
 		{"Stone", 	  		      				"MOD/vox/blocks/stone.vox", 			     		{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil},
@@ -128,4 +128,5 @@ blocks =
 		{"Stone Button", 						"MOD/vox/blocks/stonebutton.vox",					{x = 0, y = 0,  z = 0}, 	"tags='interact=Interact'",	{x = 16, y = 16, z = 16},	{x = 15, y = 16, z = 16},	nil, 					false, 		7, nil},
 		{"Oak Button", 							"MOD/vox/blocks/oakbutton.vox",						{x = 0, y = 0,  z = 0}, 	"tags='interact=Interact'",	{x = 16, y = 16, z = 16},	{x = 15, y = 16, z = 16},	nil, 					false, 		7, nil},
 		{"Redstone Lamp", 						"MOD/vox/blocks/redstonelamp.vox",					{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		7, "<light tags='LAMPID' pos='0.8 0.8 0.8' type='sphere' color='0.71 0.83 0.68' size='0.25 0.25' unshadowed='1.25'/>"},
+		{"Oak Fence Gate", 						"MOD/vox/blocks/oakfencegate.xml",					{x = 0, y = 1,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		8, nil},
 	}

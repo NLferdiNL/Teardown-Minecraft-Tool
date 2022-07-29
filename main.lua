@@ -20,14 +20,13 @@ local toolSlot = nil
 -- TODO: Fix block break particles moving one way, sometimes.
 -- TODO: Add corner stairs.
 -- TODO: Add sideways torches. (Use joints or just merge?) (Redstone torches too!!)
--- TODO: Add fence gates for the Fence Update.
 -- TODO: Implement repeater locking functionality.
 -- TODO: Implement redstone torches.
 -- TODO: Replace dev art for Dust, Repeater, Lamp
 -- TODO: Fix button rotation.
 -- TODO: Add button hard powering.
--- TODO: Fix redstone connection size on non dust connection.
--- TODO: Fix button > repeater compare number with boolean.
+-- TODO: TNT Fuse implementation. Use DrawShapeHighlight for the aniamtion.
+-- TODO: Fix RSExtra going nil when hard powering upwards.
 -- TODO: Repeater stay on delay?
 -- MAYBE: Trapdoor use log alignment?
 
@@ -83,7 +82,7 @@ for i = 1, mainInventorySize + miscInventorySlots do
 	end
 	
 	if i == 32 then
-		inventory[i][1] = 123
+		inventory[i][1] = 128
 	end
 	
 	if i == 33 then
@@ -604,6 +603,27 @@ function PlaceBlock()
 			if selectedBlockId == 123 then
 				connectedShapesTag = ConnectToAdjecentBlocks(selectedBlockData, adjecentBlocks, tempPos, redstoneOffset, {12, 46, 123, 124, 125, 126, 127}, 4) -- Vec(-0.155, 0, -0.205)
 			end
+		else
+			local tempRot = QuatEuler(blockEulerX, blockEulerY, blockEulerZ)
+			local tempTransform = Transform(gridAligned, tempRot, 0)
+			
+			local gateLocalOffset = Vec()
+			local blockRotY = blockEulerY / 90
+			
+			if blockRotY == -1 then -- Why do math when brute force work.
+				gateLocalOffset = Vec(gridModulo / 2, gridModulo / 16 * 5, -gridModulo / 2)
+			elseif blockEulerY / 90 == 0 then
+				gateLocalOffset = Vec(gridModulo / 2, gridModulo / 16 * 5, gridModulo / 2)
+			elseif blockRotY == 1 then
+				gateLocalOffset = Vec(-gridModulo / 2, gridModulo / 16 * 5, gridModulo / 2)
+			elseif blockRotY == 2 then
+				gateLocalOffset = Vec(-gridModulo / 2, gridModulo / 16 * 5, -gridModulo / 2)
+			end
+			
+			local gateOffset = TransformToParentPoint(tempTransform, gateLocalOffset)
+			
+			gridAligned = gateOffset
+			blockPosOffset = Vec()
 		end
 	end
 	
@@ -661,6 +681,16 @@ function PlaceBlock()
 		else
 			Redstone_Add(selectedBlockId, block, connectedShapesTag)
 		end
+	end
+	
+	if selectedBlockData[9] == 8 then
+		local gateR = FindShape("gateR", true)
+		local gateL = FindShape("gateL", true)
+		
+		RemoveTag(gateR, "gateR") --To prevent future findings.
+		RemoveTag(gateL, "gateL")
+		
+		connectedShapesTag = connectedShapesTag .. gateR .. " " .. gateL
 	end
 	
 	PlaySound(interactionSound, gridAligned)
@@ -1044,7 +1074,8 @@ function SpawnAdjustedConnector(selectedBlockData, selectedBlockId, otherShape, 
 			local isValidBlockType = otherShapeBlockType == 1 or
 									 otherShapeBlockType == 3 or
 									 otherShapeBlockType == 5 or
-									 (otherShapeBlockType == 7 and selectedBlockId == 123 and otherBlockId ~= 123)
+									 (otherShapeBlockType == 7 and selectedBlockId == 123 and otherBlockId ~= 123) or
+									 otherShapeBlockType == 8
 			
 			if math.abs(dir[i]) == 1 and isValidBlockType then
 				local selectedBlockType = selectedBlockData[9]
