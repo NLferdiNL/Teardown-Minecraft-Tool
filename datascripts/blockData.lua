@@ -129,4 +129,5 @@ blocks =
 		{"Oak Button", 							"MOD/vox/blocks/oakbutton.vox",						{x = 1, y = 1,  z = 1}, 	"tags='interact=Interact'",	{x = 16, y = 16, z = 16},	{x = 15, y = 16, z = 16},	nil, 					false, 		7, nil},
 		{"Redstone Lamp", 						"MOD/vox/blocks/redstonelamp.vox",					{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		7, "<light tags='LAMPID' pos='0.8 0.8 0.8' type='sphere' color='0.71 0.83 0.68' size='0.25 0.25' unshadowed='1.25'/>"},
 		{"Oak Fence Gate", 						"MOD/vox/blocks/oakfencegate.xml",					{x = 0, y = 1,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		8, nil},
+		{"Redstone Torch", 						"MOD/vox/blocks/redstonetorch.vox",					{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = -3, y = -3, z = -3},	nil, 					false, 		7, "<light tags='LAMPID' pos='0.8 0.8 0.8' type='sphere' color='0.71 0.20 0.00' size='0.25 0.25' unshadowed='1.25'/>"},
 	}

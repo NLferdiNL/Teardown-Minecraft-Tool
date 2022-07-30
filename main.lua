@@ -19,14 +19,16 @@ local toolSlot = nil
 -- TODO: Fix "block of ___" insides to be random.
 -- TODO: Fix block break particles moving one way, sometimes.
 -- TODO: Add corner stairs.
--- TODO: Add sideways torches. (Use joints or just merge?) (Redstone torches too!!)
 -- TODO: Implement repeater locking functionality.
 -- TODO: Implement redstone torches.
 -- TODO: Replace dev art for Dust, Repeater, Lamp
--- TODO: Add button hard powering.
 -- TODO: TNT Fuse implementation. Use DrawShapeHighlight for the aniamtion.
--- TODO: Fix RSExtra going nil when hard powering upwards.
--- TODO: Repeater stay on delay?
+-- TODO: Fix RSExtra going nil when repeaters powering blocks.
+-- TODO: Add redstone torch hard powering.
+-- TODO: Add supported blocks breaking. (Use connected blocks, if connected has id process normally?)
+-- TODO: Add redstone dust ascending and descending.
+-- TODO: Redstone torch checking RSDB for attached block.
+-- MAYBE: Repeater stay on delay?
 -- MAYBE: Trapdoor use log alignment?
 
 local toolVox = "MOD/vox/tool.vox"
@@ -102,6 +104,10 @@ for i = 1, mainInventorySize + miscInventorySlots do
 	
 	if i == 37 then
 		inventory[i][1] = 127
+	end
+	
+	if i == 38 then
+		inventory[i][1] = 129
 	end
 end
 
@@ -690,7 +696,7 @@ function PlaceBlock()
 			if selectedBlockId == 123 then
 				connectedShapesTag = ConnectToAdjecentBlocks(selectedBlockData, adjecentBlocks, tempPos, redstoneOffset, {12, 46, 123, 124, 125, 126, 127}, 4) -- Vec(-0.155, 0, -0.205)
 			end
-		else
+		elseif selectedBlockData[9] == 8 then
 			local tempRot = QuatEuler(blockEulerX, blockEulerY, blockEulerZ)
 			local tempTransform = Transform(gridAligned, tempRot, 0)
 			
@@ -714,6 +720,41 @@ function PlaceBlock()
 		end
 	end
 	
+	if selectedBlockId == 16 or selectedBlockId == 129 then
+		local gridAlignedHitPoint = getGridAlignedPos(VecAdd(hitPoint, VecScale(normal, -gridModulo * 0.1)))
+		local playerRotX, playerRotY, playerRotZ = GetQuatEuler(playerCameraTransform.rot)
+		
+		if gridAlignedHitPoint[2] == gridAligned[2] then
+			blockEulerZ = 15
+			blockPosOffset[2] = blockPosOffset[2] + gridModulo / 16
+			
+			if gridAlignedHitPoint[1] == gridAligned[1] then
+				if gridAlignedHitPoint[3] > gridAligned[3] then
+					blockEulerY = -90
+					blockPosOffset[1] = blockPosOffset[1] + gridModulo
+					blockPosOffset[3] = blockPosOffset[3] + gridModulo * 0.5
+				else
+					blockPosOffset[3] = blockPosOffset[3] + gridModulo * 0.5
+					blockEulerY = 90
+				end
+			elseif gridAlignedHitPoint[3] == gridAligned[3] then
+				if gridAlignedHitPoint[1] > gridAligned[1] then
+					--blockPosOffset[1] = blockPosOffset[1] + gridModulo
+					blockPosOffset[1] = blockPosOffset[1] + gridModulo * 0.5
+				else
+					blockPosOffset[1] = blockPosOffset[1] + gridModulo * 0.5
+					blockPosOffset[3] = blockPosOffset[3] + gridModulo
+					blockEulerY = 180
+				end
+			end
+		elseif gridAlignedHitPoint[2] > gridAligned[2] then
+			DebugPrint("AHH")
+			blockEulerZ = 180
+			blockPosOffset[1] = blockPosOffset[1] + gridModulo
+			blockPosOffset[2] = blockPosOffset[2] + gridModulo
+		end
+	end
+	
 	gridAligned = VecAdd(gridAligned, blockPosOffset)
 	blockRot = QuatEuler(blockEulerX, blockEulerY, blockEulerZ)
 	
@@ -734,6 +775,9 @@ function PlaceBlock()
 	if selectedBlockData[10] ~= nil then
 		extraBlockXML = selectedBlockData[10]
 		if selectedBlockId == 127 then
+			uniqueLightId = uniqueLightId + 1
+			extraBlockXML = string.gsub(extraBlockXML, "LAMPID", "MCL_" .. tostring(uniqueLightId))
+		elseif selectedBlockId == 129 then
 			uniqueLightId = uniqueLightId + 1
 			extraBlockXML = string.gsub(extraBlockXML, "LAMPID", "MCL_" .. tostring(uniqueLightId))
 		end
@@ -767,6 +811,15 @@ function PlaceBlock()
 			Redstone_Add(selectedBlockId, block, connectedShapesTag, shape)
 		elseif selectedBlockId == 127 then
 			Redstone_Add(selectedBlockId, block, connectedShapesTag, "MCL_" .. tostring(uniqueLightId))
+		elseif selectedBlockId == 129 then
+			local otherBlock = shape
+			local otherBlockId = GetTagValue(shape, "minecraftblockid")
+			
+			if otherBlockId == nil or otherBlockId == 0 then
+				otherBlock = nil
+			end
+			
+			Redstone_Add(selectedBlockId, block, connectedShapesTag, {"MCL_" .. tostring(uniqueLightId), otherBlock})
 		else
 			Redstone_Add(selectedBlockId, block, connectedShapesTag)
 		end

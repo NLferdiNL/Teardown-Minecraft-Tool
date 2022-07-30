@@ -7,6 +7,7 @@ redstoneDB = {}
 -- Stone Button = 125
 -- Wood Button = 126
 -- Lamp = 127
+-- Redstone Torch = 129
 
 -- rsBlockData = {shape, block id, power, connection shapes, power last tick, extra(repeaterdata)}
 -- Origin = first block, then rest is pos + origin
@@ -42,7 +43,7 @@ function redstone_update(dt)
 		end
 	end
 	
-	for i = 1, #fakePoweredBlocks do
+	for i = #fakePoweredBlocks, 1, -1 do
 		local currFake = fakePoweredBlocks[i]
 		
 		local pos = GetBlockCenter(currFake[1])
@@ -60,9 +61,22 @@ function redstone_update(dt)
 		
 		SetTag(currFake[2][1], "minecraftredstonesoftpower", 0)
 		SetTag(currFake[2][1], "minecraftredstonehardpower", 0)
+		
+		lastSoft = tonumber(lastSoft)
+		lastHard = tonumber(lastHard)
+		
+		if lastSoft == nil then
+			lastSoft = 0
+		end
+		
+		if lastHard == nil then
+			lastHard = 0
+		end
+		
+		if lastSoft <= 0 and lastHard <= 0 then 
+			--fakePoweredBlocks[i] = nil
+		end
 	end
-	
-	fakePoweredBlocks = {}
 end
 
 function Redstone_Draw(dt)
@@ -120,6 +134,11 @@ function Redstone_Add(id, shape, connections, extraData)
 		extra = {"interact", 1.5, 0.0, extraData}
 	elseif id == 127 then
 		extra = FindLight(extraData, true)
+	elseif id == 129 then
+		local light = FindLight(extraData[1])
+		local attachedBlock = extraData[2]
+		
+		extra = {light, attachedBlock}
 	end
 	
 	redstoneDB[pos[1]][pos[2]][pos[3]] = {shape, id, power, ConnectionToTable(connections), power, extra, 0}
@@ -490,6 +509,62 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 		rsBlockData[3] = 0
 		
 		return
+	elseif rsBlockId == 129 then
+		local rsLight = rsExtra[1]
+		local attachedShape = rsExtra[2]
+		
+		if attachedShape == nil then
+			return
+		end
+		
+		local hardPower = GetTagValue(attachedShape, "minecraftredstonehardpower")
+		local hardPowerLast = GetTagValue(attachedShape, "minecraftredstonehardpowerlast")
+		
+		local softPower = GetTagValue(attachedShape, "minecraftredstonesoftpower")
+		local softPowerLast = GetTagValue(attachedShape, "minecraftredstonesoftpowerlast")
+		
+		if hardPower == nil or hardPower == "" then
+			hardPower = 0
+		else
+			hardPower = tonumber(hardPower)
+		end
+		
+		if hardPowerLast == nil or hardPowerLast == ""  then
+			hardPowerLast = 0
+		else
+			hardPowerLast = tonumber(hardPowerLast)
+		end
+		
+		if softPower == nil or softPower == ""  then
+			softPower = 0
+		else
+			softPower = tonumber(softPower)
+		end
+		
+		if softPowerLast == nil or softPowerLast == ""  then
+			softPowerLast = 0
+		else
+			softPowerLast = tonumber(softPowerLast)
+		end
+		
+		DebugWatch("hardPower", hardPower)
+		DebugWatch("hardPowerLast", hardPowerLast)
+		DebugWatch("softPower", softPower)
+		DebugWatch("softPowerLast", softPowerLast)
+		
+		if hardPower > 0 or hardPowerLast > 0 or softPower > 0 or softPowerLast > 0 then
+			rsBlockData[3] = 0
+		else
+			rsBlockData[3] = 16
+		end
+		
+		if rsBlockData[3] >=1 then
+			SetShapeEmissiveScale(currConn, 1)
+		else
+			SetShapeEmissiveScale(currConn, 0)
+		end
+		
+		SetLightEnabled(rsLight, rsBlockData[3] >= 1)
 	end
 	
 	local adjecentRs = GetAdjecent(x, y, z, rsShape); -- {RSDATA, POS}
@@ -522,7 +597,7 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 			adjecentRs[#adjecentRs + 1] = {upRsData, Vec(x, y + blockSize, z), false}
 		end
 		
-		local downRsData = GetFromDB(x, y + blockSize, z)
+		--local downRsData = GetFromDB(x, y + blockSize, z)
 	end
 	
 	if rsBlockId == 123 then
@@ -561,7 +636,7 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 		end
 	end
 	
-	if rsBlockId ~= 46 and rsBlockId ~= 125 and rsBlockId ~= 126 then
+	if rsBlockId ~= 46 and rsBlockId ~= 125 and rsBlockId ~= 126 and rsBlockId ~= 129 then
 		rsBlockData[5] = rsPower
 		rsBlockData[3] = 0
 	end
