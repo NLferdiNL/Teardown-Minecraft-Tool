@@ -23,7 +23,6 @@ local toolSlot = nil
 -- TODO: Implement repeater locking functionality.
 -- TODO: Implement redstone torches.
 -- TODO: Replace dev art for Dust, Repeater, Lamp
--- TODO: Fix button rotation.
 -- TODO: Add button hard powering.
 -- TODO: TNT Fuse implementation. Use DrawShapeHighlight for the aniamtion.
 -- TODO: Fix RSExtra going nil when hard powering upwards.
@@ -82,7 +81,7 @@ for i = 1, mainInventorySize + miscInventorySlots do
 	end
 	
 	if i == 32 then
-		inventory[i][1] = 128
+		inventory[i][1] = 123
 	end
 	
 	if i == 33 then
@@ -477,7 +476,97 @@ function PlaceBlock()
 			end
 		end
 	else
-		if (selectedBlockData[3].x ~= 0 or selectedBlockData[3].z ~= 0) and selectedBlockData[3].y == 0 then
+		if (selectedBlockData[3].x ~= 0 and selectedBlockData[3].y ~= 0 and selectedBlockData[3].z ~= 0) then
+			local gridAlignedHitPoint = getGridAlignedPos(VecAdd(hitPoint, VecScale(normal, -gridModulo * 0.1)))
+			--local tempGridTransform = Transform(gridAlignedHitPoint, QuatEuler(blockEulerX, blockEulerY, blockEulerZ))
+			
+			if gridAlignedHitPoint[2] > gridAligned[2] then
+				blockEulerZ = blockEulerZ + 180
+				blockPosOffset[1] = blockPosOffset[1] + gridModulo
+				blockPosOffset[2] = blockPosOffset[2] + gridModulo
+			elseif gridAlignedHitPoint[2] == gridAligned[2] then
+				if gridAlignedHitPoint[1] == gridAligned[1] then
+					blockEulerX = blockEulerX + 90
+					blockPosOffset[2] = blockPosOffset[2] + gridModulo
+				
+					if gridAlignedHitPoint[3] > gridAligned[3] then
+						blockEulerY = blockEulerY + 180
+						blockPosOffset[1] = blockPosOffset[1] + gridModulo
+						blockPosOffset[3] = blockPosOffset[3] + gridModulo
+					end
+				else
+					blockEulerX = blockEulerX + 90
+					if gridAlignedHitPoint[1] > gridAligned[1] then
+						blockEulerY = blockEulerY - 90
+						blockPosOffset[1] = blockPosOffset[1] + gridModulo
+						blockPosOffset[2] = blockPosOffset[2] + gridModulo
+					else
+						blockEulerY = blockEulerY + 90
+						blockPosOffset[2] = blockPosOffset[2] + gridModulo
+						blockPosOffset[3] = blockPosOffset[3] + gridModulo
+					end
+				end
+			end
+			
+			if gridAlignedHitPoint[3] == playerPos[3] and gridAlignedHitPoint[2] ~= gridAligned[2] then
+				blockEulerY = blockEulerY + 90
+				if gridAlignedHitPoint[2] > gridAligned[2] then
+					blockPosOffset[1] = blockPosOffset[1] - gridModulo
+				else
+					blockPosOffset[3] = blockPosOffset[3] + gridModulo
+				end
+			end
+			
+			--[[local gridAlignedHitPoint = getGridAlignedPos(VecAdd(hitPoint, VecScale(normal, -gridModulo * 0.1)))
+			
+			if gridAlignedHitPoint[1] == gridAligned[1] and not gridAlignedHitPoint[2] == gridAligned[2] then
+				DebugPrint("1")
+			elseif gridAlignedHitPoint[3] == gridAligned[3] and not gridAlignedHitPoint[2] == gridAligned[2] then
+				DebugPrint("2")
+			else
+				if gridAlignedHitPoint[2] < gridAligned[2] then
+					DebugPrint("3")
+				else
+					blockEulerZ = blockEulerZ + 180
+					blockPosOffset[1] = blockPosOffset[1] + gridModulo
+					blockPosOffset[2] = blockPosOffset[2] + gridModulo
+					DebugPrint("4")
+				end
+				
+				if gridAlignedHitPoint[1] == gridAligned[1] then
+					DebugPrint("4")
+					blockEulerY = blockEulerY + 90
+					
+					if gridAlignedHitPoint[2] > gridAligned[2] then
+						blockPosOffset[1] = blockPosOffset[1] - gridModulo
+					elseif gridAlignedHitPoint[2] < gridAligned[2] then
+						blockPosOffset[3] = blockPosOffset[3] + gridModulo
+					end
+				elseif gridAlignedHitPoint[3] == gridAligned[3] then
+					DebugPrint("5")
+					blockEulerY = blockEulerY + 180
+					if gridAlignedHitPoint[2] > gridAligned[2] then
+						blockPosOffset[1] = blockPosOffset[3] + gridModulo
+					elseif gridAlignedHitPoint[2] < gridAligned[2] then
+						blockPosOffset[3] = blockPosOffset[1] - gridModulo
+					end
+				end
+			end]]--
+			
+			--[[if gridAlignedHitPoint[2] == gridAligned[2] then
+				if gridAlignedHitPoint[1] == gridAligned[1] then
+					DebugPrint("1")
+				elseif gridAlignedHitPoint[3] == gridAligned[3] then
+					DebugPrint("2")
+				end
+			else
+				if gridAlignedHitPoint[1] == gridAligned[1] then
+					DebugPrint("3")
+				elseif gridAlignedHitPoint[3] == gridAligned[3] then
+					DebugPrint("4")
+				end
+			end]]--
+		elseif (selectedBlockData[3].x ~= 0 or selectedBlockData[3].z ~= 0) and selectedBlockData[3].y == 0 then
 			local gridAlignedHitPoint = getGridAlignedPos(VecAdd(hitPoint, VecScale(normal, -gridModulo * 0.1)))
 			
 			if gridAlignedHitPoint[1] == gridAligned[1] and gridAlignedHitPoint[2] == gridAligned[2] then
@@ -487,9 +576,7 @@ function PlaceBlock()
 				blockEulerZ = 90 * selectedBlockData[3].z
 				blockPosOffset[1] = blockPosOffset[1] + gridModulo
 			end
-		end
-		
-		if selectedBlockData[3].y ~= 0 then
+		elseif selectedBlockData[3].y ~= 0 then
 			if selectedBlockData[9] == 5 and hitPoint[2] + normal[2] * 0.01 > gridAligned[2] + blockSize / 10 / 2 then
 				blockEulerZ = blockEulerZ - 180
 				if playerPos[1] == gridAligned[1] and playerPos[3] < gridAligned[3] then
@@ -676,7 +763,9 @@ function PlaceBlock()
 	end
 	
 	if selectedBlockData[9] == 7 then
-		if selectedBlockId == 127 then
+		if selectedBlockId == 125 or selectedBlockId == 126 then
+			Redstone_Add(selectedBlockId, block, connectedShapesTag, shape)
+		elseif selectedBlockId == 127 then
 			Redstone_Add(selectedBlockId, block, connectedShapesTag, "MCL_" .. tostring(uniqueLightId))
 		else
 			Redstone_Add(selectedBlockId, block, connectedShapesTag)
@@ -690,7 +779,7 @@ function PlaceBlock()
 		RemoveTag(gateR, "gateR") --To prevent future findings.
 		RemoveTag(gateL, "gateL")
 		
-		connectedShapesTag = connectedShapesTag .. gateR .. " " .. gateL
+		connectedShapesTag = connectedShapesTag .. gateR .. " " .. gateL .. " "
 	end
 	
 	PlaySound(interactionSound, gridAligned)

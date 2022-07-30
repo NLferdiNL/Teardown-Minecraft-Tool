@@ -125,8 +125,8 @@ blocks =
 		{"Tinted Glass", 						"MOD/vox/blocks/tintedglass.vox",					{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil},
 		{"Redstone Dust", 						"MOD/vox/blocks/redstonedust.vox",					{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 1,  z = 16},	{x = 15, y = 16, z = 15},	nil, 					false, 		7, nil},
 		{"Redstone Repeater", 					"MOD/vox/blocks/redstonerepeater.vox",				{x = 0, y = 1,  z = 0}, 	"tags='interact=Tick:'",	{x = 16, y = 2,  z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		7, nil},
-		{"Stone Button", 						"MOD/vox/blocks/stonebutton.vox",					{x = 0, y = 0,  z = 0}, 	"tags='interact=Interact'",	{x = 16, y = 16, z = 16},	{x = 15, y = 16, z = 16},	nil, 					false, 		7, nil},
-		{"Oak Button", 							"MOD/vox/blocks/oakbutton.vox",						{x = 0, y = 0,  z = 0}, 	"tags='interact=Interact'",	{x = 16, y = 16, z = 16},	{x = 15, y = 16, z = 16},	nil, 					false, 		7, nil},
+		{"Stone Button", 						"MOD/vox/blocks/stonebutton.vox",					{x = 1, y = 1,  z = 1}, 	"tags='interact=Interact'",	{x = 16, y = 16, z = 16},	{x = 15, y = 16, z = 16},	nil, 					false, 		7, nil},
+		{"Oak Button", 							"MOD/vox/blocks/oakbutton.vox",						{x = 1, y = 1,  z = 1}, 	"tags='interact=Interact'",	{x = 16, y = 16, z = 16},	{x = 15, y = 16, z = 16},	nil, 					false, 		7, nil},
 		{"Redstone Lamp", 						"MOD/vox/blocks/redstonelamp.vox",					{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		7, "<light tags='LAMPID' pos='0.8 0.8 0.8' type='sphere' color='0.71 0.83 0.68' size='0.25 0.25' unshadowed='1.25'/>"},
 		{"Oak Fence Gate", 						"MOD/vox/blocks/oakfencegate.xml",					{x = 0, y = 1,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		8, nil},
 	}

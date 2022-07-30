@@ -115,14 +115,14 @@ function Redstone_Add(id, shape, connections, extraData)
 		SetTag(shape, "interact", "Tick: 0.1")
 		extra = {"interact", 0.1, 0.1, false}
 	elseif id == 125 then
-		extra = {"interact", 1.0, 0.0}
+		extra = {"interact", 1.0, 0.0, extraData}
 	elseif id == 126 then
-		extra = {"interact", 1.5, 0.0}
+		extra = {"interact", 1.5, 0.0, extraData}
 	elseif id == 127 then
 		extra = FindLight(extraData, true)
 	end
 	
-	redstoneDB[pos[1]][pos[2]][pos[3]] = {shape, id, power, ConnectionToTable(connections), power, extra}
+	redstoneDB[pos[1]][pos[2]][pos[3]] = {shape, id, power, ConnectionToTable(connections), power, extra, 0}
 	
 	--DebugPrint("Spawn: " .. VecToString(pos))
 end
@@ -465,6 +465,14 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 		if rsExtra[3] > 0 then
 			rsExtra[3] = rsExtra[3] - dt
 			rsBlockData[3] = 16
+			local otherShape = rsBlockData[6][4]
+		
+			SetTag(otherShape, "minecraftredstonehardpower", 16)
+			SetTag(otherShape, "minecraftredstonehardpowerlast", 16)
+			
+			local fakeRsData = GetFakeBlockData(otherShape)
+			
+			fakePoweredBlocks[#fakePoweredBlocks + 1] = {otherShape, fakeRsData}
 		else
 			rsBlockData[5] = rsBlockData[3]
 			rsBlockData[3] = 0
