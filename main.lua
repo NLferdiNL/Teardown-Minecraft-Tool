@@ -22,13 +22,16 @@ local toolSlot = nil
 -- TODO: Implement repeater locking functionality.
 -- TODO: Implement redstone torches.
 -- TODO: Replace dev art for Dust, Repeater, Lamp
--- TODO: TNT Fuse implementation. Use DrawShapeHighlight for the aniamtion.
--- TODO: Fix RSExtra going nil when repeaters powering blocks.
+-- TODO: TNT Fuse implementation. Use DrawShapeHighlight for the animation.
+-- TODO: Fix RSExtra going nil when repeaters powering blocks. (Repeater may potentially be fakepowering redstone components)
 -- TODO: Add redstone torch hard powering.
 -- TODO: Add supported blocks breaking. (Use connected blocks, if connected has id process normally?)
 -- TODO: Add redstone dust ascending and descending.
 -- TODO: Redstone torch checking RSDB for attached block.
--- MAYBE: Repeater stay on delay?
+-- TODO: Fix torch connections.
+-- TODO: Repeater stay on delay (requires a refactor)
+-- TODO: Torch sideways/downwards power.
+-- MAYBE: Seperate unique redstone comps into seperate.lua files? Would improve readability..
 -- MAYBE: Trapdoor use log alignment?
 
 local toolVox = "MOD/vox/tool.vox"
@@ -385,7 +388,23 @@ function RemoveBlock()
 	
 	local blockData = blocks[blockTag]
 	
-	if blockData[9] == 7 then
+	local blockRedstonePos = GetTagValue(shape, "minecraftredstonepos")
+	
+	local redstonePos = nil
+	
+	if blockRedstonePos ~= nil and blockRedstonePos ~= "" then
+		redstonePos = Vec()
+		local i = 1
+		for posDigit in string.gmatch(blockRedstonePos, "%-?%d+") do
+			redstonePos[i] = tonumber(posDigit)
+			i = i + 1
+		end
+	end
+	
+	if redstonePos ~= nil then
+		DebugPrint(VecToString(redstonePos))
+		Redstone_Remove_Pos(redstonePos[1], redstonePos[2], redstonePos[3])
+	elseif blockData[9] == 7 then
 		Redstone_Remove(shape)
 	end
 	
@@ -755,6 +774,7 @@ function PlaceBlock()
 		end
 	end
 	
+	local gridAlignedPreOffset = VecCopy(gridAligned)
 	gridAligned = VecAdd(gridAligned, blockPosOffset)
 	blockRot = QuatEuler(blockEulerX, blockEulerY, blockEulerZ)
 	
@@ -819,7 +839,15 @@ function PlaceBlock()
 				otherBlock = nil
 			end
 			
-			Redstone_Add(selectedBlockId, block, connectedShapesTag, {"MCL_" .. tostring(uniqueLightId), otherBlock})
+			local offsetPos = nil
+			
+			if blockEulerX ~= 0 or blockEulerY ~= 0 or blockEulerZ ~= 0 then
+				offsetPos = VecAdd(gridAlignedPreOffset, Vec(gridModulo / 2, -0.02, gridModulo / 2))
+			end
+			
+			local returnPos = Redstone_Add(selectedBlockId, block, connectedShapesTag, {"MCL_" .. tostring(uniqueLightId), otherBlock}, offsetPos)--VecSub(gridAligned, blockPosOffset))
+			
+			SetTag(block, "minecraftredstonepos", returnPos[1] .. " " .. returnPos[2] .. " " .. returnPos[3])
 		else
 			Redstone_Add(selectedBlockId, block, connectedShapesTag)
 		end
@@ -1413,7 +1441,7 @@ function renderHud()
 	UiPop()
 end
 
-function GetAimVariables()
+function GetAimVariables()	
 	return hit, hitPoint, distance, normal, shape
 end
 
