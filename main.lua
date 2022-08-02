@@ -26,11 +26,14 @@ local toolSlot = nil
 -- TODO: Fix RSExtra going nil when repeaters powering blocks. (Repeater may potentially be fakepowering redstone components)
 -- TODO: Add redstone torch hard powering.
 -- TODO: Add supported blocks breaking. (Use connected blocks, if connected has id process normally?)
--- TODO: Add redstone dust ascending and descending.
+-- TODO: Add redstone dust ascending and descending connections. (Account for cutting off if block in the way)
 -- TODO: Redstone torch checking RSDB for attached block.
 -- TODO: Fix torch connections.
 -- TODO: Repeater stay on delay (requires a refactor)
 -- TODO: Torch sideways/downwards power.
+-- TODO: Fix shape rotation issues in GetNonRedstoneBlock(shape, localSide, color4).
+-- TODO: Fix repeaters not properly powering blocks up.
+-- TODO: Redstone dust up and down blocking with a block cutting it off.
 -- MAYBE: Seperate unique redstone comps into seperate.lua files? Would improve readability..
 -- MAYBE: Trapdoor use log alignment?
 
@@ -389,6 +392,7 @@ function RemoveBlock()
 	local blockData = blocks[blockTag]
 	
 	local blockRedstonePos = GetTagValue(shape, "minecraftredstonepos")
+	local blockRedstoneInfluenced = GetTagValue(shape, "minecraftredstoneinfluenced")
 	
 	local redstonePos = nil
 	
@@ -404,7 +408,7 @@ function RemoveBlock()
 	if redstonePos ~= nil then
 		DebugPrint(VecToString(redstonePos))
 		Redstone_Remove_Pos(redstonePos[1], redstonePos[2], redstonePos[3])
-	elseif blockData[9] == 7 then
+	elseif blockData[9] == 7 or blockRedstoneInfluenced ~= nil then
 		Redstone_Remove(shape)
 	end
 	

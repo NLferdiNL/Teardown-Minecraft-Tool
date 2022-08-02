@@ -1,4 +1,8 @@
 function tableToText(inputTable, loopThroughTables, useIPairs, addIndex, addNewLine)
+	if inputTable == nil then
+		return "table nil"
+	end
+
 	loopThroughTables = loopThroughTables or true
 	useIPairs = useIPairs or false
 	addIndex = addIndex or true
