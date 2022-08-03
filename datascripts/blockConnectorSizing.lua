@@ -5,8 +5,8 @@ blockConnectorSizing = {
 	--[[block]] 	0,
 	--[[door]] 		0,
 	--[[slab]] 		0,
-	--[[fence]] 	{x = 12, y = 9, z = 2},
+	--[[fence]] 	{{x = 12, y = 9, z = 2}},
 	--[[stairs]] 	0,
 	--[[trapdoor]] 	0,
-	--[[redstone]]  {x = 8, y = 1, z = 6},
+	--[[redstone]]  {{x = 8, y = 1, z = 6}, {x = 8, y = 17, z = 6},},
 }

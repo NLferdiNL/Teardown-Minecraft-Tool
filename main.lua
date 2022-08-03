@@ -20,21 +20,17 @@ local toolSlot = nil
 -- TODO: Fix block break particles moving one way, sometimes.
 -- TODO: Add corner stairs.
 -- TODO: Implement repeater locking functionality.
--- TODO: Implement redstone torches.
 -- TODO: Replace dev art for Dust, Repeater, Lamp
--- TODO: TNT Fuse implementation. Use DrawShapeHighlight for the animation.
+-- TODO: TNT Fuse anim, flash faster closer to 0 timer is.
 -- TODO: Fix RSExtra going nil when repeaters powering blocks. (Repeater may potentially be fakepowering redstone components)
--- TODO: Add redstone torch hard powering.
 -- TODO: Add supported blocks breaking. (Use connected blocks, if connected has id process normally?)
--- TODO: Add redstone dust ascending and descending connections. (Account for cutting off if block in the way)
--- TODO: Redstone torch checking RSDB for attached block.
 -- TODO: Fix torch connections.
 -- TODO: Repeater stay on delay (requires a refactor)
--- TODO: Torch sideways/downwards power.
--- TODO: Fix shape rotation issues in GetNonRedstoneBlock(shape, localSide, color4).
--- TODO: Fix repeaters not properly powering blocks up.
--- TODO: Redstone dust up and down blocking with a block cutting it off.
--- MAYBE: Seperate unique redstone comps into seperate.lua files? Would improve readability..
+-- TODO: Torch upwards/downwards (hard)power.
+-- TODO: Fix repeaters not properly blocks.
+-- TODO: Redstone dust up and down blocking with a block cutting it off. (Include connections)
+-- TODO: Reimplement redstone fake block clearing.
+-- TODO: Add straight redstone soft powering.
 -- MAYBE: Trapdoor use log alignment?
 
 local toolVox = "MOD/vox/tool.vox"
@@ -134,7 +130,7 @@ local redstoneOffset = Vec(0, 0, gridModulo / 16 * -2)
 
 local canGrabObject = false
 
-local debugstart = true
+debugstart = true
 local debugstarted = false
 
 function init()
@@ -406,7 +402,7 @@ function RemoveBlock()
 	end
 	
 	if redstonePos ~= nil then
-		DebugPrint(VecToString(redstonePos))
+		--DebugPrint(VecToString(redstonePos))
 		Redstone_Remove_Pos(redstonePos[1], redstonePos[2], redstonePos[3])
 	elseif blockData[9] == 7 or blockRedstoneInfluenced ~= nil then
 		Redstone_Remove(shape)
@@ -717,7 +713,15 @@ function PlaceBlock()
 			end
 		elseif selectedBlockData[9] == 7 and not dynamicBlock then
 			if selectedBlockId == 123 then
-				connectedShapesTag = ConnectToAdjecentBlocks(selectedBlockData, adjecentBlocks, tempPos, redstoneOffset, {12, 46, 123, 124, 125, 126, 127}, 4) -- Vec(-0.155, 0, -0.205)
+				local adjTransformUp = Transform(VecAdd(tempPos, Vec(0, gridModulo, 0)), Quat())
+				local adjTransformDown = Transform(VecAdd(tempPos, Vec(0, -gridModulo, 0)), Quat())
+				
+				local adjBlocksUp = FindAdjecentBlocks(adjTransformUp)
+				local adjBlocksDown = FindAdjecentBlocks(adjTransformDown)
+				
+				connectedShapesTag = connectedShapesTag .. ConnectToAdjecentBlocks(selectedBlockData, adjecentBlocks, tempPos, redstoneOffset, {12, 46, 123, 124, 125, 126, 127}, 4) -- Vec(-0.155, 0, -0.205)
+				connectedShapesTag = connectedShapesTag .. ConnectToAdjecentBlocks(selectedBlockData, adjBlocksUp, adjTransformUp.pos, VecAdd(redstoneOffset, Vec(0, -gridModulo, 0)), {12, 46, 123, 124, 125, 126, 127}, 4, "_cu") -- Vec(-0.155, 0, -0.205)
+				connectedShapesTag = connectedShapesTag .. ConnectToAdjecentBlocks(selectedBlockData, adjBlocksDown, adjTransformDown.pos, redstoneOffset, {12, 46, 123, 124, 125, 126, 127}, 4, "_cd") -- Vec(-0.155, 0, -0.205)
 			end
 		elseif selectedBlockData[9] == 8 then
 			local tempRot = QuatEuler(blockEulerX, blockEulerY, blockEulerZ)
@@ -839,7 +843,7 @@ function PlaceBlock()
 			local otherBlock = shape
 			local otherBlockId = GetTagValue(shape, "minecraftblockid")
 			
-			if otherBlockId == nil or otherBlockId == 0 then
+			if otherBlockId == nil or otherBlockId == "" then
 				otherBlock = nil
 			end
 			
@@ -1068,7 +1072,7 @@ function IsBlockInFilter(filter, id)
 	return false
 end
 
-function ConnectToAdjecentBlocks(selectedBlockData, adjecentBlocks, middlePos, blockOffset, blockFilter, dirMultiplier)
+function ConnectToAdjecentBlocks(selectedBlockData, adjecentBlocks, middlePos, blockOffset, blockFilter, dirMultiplier, suffix)
 	local connectedShapesTag = ""
 	
 	for i = 1, #adjecentBlocks do
@@ -1091,7 +1095,7 @@ function ConnectToAdjecentBlocks(selectedBlockData, adjecentBlocks, middlePos, b
 				
 				local fenceConnectionTransform, dir = GetBlockConnectionTransform(middlePos, center, i * 90, blockOffset, dirMultiplier)
 				
-				local currPieces = SpawnAdjustedConnector(selectedBlockData, selectedBlockId, otherShape, fenceConnectionTransform, dir)
+				local currPieces = SpawnAdjustedConnector(selectedBlockData, selectedBlockId, otherShape, fenceConnectionTransform, dir, suffix)
 				
 				connectedShapesTag = connectedShapesTag .. currPieces
 				
@@ -1192,14 +1196,20 @@ function GetBlockConnectionTransform(shapePos, otherShapePos, rot, posOffset, di
 	return fenceConnectionTransform, dir
 end
 
-function SpawnBlockConnector(selectedBlockData, connectionTransform, sizeModifier)
+function SpawnBlockConnector(selectedBlockData, connectionTransform, sizeModifier, suffix)
 	if sizeModifier == nil then
 		sizeModifier = Vec(1, 1, 1)
 	end
 	
-	local blockBrushXML = "brush='" .. string.gsub(selectedBlockData[2], "%.vox", "_c%.vox")
+	local blockConnectorSize = blockConnectorSizing[selectedBlockData[9]][1]
 	
-	local blockConnectorSize = blockConnectorSizing[selectedBlockData[9]]
+	if suffix == nil then
+		suffix = "_c"
+	else
+		blockConnectorSize = blockConnectorSizing[selectedBlockData[9]][2]
+	end
+	
+	local blockBrushXML = "brush='" .. string.gsub(selectedBlockData[2], "%.vox", suffix .. "%.vox")
 	
 	local blockSizeVec = Vec(blockSize / 16 * blockConnectorSize.x * sizeModifier[1], blockSize / 16 * blockConnectorSize.y * sizeModifier[2], blockSize / 16 * blockConnectorSize.z * sizeModifier[3])
 	
@@ -1220,7 +1230,7 @@ function SpawnBlockConnector(selectedBlockData, connectionTransform, sizeModifie
 	return connectionPiece
 end
 
-function SpawnAdjustedConnector(selectedBlockData, selectedBlockId, otherShape, connectionTransform, dir)
+function SpawnAdjustedConnector(selectedBlockData, selectedBlockId, otherShape, connectionTransform, dir, suffix)
 	local otherBlockId = GetTagValue(otherShape, "minecraftblockid")
 	
 	if otherBlockId == nil then
@@ -1262,7 +1272,7 @@ function SpawnAdjustedConnector(selectedBlockData, selectedBlockId, otherShape, 
 		end
 	end
 	
-	local connectionPiece = SpawnBlockConnector(selectedBlockData, connectionTransform, sizeModifier)
+	local connectionPiece = SpawnBlockConnector(selectedBlockData, connectionTransform, sizeModifier, suffix)
 	
 	return connectionPiece
 end

@@ -123,7 +123,7 @@ blocks =
 		{"Sculk Shrieker", 						"MOD/vox/blocks/sculkshrieker.vox",					{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 15, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil},
 		{"Tuff", 								"MOD/vox/blocks/tuff.vox",							{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil},
 		{"Tinted Glass", 						"MOD/vox/blocks/tintedglass.vox",					{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil},
-		{"Redstone Dust", 						"MOD/vox/blocks/redstonedust.vox",					{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 1,  z = 16},	{x = 15, y = 16, z = 15},	nil, 					false, 		7, nil},
+		{"Redstone Dust", 						"MOD/vox/blocks/redstonedust/redstonedust.vox",		{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 1,  z = 16},	{x = 15, y = 16, z = 15},	nil, 					false, 		7, nil},
 		{"Redstone Repeater", 					"MOD/vox/blocks/redstonerepeater.vox",				{x = 0, y = 1,  z = 0}, 	"tags='interact=Tick:'",	{x = 16, y = 2,  z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		7, nil},
 		{"Stone Button", 						"MOD/vox/blocks/stonebutton.vox",					{x = 1, y = 1,  z = 1}, 	"tags='interact=Interact'",	{x = 16, y = 16, z = 16},	{x = 15, y = 16, z = 16},	nil, 					false, 		7, nil},
 		{"Oak Button", 							"MOD/vox/blocks/oakbutton.vox",						{x = 1, y = 1,  z = 1}, 	"tags='interact=Interact'",	{x = 16, y = 16, z = 16},	{x = 15, y = 16, z = 16},	nil, 					false, 		7, nil},

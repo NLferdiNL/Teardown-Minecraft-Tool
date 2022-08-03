@@ -3,7 +3,7 @@ local origBlockSize = 1.6
 local blockSize = origBlockSize * mult
 
 function HandleRedstoneTorch(x, y, z, rsBlockData, dt)
-	if rsBlockData == nil then
+	if rsBlockData == nil or rsBlockData[6] == nil then
 		return
 	end
 	
@@ -14,38 +14,36 @@ function HandleRedstoneTorch(x, y, z, rsBlockData, dt)
 	local rsLight = rsExtra[1]
 	local attachedShape = rsExtra[2]
 	
-	if attachedShape == nil then
-		return
+	local hardPower = 0
+	local hardPowerLast = 0
+	
+	local softPower = 0
+	local softPowerLast = 0
+	
+	local attachedRsData = nil
+	
+	if attachedShape ~= nil then
+		attachedRsData = GetFakeBlockData(attachedShape)
+		
+		hardPower = attachedRsData[3]
+		hardPowerLast = attachedRsData[5]
+		
+		softPower = attachedRsData[7]
+		softPowerLast = attachedRsData[8]
 	end
 	
-	local hardPower = GetTagValue(attachedShape, "minecraftredstonehardpower")
+	--[[local hardPower = GetTagValue(attachedShape, "minecraftredstonehardpower")
 	local hardPowerLast = GetTagValue(attachedShape, "minecraftredstonehardpowerlast")
 	
 	local softPower = GetTagValue(attachedShape, "minecraftredstonesoftpower")
-	local softPowerLast = GetTagValue(attachedShape, "minecraftredstonesoftpowerlast")
+	local softPowerLast = GetTagValue(attachedShape, "minecraftredstonesoftpowerlast")]]--
 	
-	if hardPower == nil or hardPower == "" then
-		hardPower = 0
-	else
-		hardPower = tonumber(hardPower)
-	end
-	
-	if hardPowerLast == nil or hardPowerLast == ""  then
-		hardPowerLast = 0
-	else
-		hardPowerLast = tonumber(hardPowerLast)
-	end
-	
-	if softPower == nil or softPower == ""  then
+	if softPower == nil then
 		softPower = 0
-	else
-		softPower = tonumber(softPower)
 	end
 	
-	if softPowerLast == nil or softPowerLast == ""  then
+	if softPowerLast == nil then
 		softPowerLast = 0
-	else
-		softPowerLast = tonumber(softPowerLast)
 	end
 	
 	--[[DebugWatch("hardPower", hardPower)

@@ -17,19 +17,14 @@ function HandleButton(x, y, z, rsBlockData, dt)
 		rsBlockData[3] = 16
 		local otherShape = rsBlockData[6][4]
 	
-		SetTag(otherShape, "minecraftredstonehardpower", 16)
-		SetTag(otherShape, "minecraftredstonehardpowerlast", 16)
+		--SetTag(otherShape, "minecraftredstonehardpower", 16)
+		--SetTag(otherShape, "minecraftredstonehardpowerlast", 16)
 		
 		local fakeRsData = GetFakeBlockData(otherShape)
 		
-		local fakeBlockIndex = fakePoweredBlocksShapeIndex[otherShape]
-				
-		if fakeBlockIndex == nil then
-			fakeBlockIndex = #fakePoweredBlocks + 1
-			fakePoweredBlocksShapeIndex[otherShape] = #fakePoweredBlocks + 1
+		if fakeRsData ~= nil then
+			fakeRsData[3] = 16
 		end
-				
-		fakePoweredBlocks[fakeBlockIndex] = fakeRsData
 	else
 		rsBlockData[5] = rsBlockData[3]
 		rsBlockData[3] = 0
