@@ -17,15 +17,18 @@ function HandleTnt(x, y, z, rsBlockData, dt)
 	
 	if rsExtra == nil then
 		rsBlockData[6] = 4.0
+		SetBodyDynamic(GetShapeBody(rsShape), true)
+		SetTag(rsShape, "unbreakable")
 		return
 	end
 	
 	if rsExtra > 0 then
 		rsBlockData[6] = rsBlockData[6] - dt
-		DrawShapeHighlight(rsShape, 1 - (1 / 0.25 * rsExtra) % 1)
+		--DrawShapeHighlight(rsShape, 1 - (1 / 0.25 * rsExtra) % 1)
+		DrawShapeHighlight(rsShape, GetTime() % (rsExtra + 1))
 	else
 		local shapePos = GetRealBlockCenter(rsShape)
-			
+		RemoveTag(rsShape, "unbreakable")
 		MakeHole(shapePos, 0.2, 0.2, 0.2, true)
 	end
 end

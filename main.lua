@@ -15,23 +15,36 @@ toolName = "minecraftbuildtool"
 toolReadableName = "Minecraft Tool"
 local toolSlot = nil
 
+-- TODO List Redstone Update: (Release once empty.)
+-- Fix soft power blocks not powering soft adjecents.
+-- Fix sideways torch powering above block attached to.
+-- Fix redstone to side button connecting.
+-- Torch fix up/down power positioning.
+-- Prevent ascend/descend redstone connection to button.
+-- Fix torches not powering adjecent.
+-- Redstone dust up and down blocking with a block cutting it off. (Include connections)
+-- Tnt Anim less rapid.
+-- Replace dev art for Dust, Repeater, Lamp
+-- Fix RS Nor Latch not working.
+
+-- TODO List Redstone Update 2: (Release once empty.)
+-- Repeater stay on delay (requires a refactor)
+-- Add straight redstone soft powering. (And connections for visuals)
+-- SetBodyDynamic false, button, press anim.
+-- Torch burnout timers.
+
+-- Unimportant for now:
+
 -- TODO: Add dropping items.
 -- TODO: Fix "block of ___" insides to be random.
 -- TODO: Fix block break particles moving one way, sometimes.
 -- TODO: Add corner stairs.
--- TODO: Implement repeater locking functionality.
--- TODO: Replace dev art for Dust, Repeater, Lamp
--- TODO: TNT Fuse anim, flash faster closer to 0 timer is.
--- TODO: Fix RSExtra going nil when repeaters powering blocks. (Repeater may potentially be fakepowering redstone components)
--- TODO: Add supported blocks breaking. (Use connected blocks, if connected has id process normally?)
--- TODO: Fix torch connections.
--- TODO: Repeater stay on delay (requires a refactor)
--- TODO: Torch upwards/downwards (hard)power.
--- TODO: Fix repeaters not properly blocks.
--- TODO: Redstone dust up and down blocking with a block cutting it off. (Include connections)
--- TODO: Reimplement redstone fake block clearing.
--- TODO: Add straight redstone soft powering.
+
+-- Unknown if still issue:
+-- TODO: Fix RSExtra going nil when repeaters powering blocks. (Repeater may potentially be fakepowering redstone components) (Fake power removed though..)
+
 -- MAYBE: Trapdoor use log alignment?
+-- MAYBE: Implement repeater locking functionality.
 
 local toolVox = "MOD/vox/tool.vox"
 
@@ -374,12 +387,16 @@ function spawnBrokenBlockParticles(blockShape)
 	end
 end
 
-function RemoveBlock()
-	if not hit then
+function RemoveBlock(blockToRemove)
+	if not hit and blockToRemove == nil then
 		return
 	end
 	
-	local blockTag = tonumber(GetTagValue(shape, "minecraftblockid"))
+	if hit and blockToRemove == nil then
+		blockToRemove = shape
+	end
+	
+	local blockTag = tonumber(GetTagValue(blockToRemove, "minecraftblockid"))
 	
 	if blockTag == nil or blockTag <= 0 then
 		return
@@ -387,8 +404,8 @@ function RemoveBlock()
 	
 	local blockData = blocks[blockTag]
 	
-	local blockRedstonePos = GetTagValue(shape, "minecraftredstonepos")
-	local blockRedstoneInfluenced = GetTagValue(shape, "minecraftredstoneinfluenced")
+	local blockRedstonePos = GetTagValue(blockToRemove, "minecraftredstonepos")
+	local blockRedstoneInfluenced = GetTagValue(blockToRemove, "minecraftredstoneinfluenced")
 	
 	local redstonePos = nil
 	
@@ -405,12 +422,12 @@ function RemoveBlock()
 		--DebugPrint(VecToString(redstonePos))
 		Redstone_Remove_Pos(redstonePos[1], redstonePos[2], redstonePos[3])
 	elseif blockData[9] == 7 or blockRedstoneInfluenced ~= nil then
-		Redstone_Remove(shape)
+		Redstone_Remove(blockToRemove)
 	end
 	
-	local blockSpecialData = GetTagValue(shape, "minecraftspecialdata")
+	local blockSpecialData = GetTagValue(blockToRemove, "minecraftspecialdata")
 	
-	local blockConnectedShapes = GetTagValue(shape, "minecraftconnectedshapes")
+	local blockConnectedShapes = GetTagValue(blockToRemove, "minecraftconnectedshapes")
 	
 	if blockConnectedShapes ~= nil and blockConnectedShapes ~= "" then
 		RemoveConnectedShapes(blockConnectedShapes)
@@ -423,9 +440,9 @@ function RemoveBlock()
 	
 	PlaySound(interactionSound, hitPoint)
 	
-	spawnBrokenBlockParticles(shape)
+	spawnBrokenBlockParticles(blockToRemove)
 	
-	Delete(shape)
+	Delete(blockToRemove)
 end
 
 function PlaceBlock()
@@ -775,7 +792,6 @@ function PlaceBlock()
 				end
 			end
 		elseif gridAlignedHitPoint[2] > gridAligned[2] then
-			DebugPrint("AHH")
 			blockEulerZ = 180
 			blockPosOffset[1] = blockPosOffset[1] + gridModulo
 			blockPosOffset[2] = blockPosOffset[2] + gridModulo
@@ -835,10 +851,22 @@ function PlaceBlock()
 	end
 	
 	if selectedBlockData[9] == 7 then
+		if selectedBlockId == 12 then
+			SetBodyDynamic(block, false)
+		end
+		
+		local offsetPos = gridAlignedPreOffset
+		
+		--DebugPrint(tostring(offsetPos == nil) .. " " .. selectedBlockId)
+		
 		if selectedBlockId == 125 or selectedBlockId == 126 then
-			Redstone_Add(selectedBlockId, block, connectedShapesTag, shape)
+			local returnPos = Redstone_Add(selectedBlockId, block, connectedShapesTag, shape, offsetPos)
+			
+			SetTag(block, "minecraftredstonepos", returnPos[1] .. " " .. returnPos[2] .. " " .. returnPos[3])
 		elseif selectedBlockId == 127 then
-			Redstone_Add(selectedBlockId, block, connectedShapesTag, "MCL_" .. tostring(uniqueLightId))
+			local returnPos = Redstone_Add(selectedBlockId, block, connectedShapesTag, "MCL_" .. tostring(uniqueLightId), offsetPos)
+			
+			SetTag(block, "minecraftredstonepos", returnPos[1] .. " " .. returnPos[2] .. " " .. returnPos[3])
 		elseif selectedBlockId == 129 then
 			local otherBlock = shape
 			local otherBlockId = GetTagValue(shape, "minecraftblockid")
@@ -847,17 +875,19 @@ function PlaceBlock()
 				otherBlock = nil
 			end
 			
-			local offsetPos = nil
+			--[[local offsetPos = nil
 			
 			if blockEulerX ~= 0 or blockEulerY ~= 0 or blockEulerZ ~= 0 then
 				offsetPos = VecAdd(gridAlignedPreOffset, Vec(gridModulo / 2, -0.02, gridModulo / 2))
-			end
+			end]]--
 			
-			local returnPos = Redstone_Add(selectedBlockId, block, connectedShapesTag, {"MCL_" .. tostring(uniqueLightId), otherBlock}, offsetPos)--VecSub(gridAligned, blockPosOffset))
+			local returnPos = Redstone_Add(selectedBlockId, block, connectedShapesTag, {"MCL_" .. tostring(uniqueLightId), otherBlock, blockEulerX ~= 0 or blockEulerY ~= 0 or blockEulerZ ~= 0}, offsetPos)--VecSub(gridAligned, blockPosOffset))
 			
 			SetTag(block, "minecraftredstonepos", returnPos[1] .. " " .. returnPos[2] .. " " .. returnPos[3])
 		else
-			Redstone_Add(selectedBlockId, block, connectedShapesTag)
+			local returnPos = Redstone_Add(selectedBlockId, block, connectedShapesTag, nil, offsetPos)
+			
+			SetTag(block, "minecraftredstonepos", returnPos[1] .. " " .. returnPos[2] .. " " .. returnPos[3])
 		end
 	end
 	
@@ -944,6 +974,29 @@ function PlaceBlock()
 					end
 				end
 			end
+		end
+	end
+	-- TNT = 12
+	-- Block = 46
+	-- Dust = 123
+	-- Repeater = 124
+	-- Stone Button = 125
+	-- Wood Button = 126
+	-- Lamp = 127
+	-- Redstone Torch = 129
+	if selectedBlockId == 123 or selectedBlockId == 124 or selectedBlockId == 125 or selectedBlockId == 126 or selectedBlockId == 129 then
+		local otherBlock = shape
+		
+		if HasTag(shape, "minecraftblockid") then
+			local otherConnectedShapes = GetTagValue(otherBlock, "minecraftconnectedshapes")
+			
+			if otherConnectedShapes == nil then
+				otherConnectedShapes = ""
+			end
+			
+			otherConnectedShapes = otherConnectedShapes .. " " .. block
+			
+			SetTag(otherBlock, "minecraftconnectedshapes", otherConnectedShapes)
 		end
 	end
 	
@@ -1279,7 +1332,11 @@ end
 
 function RemoveConnectedShapes(shapeList)
 	for shape in string.gmatch(shapeList, "%d+") do
-		Delete(shape)
+		if HasTag(shape, "minecraftblockid") then
+			RemoveBlock(shape)
+		else
+			Delete(shape)
+		end
 	end
 end
 

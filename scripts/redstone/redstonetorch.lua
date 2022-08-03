@@ -7,6 +7,7 @@ function HandleRedstoneTorch(x, y, z, rsBlockData, dt)
 		return
 	end
 	
+	local rsShape = rsBlockData[1]
 	local rsPower = rsBlockData[3]
 	local rsPowerLastTick = rsBlockData[5]
 	local rsExtra = rsBlockData[6]
@@ -23,8 +24,22 @@ function HandleRedstoneTorch(x, y, z, rsBlockData, dt)
 	local attachedRsData = nil
 	
 	if attachedShape ~= nil then
-		attachedRsData = GetFakeBlockData(attachedShape)
+		attachedRsData = GetRSDataFromShape(attachedShape)
+		--DrawShapeHighlight(attachedShape, 1)
+	end
+	
+	--[[if IsShapeBroken(attachedShape) then
+		DebugPrint("BREAK")
+		local breakPoint = GetRealBlockCenter(rsShape, 2)
 		
+		breakPoint = VecAdd(breakPoint, Vec(0, -0.25, 0))
+		
+		spawnDebugParticle(breakPoint, 1, Color4.Green)
+		MakeHole(breakPoint, 0.25, 0.25, 0.25)
+		return false
+	end]]--
+	
+	if attachedRsData ~= nil then
 		hardPower = attachedRsData[3]
 		hardPowerLast = attachedRsData[5]
 		
@@ -46,32 +61,35 @@ function HandleRedstoneTorch(x, y, z, rsBlockData, dt)
 		softPowerLast = 0
 	end
 	
-	--[[DebugWatch("hardPower", hardPower)
+	DebugWatch("hardPower", hardPower)
 	DebugWatch("hardPowerLast", hardPowerLast)
 	DebugWatch("softPower", softPower)
 	DebugWatch("softPowerLast", softPowerLast)
 	DebugWatch("timer", rsExtra[4])
 	DebugWatch("rsPowerLastTick", rsPowerLastTick)
-	DebugWatch("rsPower", rsPower)]]--
+	DebugWatch("rsPower", rsPower)
 	
 	if hardPower > 0 or hardPowerLast > 0 or softPower > 0 or softPowerLast > 0 then
 		rsBlockData[3] = 0
 		rsExtra[4] = rsExtra[3]
 		
+		DebugPrint("NOT")
+		
 		--[[if hardPower == hardPowerLast or softPower == softPowerLast and rsExtra[4] ~= rsExtra[3] / 2 then
 			rsExtra[4] = rsExtra[3] / 2
 		end]]--
 	else
-		if rsBlockData[3] <= 0 and rsExtra[4] <= 0 then
-			rsExtra[4] = rsExtra[3]
-		end
-	
+		DebugPrint("AM")
 		if rsExtra[4] > 0 then
 			rsExtra[4] = rsExtra[4] - dt
 			
 			if rsExtra[4] <= 0 then
 				rsBlockData[3] = 16
 			end
+		end
+	
+		if rsBlockData[3] <= 0 and rsExtra[4] <= 0 then
+			rsExtra[4] = rsExtra[3]
 		end
 	end
 	
@@ -92,11 +110,13 @@ function HandleRedstoneTorch(x, y, z, rsBlockData, dt)
 		end
 	end]]--
 	
-	if rsBlockData[3] >=1 then
+	--[[if rsBlockData[3] >=1 then
 		SetShapeEmissiveScale(currConn, 1)
 	else
 		SetShapeEmissiveScale(currConn, 0)
-	end
+	end]]--
 	
 	SetLightEnabled(rsLight, rsBlockData[3] >= 1)
+	
+	return rsBlockData[3] >= 1
 end

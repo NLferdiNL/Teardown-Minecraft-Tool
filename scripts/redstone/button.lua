@@ -20,7 +20,7 @@ function HandleButton(x, y, z, rsBlockData, dt)
 		--SetTag(otherShape, "minecraftredstonehardpower", 16)
 		--SetTag(otherShape, "minecraftredstonehardpowerlast", 16)
 		
-		local fakeRsData = GetFakeBlockData(otherShape)
+		local fakeRsData = GetRSDataFromShape(otherShape)
 		
 		if fakeRsData ~= nil then
 			fakeRsData[3] = 16

@@ -30,27 +30,62 @@ function HandleRedstoneRepeater(x, y, z, rsBlockData, dt)
 	rearObject[2] = y
 	rearObject[3] = roundOne(rearObject[3])
 	
-	local frontRsData = GetFromDB(frontObject[1], frontObject[2], frontObject[3])
-	local rearRsData = GetFromDB(rearObject[1], rearObject[2], rearObject[3])
+	local frontRsData = nil --GetFromDB(frontObject[1], frontObject[2], frontObject[3])
+	local rearRsData = nil --GetFromDB(rearObject[1], rearObject[2], rearObject[3])
 	
 	local frontAltBlock = nil
 	local rearAltBlock = nil
+	local rotX, rotY, rotZ = GetQuatEuler(shapeTransform.rot)
+	
+	local overridePos = Vec(x / mult, y / mult, z / mult)
+	
+	--DebugPrint(roundOne(rotY / 100))
+	
+	rotY = roundOne(rotY / 100)
+	
+	if rotY == -90 then
+		overridePos[1] = overridePos[1] + 1.6
+	elseif rotY == 90 then
+		overridePos[3] = overridePos[3] + 1.6
+	elseif rotY == 180 then
+		overridePos[1] = overridePos[1] + 1.6
+		overridePos[3] = overridePos[3] + 1.6
+	end
 	
 	if frontRsData == nil then
-		frontAltBlock = GetNonRedstoneBlock(rsShape, Vec(0.5, 0.5, -0.5))
-		frontRsData = GetFakeBlockData(frontAltBlock)
+		frontAltBlock = GetNonRedstoneBlock(rsShape, Vec(0.5, 0.5, -0.5), nil, overridePos, QuatEuler(0, rotY, 0))
+		frontRsData = GetRSDataFromShape(frontAltBlock)
 	end
 	
 	if rearRsData == nil then
-		rearAltBlock = GetNonRedstoneBlock(rsShape, Vec(0.5, 0.5, 1.5))
-		rearRsData = GetFakeBlockData(rearAltBlock)
+		rearAltBlock = GetNonRedstoneBlock(rsShape, Vec(0.5, 0.5, 1.5), nil, overridePos, QuatEuler(0, rotY, 0))
+		rearRsData = GetRSDataFromShape(rearAltBlock)
 	end
 	
 	if rearRsData ~= nil and rearRsData[7] ~= nil and rearRsData[3] <= 0 then
 		rearRsData[3] = rearRsData[7]
 	end
 	
-	if (rearRsData ~= nil and (rearRsData[3] > 0 or rearRsData[5] > 0)) or rsExtra[4] then
+	local rearPower = 0
+	
+	if rearRsData ~= nil then
+		rearPower = rearRsData[3]
+		if rearRsData[5] > rearPower then
+			rearPower = rearRsData[5]
+		end
+		
+		if rearRsData[7] ~= nil then
+			if rearRsData[7] > rearPower then
+				rearPower = rearRsData[7]
+			end
+			
+			--[[if rearRsData[8] > rearPower then
+				rearPower = rearRsData[8]
+			end]]--
+		end
+	end
+	
+	if (rearRsData ~= nil and (rearPower > 0)) or rsExtra[4] then
 		SetShapeEmissiveScale(rsShape, 1)
 		if rsExtra[3] > 0 then
 			rsExtra[4] = true
@@ -64,7 +99,7 @@ function HandleRedstoneRepeater(x, y, z, rsBlockData, dt)
 		end
 		
 		if frontRsData ~= nil and usableBlock and rsExtra[3] <= 0 then
-			DebugPrint("HAA")
+			--DebugPrint("HAA")
 			--if frontAltBlock ~= nil then
 				--SetTag(frontAltBlock, "minecraftredstonehardpower", 16)
 				--SetTag(frontAltBlock, "minecraftredstonehardpowerlast", 16)
@@ -84,8 +119,8 @@ function HandleRedstoneRepeater(x, y, z, rsBlockData, dt)
 				
 				--frontRsData[3] = 15
 			--else
-			frontRsData[3] = 15
-			DebugPrint(tableToText(frontRsData))
+			frontRsData[3] = 16
+			--DebugPrint(tableToText(frontRsData))
 			--end
 		end
 		
@@ -98,5 +133,4 @@ function HandleRedstoneRepeater(x, y, z, rsBlockData, dt)
 		SetShapeEmissiveScale(rsShape, 0)
 		rsBlockData[3] = 0
 	end
-	
 end
