@@ -16,15 +16,12 @@ toolReadableName = "Minecraft Tool"
 local toolSlot = nil
 
 -- TODO List Redstone Update: (Release once empty.)
--- Fix soft power blocks not powering soft adjecents.
--- Fix sideways torch powering above block attached to.
 -- Fix redstone to side button connecting.
--- Torch fix up/down power positioning.
--- Prevent ascend/descend redstone connection to button.
--- Fix torches not powering adjecent.
 -- Redstone dust up and down blocking with a block cutting it off. (Include connections)
+-- Prevent ascend/descend redstone connection to anything but dust.
 -- Tnt Anim less rapid.
 -- Replace dev art for Dust, Repeater, Lamp
+-- Maybe pressure plates.
 -- Fix RS Nor Latch not working.
 
 -- TODO List Redstone Update 2: (Release once empty.)
@@ -32,6 +29,8 @@ local toolSlot = nil
 -- Add straight redstone soft powering. (And connections for visuals)
 -- SetBodyDynamic false, button, press anim.
 -- Torch burnout timers.
+-- Power interactions with items such as doors.
+-- Maybe pistons.
 
 -- Unimportant for now:
 

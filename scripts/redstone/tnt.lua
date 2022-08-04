@@ -25,7 +25,12 @@ function HandleTnt(x, y, z, rsBlockData, dt)
 	if rsExtra > 0 then
 		rsBlockData[6] = rsBlockData[6] - dt
 		--DrawShapeHighlight(rsShape, 1 - (1 / 0.25 * rsExtra) % 1)
-		DrawShapeHighlight(rsShape, GetTime() % (rsExtra + 1))
+		--DrawShapeHighlight(rsShape, GetTime() / 10 % (rsExtra * 10))
+		
+		local timeExtra = 0.75
+		
+		DrawShapeHighlight(rsShape, math.sin(((4.0 - rsExtra + timeExtra)) % (rsExtra + timeExtra)))
+		
 	else
 		local shapePos = GetRealBlockCenter(rsShape)
 		RemoveTag(rsShape, "unbreakable")

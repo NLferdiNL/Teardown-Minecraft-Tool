@@ -28,9 +28,12 @@ local blockSize = origBlockSize * mult
 --local test = 0
 
 local font = "MOD/fonts/MinecraftRegular.ttf"
+local sfx = {"MOD/sfx/button/stone_button_press.ogg", "MOD/sfx/button/stone_button_unpress.ogg", "MOD/sfx/button/wood_button_press.ogg", "MOD/sfx/button/wood_button_unpress.ogg"}
 
 function redstone_init()
-
+	for i = 1, #sfx do
+		sfx[i] = LoadSound(sfx[i], 1)
+	end
 end
 
 --local ticker = 1
@@ -54,9 +57,8 @@ function redstone_update(dt)
 	end]]--
 	
 	for shape, index in pairs(redstoneBlocksPosIndex) do
-		if IsShapeBroken(shape) or GetShapeBody(shape) ~= 1 then
-			local rsData = GetFromDB(index[1], index[2], index[3])
-			
+		local rsData = GetFromDB(index[1], index[2], index[3])
+		if IsShapeBroken(shape) or (GetShapeBody(shape) ~= 1 and (rsData == nil or (rsData ~= nil and rsData[2] ~= 12))) then
 			if rsData ~= nil then
 				rsData[3] = 0
 				rsData[5] = 0
@@ -69,8 +71,8 @@ function redstone_update(dt)
 			end
 			
 			Redstone_Remove(shape)
-		elseif GetFromDB(index[1], index[2], index[3]) ~= nil then
-			HandleRedstone(index[1], index[2], index[3], GetFromDB(index[1], index[2], index[3]), dt)
+		elseif rsData then
+			HandleRedstone(index[1], index[2], index[3], rsData, dt)
 		end
 	end
 	
@@ -177,12 +179,12 @@ function Redstone_Draw(dt)
 		
 		--DebugWatch("index", tableToText(fakePoweredBlocksShapeIndex, false, false, true))
 		
-		local blockRedstonePos = GetTagValue(aimShape, "minecraftredstonepos")
+		--local blockRedstonePos = GetTagValue(aimShape, "minecraftredstonepos")
 		
-		if rsData or (blockRedstonePos ~= nil and blockRedstonePos ~= "") then
-			--[[if rsData == nil then
+		--[[if rsData then or (blockRedstonePos ~= nil and blockRedstonePos ~= "") then
+			if rsData == nil then
 				rsData = fakePoweredBlocks[fakePoweredBlocksShapeIndex[aimShape] ]
-			end]]--
+			end
 			
 			if rsData == nil then
 				if blockRedstonePos ~= nil and blockRedstonePos ~= "" then
@@ -195,43 +197,44 @@ function Redstone_Draw(dt)
 					
 					rsData = GetFromDB(redstonePos[1], redstonePos[2], redstonePos[3])
 				end
-			end
+			end]]--
+		if rsData ~= nil then
+			UiPush()
+				UiAlign("left top")
+				UiFont(font, 26)
+				--{shape, block id, power, connection shapes, power last tick, extra(repeaterdata), softPower, softPowerLast}
+				UiTranslate(UiWidth() * 0.01, UiWidth() * 0.01)
+				UiText("Pos: " .. aimPos[1] .. ", " .. aimPos[2] .. ", " .. aimPos[3])
+				UiTranslate(0, 28)
+				UiText("Shape: " .. rsData[1])
+				UiTranslate(0, 28)
+				UiText("ID: " .. rsData[2])
+				UiTranslate(0, 28)
+				UiText("Power: " .. rsData[3])
+				UiTranslate(0, 28)
+				if type(rsData[4]) == "table" then
+					UiText("Conn shapes: " .. tableToText(rsData[4]))
+				else
+					UiText("Conn shapes: " .. tostring(rsData[4]))
+				end
+				UiTranslate(0, 28)
+				UiText("Power last tick: " .. rsData[5])
+				UiTranslate(0, 28)
+				if type(rsData[6]) == "table" then
+					UiText("Extra data: " .. tableToText(rsData[6]))
+				else
+					UiText("Extra data: " .. tostring(rsData[6]))
+				end
+				UiTranslate(0, 28)
+				UiText("Soft power: " .. tostring(rsData[7]))
+				UiTranslate(0, 28)
+				UiText("Soft power last tick: " .. tostring(rsData[8]))
+			UiPop()
 			
-			if rsData ~= nil then
-				UiPush()
-					UiAlign("left top")
-					UiFont(font, 26)
-					--{shape, block id, power, connection shapes, power last tick, extra(repeaterdata), softPower, softPowerLast}
-					UiTranslate(UiWidth() * 0.01, UiWidth() * 0.01)
-					UiText("Shape: " .. rsData[1])
-					UiTranslate(0, 28)
-					UiText("ID: " .. rsData[2])
-					UiTranslate(0, 28)
-					UiText("Power: " .. rsData[3])
-					UiTranslate(0, 28)
-					if type(rsData[4]) == "table" then
-						UiText("Conn shapes: " .. tableToText(rsData[4]))
-					else
-						UiText("Conn shapes: " .. tostring(rsData[4]))
-					end
-					UiTranslate(0, 28)
-					UiText("Power last tick: " .. rsData[5])
-					UiTranslate(0, 28)
-					if type(rsData[6]) == "table" then
-						UiText("Extra data: " .. tableToText(rsData[6]))
-					else
-						UiText("Extra data: " .. tostring(rsData[6]))
-					end
-					UiTranslate(0, 28)
-					UiText("Soft power: " .. tostring(rsData[7]))
-					UiTranslate(0, 28)
-					UiText("Soft power last tick: " .. tostring(rsData[8]))
-				UiPop()
-				
-				--DebugWatch("aimData", tableToText(rsData))
-				DrawShapeHighlight(aimShape, 0.25)
-			end
+			--DebugWatch("aimData", tableToText(rsData))
+			DrawShapeHighlight(aimShape, 0.25)
 		end
+		--end
 	end
 end
 
@@ -239,16 +242,17 @@ function Redstone_Add(id, shape, connections, extraData, posOverride)
 	--rsCount = rsCount + 1
 	--pos = VecRound(pos, 2)
 	--pos = Vec(pos[1] / blockSize, pos[2] / blockSize, pos[3] / blockSize)
-	local pos = posOverride or GetBlockCenter(shape)
+	local pos = posOverride --or GetBlockCenter(shape)
 	
 	if posOverride ~= nil then
 		pos[1] = roundOne(pos[1])-- + (mult - roundOne(pos[1]) % mult)
 		pos[2] = roundOne(pos[2])-- + (mult - roundOne(pos[2]) % mult)
 		pos[3] = roundOne(pos[3])-- + (mult - roundOne(pos[3]) % mult)
 		--DebugPrint(VecToString(pos))
+	else
+		DebugPrint("POS NIL IN ADDING BLOCK " .. id)
+		return
 	end
-	
-	redstoneBlocksPosIndex[shape] = pos
 	
 	--DebugPrint(VecToString(pos))
 	
@@ -283,19 +287,20 @@ function Redstone_Add(id, shape, connections, extraData, posOverride)
 		SetTag(shape, "interact", "Tick: 0.1")
 		extra = {"interact", 0.1, 0.1, false, 0.1, 0.0}
 	elseif id == 125 then
-		extra = {"interact", 1.0, 0.0, extraData}
+		extra = {"interact", 1.0, 0.0, extraData, sfx[1], sfx[2]}
 	elseif id == 126 then
-		extra = {"interact", 1.5, 0.0, extraData}
+		extra = {"interact", 1.5, 0.0, extraData, sfx[3], sfx[4]}
 	elseif id == 127 then
 		extra = FindLight(extraData, true)
 	elseif id == 129 then
 		local light = FindLight(extraData[1])
 		local attachedBlock = extraData[2]
 		
-		extra = {light, attachedBlock, 0.05, 0.0, extraData[3]}
+		extra = {light, attachedBlock, 0.125, 0.0, extraData[3]}
 	end
 	
 	redstoneDB[pos[1]][pos[2]][pos[3]] = {shape, id, power, ConnectionToTable(connections), power, extra, nil}
+	redstoneBlocksPosIndex[shape] = pos
 	
 	--DebugPrint("Spawn: " .. VecToString(pos))
 	return pos
@@ -379,8 +384,7 @@ function Redstone_Interact(shape)
 	end
 	
 	if rsBlockData[2] == 125 or rsBlockData[2] == 126 then
-		rsBlockData[3] = 16
-		rsBlockData[6][3] = rsBlockData[6][2]
+		HandleButtonInteraction(rsBlockData)
 	elseif rsBlockData[2] == 124 then
 		local rsExtra = rsBlockData[6]
 		local rsTick = rsExtra[2] + 0.1
@@ -561,13 +565,13 @@ end
 function GetBlockCenter_Old(shape)
 	local sMin, sMax = GetShapeBounds(shape)
 	
-	sMax[2] = sMin[2]
+	--sMax[2] = sMin[2]
 	
-	local vec = VecCenter(sMin, sMax)
+	local vec = sMin --VecCenter(sMin, sMax)
 	
-	vec[1] = roundOne(vec[1])
-	vec[2] = roundOne(vec[2])
-	vec[3] = roundOne(vec[3])
+	vec[1] = roundToNearest(roundOne(vec[1]), 160)
+	vec[2] = roundToNearest(roundOne(vec[2]), 160)
+	vec[3] = roundToNearest(roundOne(vec[3]), 160)
 	
 	return vec
 end
@@ -706,7 +710,6 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 		return
 	elseif rsBlockId == 129 then
 		if not HandleRedstoneTorch(x, y, z,rsBlockData, dt) then
-			DebugPrint("FALSE")
 			return
 		end
 	end
@@ -810,15 +813,15 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 		
 		end]]--
 	elseif rsBlockId == 129 then
-		local downOffset = Vec(0.25, -0.5, 0.25)
-		local upOffset = Vec(0.25, -0.5, 0.25)
+		--local downOffset = Vec(0.0, -0.5, 0.0)
+		--local upOffset = Vec(0.0, -0.5, 0.0)
 		
 		local downBlock = nil
 		local upBlock = nil
 		
 		--if rsExtra[5] then
-			downBlock = GetNonRedstoneBlock(rsShape, Vec(-0.0, -0.5, -0.0), Color4.Blue, Vec(x / mult, y / mult, z / mult))
-			upBlock = GetNonRedstoneBlock(rsShape, Vec(0.0, 1.5, 0.0), Color4.Red, Vec(x / mult, y / mult, z / mult))
+			downBlock = GetNonRedstoneBlock(rsShape, Vec(0.5, -0.5, 0.5), nil, Vec(x / mult, y / mult, z / mult))
+			upBlock = GetNonRedstoneBlock(rsShape, Vec(0.5, 1.5, 0.5), nil, Vec(x / mult, y / mult, z / mult))
 		--else
 			--downBlock = GetNonRedstoneBlock(rsShape, Vec(0.15, -0.5, 0.15), Color4.Blue)
 			--upBlock = GetNonRedstoneBlock(rsShape, Vec(0.15, 1.5, 0.15), Color4.Red)
@@ -862,23 +865,24 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 		if currRsToSoftPower == nil then
 			currRsToSoftPower = false
 		end
-	
-		if currRsToSoftPower and currRsSoftPower ~= nil then
-			if currRsSoftPower < rsPower - 1 then
-				currRsData[7] = rsPower - 1
-			end
-		elseif currRsData[2] == 12 or currRsData[2] == 127 then
-			--DrawShapeHighlight(currRsShape, 1)
-			if rsSoftPower ~= nil and rsSoftPower > rsPower then
-				rsPower = rsSoftPower
-			end
-			
-			if rsPower >= 1 then
-				currRsData[3] = rsPower
-			end
-		else
-			if currRsPower < rsPower - 1 then
-				currRsData[3] = rsPower - 1
+		
+		if (rsBlockId == 129 and currRsShape ~= rsExtra[2]) or rsBlockId ~= 129 then
+			if currRsToSoftPower and currRsSoftPower ~= nil and rsBlockId ~= 46 then
+				if currRsSoftPower < rsPower - 1 then
+					currRsData[7] = rsPower - 1
+				end
+			elseif currRsData[2] == 12 or currRsData[2] == 127 then
+				if rsSoftPower ~= nil and rsSoftPower > rsPower then
+					rsPower = rsSoftPower
+				end
+				
+				if rsPower >= 1 then
+					currRsData[3] = rsPower
+				end
+			elseif currRsBlockId ~= 129 then
+				if currRsPower < rsPower - 1 then
+					currRsData[3] = rsPower - 1
+				end
 			end
 		end
 	end
