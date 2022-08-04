@@ -77,6 +77,10 @@ function VecRound(vec, numDecimalPlaces)
 	return Vec(round(vec[1], numDecimalPlaces), round(vec[2], numDecimalPlaces), round(vec[3], numDecimalPlaces))
 end
 
+function VecCompare(a, b)
+	return a[1] == b[1] and a[2] == b[2] and a[3] == b[3]
+end
+
 function roundToDecimal(num, numDecimalPlaces)
 	local mult = 10^(numDecimalPlaces or 0)
 	return math.floor(num * mult + 0.5) / mult
@@ -283,6 +287,7 @@ function spawnDebugParticle(pos, lifetime, color4)
 	ParticleTile(4)
 	ParticleColor(color4.r, color4.g, color4.b)
 	ParticleRadius(0.25)
+	ParticleEmissive(1)
 	SpawnParticle(pos, Vec(), lifetime)
 end
 

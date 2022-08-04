@@ -16,10 +16,17 @@ toolReadableName = "Minecraft Tool"
 local toolSlot = nil
 
 -- TODO List Redstone Update: (Release once empty.)
+-- Fake blocks retaining last tick power?
+-- Allow lamps to soft power each other.
+-- Soft power down not working?
+-- Prevent hard powered blocks from powering other blocks.
+-- Fix conn shapes sometimes not using spaces.
+-- Fix Redstone block powering adjectent blocks. 
+-- Redstone dust up and down blocking with a block cutting it off. (Include connections) (cutting off could use around adj for comparison)
 -- Fix redstone to side button connecting.
--- Redstone dust up and down blocking with a block cutting it off. (Include connections)
--- Prevent ascend/descend redstone connection to anything but dust.
+-- Fix button sounds playing when powered.
 -- Tnt Anim less rapid.
+-- Fix redstone interact not working when tool not equipped.
 -- Replace dev art for Dust, Repeater, Lamp
 -- Maybe pressure plates.
 -- Fix RS Nor Latch not working.
@@ -337,12 +344,14 @@ function PickBlock()
 	
 	for i = 0, 8 do
 		local selectedBlockInvData = getCurrentHeldBlockData(i)
-		local currBlockId = selectedBlockInvData[1]
-		
-		if currBlockId == aimBlockId then
-			found = true
-			hotbarSelectedIndex = i + 1
-			break
+		if selectedBlockInvData ~= nil then
+			local currBlockId = selectedBlockInvData[1]
+			
+			if currBlockId == aimBlockId then
+				found = true
+				hotbarSelectedIndex = i + 1
+				break
+			end
 		end
 	end
 	
@@ -736,8 +745,8 @@ function PlaceBlock()
 				local adjBlocksDown = FindAdjecentBlocks(adjTransformDown)
 				
 				connectedShapesTag = connectedShapesTag .. ConnectToAdjecentBlocks(selectedBlockData, adjecentBlocks, tempPos, redstoneOffset, {12, 46, 123, 124, 125, 126, 127}, 4) -- Vec(-0.155, 0, -0.205)
-				connectedShapesTag = connectedShapesTag .. ConnectToAdjecentBlocks(selectedBlockData, adjBlocksUp, adjTransformUp.pos, VecAdd(redstoneOffset, Vec(0, -gridModulo, 0)), {12, 46, 123, 124, 125, 126, 127}, 4, "_cu") -- Vec(-0.155, 0, -0.205)
-				connectedShapesTag = connectedShapesTag .. ConnectToAdjecentBlocks(selectedBlockData, adjBlocksDown, adjTransformDown.pos, redstoneOffset, {12, 46, 123, 124, 125, 126, 127}, 4, "_cd") -- Vec(-0.155, 0, -0.205)
+				connectedShapesTag = connectedShapesTag .. ConnectToAdjecentBlocks(selectedBlockData, adjBlocksUp, adjTransformUp.pos, VecAdd(redstoneOffset, Vec(0, -gridModulo, 0)), 123, 4, "_cu") -- Vec(-0.155, 0, -0.205)
+				connectedShapesTag = connectedShapesTag .. ConnectToAdjecentBlocks(selectedBlockData, adjBlocksDown, adjTransformDown.pos, redstoneOffset, 123, 4, "_cd") -- Vec(-0.155, 0, -0.205)
 			end
 		elseif selectedBlockData[9] == 8 then
 			local tempRot = QuatEuler(blockEulerX, blockEulerY, blockEulerZ)
@@ -1115,9 +1124,17 @@ function FindAdjecentBlocks(blockTransform)
 end
 
 function IsBlockInFilter(filter, id)
-	for i = 1, #filter do
-		if filter[i] == id then
+	if type(filter) == "number" then
+		if filter == id then
 			return true
+		else
+			return false
+		end
+	elseif type(filter) == "table" then
+		for i = 1, #filter do
+			if filter[i] == id then
+				return true
+			end
 		end
 	end
 	
@@ -1132,7 +1149,7 @@ function ConnectToAdjecentBlocks(selectedBlockData, adjecentBlocks, middlePos, b
 			local otherShape = adjecentBlocks[i]
 			local otherBlockId = tonumber(GetTagValue(otherShape, "minecraftblockid"))
 			
-			if blockFilter == nil or otherBlockId == blockFilter or IsBlockInFilter(blockFilter, otherBlockId) then
+			if blockFilter == nil or IsBlockInFilter(blockFilter, otherBlockId) then
 				local otherShapeTransform = GetShapeWorldTransform(otherShape)
 				
 				local blockMin, blockMax = GetShapeBounds(otherShape)
