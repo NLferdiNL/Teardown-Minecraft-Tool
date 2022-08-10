@@ -278,6 +278,7 @@ function Redstone_Add(id, shape, connections, extraData, posOverride)
 	
 	local power = 0
 	local extra = nil
+	local softPower = nil
 	
 	if id == 12 then
 		shape = GetBodyShapes(shape)[1]
@@ -292,6 +293,9 @@ function Redstone_Add(id, shape, connections, extraData, posOverride)
 		extra = {"interact", 1.5, 0.0, extraData, sfx[3], sfx[4]}
 	elseif id == 127 then
 		extra = FindLight(extraData, true)
+		SetShapeEmissiveScale(shape, 0)
+		SetLightEnabled(extra, false)
+		softPower = 0
 	elseif id == 129 then
 		local light = FindLight(extraData[1])
 		local attachedBlock = extraData[2]
@@ -299,7 +303,7 @@ function Redstone_Add(id, shape, connections, extraData, posOverride)
 		extra = {light, attachedBlock, 0.125, 0.0, extraData[3]}
 	end
 	
-	redstoneDB[pos[1]][pos[2]][pos[3]] = {shape, id, power, ConnectionToTable(connections), power, extra, nil}
+	redstoneDB[pos[1]][pos[2]][pos[3]] = {shape, id, power, ConnectionToTable(connections), power, extra, softPower, softPower}
 	redstoneBlocksPosIndex[shape] = pos
 	
 	--DebugPrint("Spawn: " .. VecToString(pos))
@@ -378,6 +382,10 @@ function Redstone_Interact(shape)
 	local pos = GetBlockCenter(shape)
 	
 	local rsBlockData = GetFromDB(pos[1], pos[2], pos[3])
+	
+	if rsBlockData == nil then
+		return
+	end
 	
 	if rsBlockData[6] == nil or rsBlockData[6][1] ~= "interact" then
 		return nil
@@ -485,19 +493,23 @@ function GetAdjecent(x, y, z, shape, filterId)--, TESTID)
 	
 	local adjecentRs = {}
 	
+	local multDiv = 1.6
+	
 	--spawnDebugParticle(Vec(x / mult, y / mult, z / mult), 2, Color4.Yellow)
 	
 	for aX = x - blockSize, x + blockSize, blockSize * 2 do
 		local realX = aX / mult -- round(aX)
 		
-		if redstoneDB[aX] ~= nil and redstoneDB[aX][y] ~= nil then
-			if redstoneDB[aX][y][z] ~= nil and (redstoneDB[aX][y][z][2] == filterId or filterId == nil) then
+		if redstoneDB[aX] ~= nil and redstoneDB[aX][y] ~= nil and redstoneDB[aX][y][z] ~= nil then
+			if redstoneDB[aX][y][z][2] == filterId or filterId == nil then
 				adjecentRs[#adjecentRs + 1] = {redstoneDB[aX][y][z], {aX, y, z}}
-			elseif filterId == nil then
-				local fakeBlock = GetNonRedstoneBlock(shape, Vec(x / mult, y / mult, z / mult))
-				local fakeRsData = GetRSDataFromShape(frontAltBlock)
-				
-				adjecentRs[#adjecentRs + 1] = fakeRsData
+			end
+		elseif filterId == nil then
+			local fakeBlock = GetNonRedstoneBlock(shape, Vec((aX - x) / mult / multDiv, 0, 0), nil, Vec(x / mult + origBlockSize / 2, y / mult + origBlockSize / 2, z / mult + origBlockSize / 2))
+			local fakeRsData = GetRSDataFromShape(fakeBlock)
+			
+			if fakeRsData ~= nil and type(fakeRsData) == "table" then
+				adjecentRs[#adjecentRs + 1] = {fakeRsData, Vec(aX, y, z)}
 			end
 		end
 		
@@ -512,14 +524,16 @@ function GetAdjecent(x, y, z, shape, filterId)--, TESTID)
 	for aZ = z - blockSize, z + blockSize, blockSize * 2 do
 		local realZ = aZ / mult -- round(aZ)
 		
-		if redstoneDB[x] ~= nil and redstoneDB[x][y] ~= nil then
-			if redstoneDB[x][y][aZ] ~= nil and (redstoneDB[x][y][aZ][2] == filterId or filterId == nil)  then
+		if redstoneDB[x] ~= nil and redstoneDB[x][y] ~= nil and redstoneDB[x][y][aZ] ~= nil then
+			if redstoneDB[x][y][aZ][2] == filterId or filterId == nil then
 				adjecentRs[#adjecentRs + 1] = {redstoneDB[x][y][aZ], {x, y, aZ}}
-			elseif filterId == nil then
-				local fakeBlock = GetNonRedstoneBlock(shape, Vec(x / mult, y / mult, z / mult))
-				local fakeRsData = GetRSDataFromShape(frontAltBlock)
-				
-				adjecentRs[#adjecentRs + 1] = fakeRsData
+			end
+		elseif filterId == nil then
+			local fakeBlock = GetNonRedstoneBlock(shape, Vec(0, 0, (aZ - z) / mult / multDiv), nil, Vec(x / mult + origBlockSize / 2, y / mult + origBlockSize / 2, z / mult + origBlockSize / 2))
+			local fakeRsData = GetRSDataFromShape(fakeBlock)
+			
+			if fakeRsData ~= nil and type(fakeRsData) == "table" then
+				adjecentRs[#adjecentRs + 1] = {fakeRsData, Vec(x, y, aZ)}
 			end
 		end
 		
@@ -560,6 +574,38 @@ function GetBlockCenter(shape)
 	end
 	
 	return redstonePos
+end
+
+function IsRealRedstone(rsData)
+	return IsRealRedstoneId(rsData[2])
+end
+
+function IsRealRedstoneId(rsBlockId)
+	return rsBlockId ~= 12 and rsBlockId ~= 46 and rsBlockId ~= 123 and rsBlockId ~= 124 and rsBlockId ~= 125 and rsBlockId ~= 126 and rsBlockId ~= 127 and rsBlockId ~= 129
+end
+
+function FilterNonRedstoneBlocks(tbl)
+	local newTbl = {}
+	
+	for i = 1, #tbl do
+		local currRsData = tbl[i]
+		
+		if IsRealRedstone(currRsData) then
+			newTbl[#newTbl + 1] = currRsData
+		end
+	end
+	
+	return newTbl
+end
+
+function IsPowerAcceptingShape(shape)
+	local rsData = GetRSDataFromShape(shape)
+
+	return IsPowerAcceptingRedstone(rsData)
+end
+
+function IsPowerAcceptingRedstone(rsData)
+	return rsData[2] == 12 or rsData[2] == 123 or rsData[2] == 127
 end
 
 function GetBlockCenter_Old(shape)
@@ -641,6 +687,9 @@ function GetNonRedstoneBlock(shape, localSide, color4, posOverride, rotOverride)
 	if color4 ~= nil then
 		spawnDebugParticle(side, 1, color4)
 		spawnDebugParticle(sMin, 2, Color4.Yellow)
+		local aabbSize = origBlockSize * 0.95 / 2
+		
+		renderAabbZone(VecAdd(side, Vec(-aabbSize, -aabbSize, -aabbSize)), VecAdd(side, Vec(aabbSize, aabbSize, aabbSize)), 1, 0, 0, 1, true)
 	end
 	
 	local searchSize = {origBlockSize * 0.95, origBlockSize * 0.95, origBlockSize  * 0.95}
@@ -741,9 +790,9 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 		end
 	end
 	
-	local isntRealRedstone = rsBlockId ~= 12 and rsBlockId ~= 123 and rsBlockId ~= 124 and rsBlockId ~= 125 and rsBlockId ~= 126 and rsBlockId ~= 127 and rsBlockId ~= 129
+	local isntRealRedstone = IsRealRedstoneId(rsBlockId)
 	
-	if isntRealRedstone and ((rsSoftPower ~= nil and rsSoftPower > 0) or rsPower > 0) then
+	if isntRealRedstone and (rsPower > 0 or (rsSoftPower ~= nil and rsSoftPower > 0)) then
 		local rsShapeTransform = GetShapeWorldTransform(rsShape)
 		local upBlock = GetNonRedstoneBlock(rsShape, Vec(0.5, 1.5, 0.5))
 		local downBlock = GetNonRedstoneBlock(rsShape, Vec(0.5, -0.5, 0.5))
@@ -760,15 +809,13 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 		DebugPrint("ActualFakeUp: " .. tostring(actualFakeUp))
 		DebugPrint("ActualFakeDown: " .. tostring(actualFakeDown))]]--
 		
-		if upRsData ~= nil and actualFakeUp then
-			adjecentRs[#adjecentRs + 1] = {upRsData, Vec(x, y + blockSize, z), true}
-			--DebugPrint("BOOM")
+		if upRsData ~= nil and IsPowerAcceptingRedstone(upRsData) then
+			adjecentRs[#adjecentRs + 1] = {upRsData, Vec(x, y + blockSize, z), false}
 			--DrawShapeOutline(upBlock, 1, 0, 0, 1)
 		end
 		
-		if downRsData ~= nil and actualFakeDown then
-			adjecentRs[#adjecentRs + 1] = {downRsData, Vec(x, y - blockSize, z), true}
-			--DebugPrint("BANG")
+		if downRsData ~= nil and IsPowerAcceptingRedstone(downRsData) then
+			adjecentRs[#adjecentRs + 1] = {downRsData, Vec(x, y - blockSize, z), false}
 			--DrawShapeOutline(downBlock, 0, 1, 0, 1)
 		end
 	end
@@ -777,12 +824,12 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 		local upBlock = GetFromDB(x, y + blockSize, z)
 		local downBlock = GetFromDB(x, y - blockSize, z)
 		
-		if upBlock ~= nil then
-			adjecentRs[#adjecentRs + 1] = {upBlock, Vec(x, y - blockSize, z), upBlock[7] ~= nil}
+		if upBlock ~= nil and IsPowerAcceptingRedstone(upBlock) then
+			adjecentRs[#adjecentRs + 1] = {upBlock, Vec(x, y - blockSize, z), false}
 		end
 		
-		if downBlock ~= nil then
-			adjecentRs[#adjecentRs + 1] = {downBlock, Vec(x, y - blockSize, z), downBlock[7] ~= nil}
+		if downBlock ~= nil and IsPowerAcceptingRedstone(downBlock) then
+			adjecentRs[#adjecentRs + 1] = {downBlock, Vec(x, y - blockSize, z), false}
 		end
 	elseif rsBlockId == 123 then
 		if rsPower > 0 then
@@ -790,11 +837,19 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 			local fakeDownRsData, actualFake = GetRSDataFromShape(fakeDownBlock)
 			
 			if fakeDownRsData ~= nil then
-				adjecentRs[#adjecentRs + 1] = {fakeDownRsData, Vec(x, y - blockSize, z), true}
+				adjecentRs[#adjecentRs + 1] = {fakeDownRsData, Vec(x, y - blockSize, z), fakeDownRsData[2] ~= 127}
 			end
 		end
 		
-		local upAdj = GetAdjecent(x, y + blockSize, z, rsShape, 123);
+		local fakeUpBlock = GetNonRedstoneBlock(rsShape, Vec(0.25, 1.5, 0.25))--, Color4.Green)
+		--local fakeUpRsData, actualFake = GetRSDataFromShape(fakeDownBlock)
+		
+		local upAdj = {}
+		
+		if fakeUpBlock == nil then
+			upAdj = GetAdjecent(x, y + blockSize, z, rsShape, 123);
+		end
+		
 		local downAdj = GetAdjecent(x, y - blockSize, z, rsShape, 123);
 		
 		for i = 1, #upAdj + #downAdj do
@@ -853,21 +908,19 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 		
 		local currRsData = currAdjData[1]
 		local currRsPos = currAdjData[2]
-		local currRsToSoftPower = currAdjData[3] -- Only valid for fake blocks.
-		
-		--DebugPrint(tostring(currRsToSoftPower))
+		local currRsToSoftPower = currAdjData[3]
 		
 		local currRsShape = currRsData[1]
 		local currRsBlockId = currRsData[2]
 		local currRsPower = currRsData[3]
-		local currRsSoftPower = currRsData[7] -- Only valid for fake blocks.
+		local currRsSoftPower = currRsData[7]
 		
 		if currRsToSoftPower == nil then
 			currRsToSoftPower = false
 		end
 		
 		if (rsBlockId == 129 and currRsShape ~= rsExtra[2]) or rsBlockId ~= 129 then
-			if currRsToSoftPower and currRsSoftPower ~= nil and rsBlockId ~= 46 then
+			if ((currRsToSoftPower and currRsSoftPower ~= nil) or IsRealRedstoneId(currRsBlockId))and rsBlockId ~= 46 then
 				if currRsSoftPower < rsPower - 1 then
 					currRsData[7] = rsPower - 1
 				end
@@ -879,7 +932,7 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 				if rsPower >= 1 then
 					currRsData[3] = rsPower
 				end
-			elseif currRsBlockId ~= 129 then
+			elseif currRsBlockId ~= 129 and ((rsBlockId == 46 and IsPowerAcceptingRedstone(currRsData)) or rsBlockId ~= 46) then
 				if currRsPower < rsPower - 1 then
 					currRsData[3] = rsPower - 1
 				end

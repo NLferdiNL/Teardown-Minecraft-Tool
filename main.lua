@@ -16,24 +16,20 @@ toolReadableName = "Minecraft Tool"
 local toolSlot = nil
 
 -- TODO List Redstone Update: (Release once empty.)
--- Fake blocks retaining last tick power?
--- Allow lamps to soft power each other.
--- Soft power down not working?
--- Prevent hard powered blocks from powering other blocks.
 -- Fix conn shapes sometimes not using spaces.
--- Fix Redstone block powering adjectent blocks. 
--- Redstone dust up and down blocking with a block cutting it off. (Include connections) (cutting off could use around adj for comparison)
+-- Block power when dust downwards blocked off.
+-- Reconnect disconnected redstone dust when blocked off.
+-- Disconnect when blocked off.
 -- Fix redstone to side button connecting.
--- Fix button sounds playing when powered.
+-- Fix (redstone)torch emissiveness.
+-- Repeater not pulling soft power sometimes.
 -- Tnt Anim less rapid.
--- Fix redstone interact not working when tool not equipped.
 -- Replace dev art for Dust, Repeater, Lamp
 -- Maybe pressure plates.
--- Fix RS Nor Latch not working.
 
 -- TODO List Redstone Update 2: (Release once empty.)
 -- Repeater stay on delay (requires a refactor)
--- Add straight redstone soft powering. (And connections for visuals)
+-- Add straight redstone soft powering. (And connections for visuals) (Just double up the connection if one of the two axis sides meets conditions?)
 -- SetBodyDynamic false, button, press anim.
 -- Torch burnout timers.
 -- Power interactions with items such as doors.
@@ -41,6 +37,7 @@ local toolSlot = nil
 
 -- Unimportant for now:
 
+-- TODO: Gridalign finding blocks for collision checks.
 -- TODO: Add dropping items.
 -- TODO: Fix "block of ___" insides to be random.
 -- TODO: Fix block break particles moving one way, sometimes.
@@ -184,6 +181,13 @@ function tick(dt)
 
 	HandleSpecialBlocks()
 	
+	local playerInteractShape = GetPlayerInteractShape()
+	local playerInteractingWithAimShape = playerInteractShape == shape
+	
+	if playerInteractingWithAimShape and InputPressed(binds["Interact"]) then
+		Redstone_Interact(playerInteractShape)
+	end
+	
 	if not menu_disabled then
 		menu_tick(dt)
 	end
@@ -264,13 +268,6 @@ function tick(dt)
 	
 	if canGrabObject or GetPlayerGrabBody() ~= 0 or GetPlayerGrabShape() ~= 0 then
 		return
-	end
-	
-	local playerInteractShape = GetPlayerInteractShape()
-	local playerInteractingWithAimShape = playerInteractShape == shape
-	
-	if playerInteractingWithAimShape and InputPressed(binds["Interact"]) then
-		Redstone_Interact(playerInteractShape)
 	end
 	
 	if (InputPressed(binds["Place"]) or InputDown(binds["Place"])) and (GetPlayerGrabBody() == 0 or GetPlayerGrabShape() == 0) and not playerInteractingWithAimShape then
@@ -738,15 +735,34 @@ function PlaceBlock()
 			end
 		elseif selectedBlockData[9] == 7 and not dynamicBlock then
 			if selectedBlockId == 123 then
+				local tempTransform = Transform(tempPos, Quat())
 				local adjTransformUp = Transform(VecAdd(tempPos, Vec(0, gridModulo, 0)), Quat())
 				local adjTransformDown = Transform(VecAdd(tempPos, Vec(0, -gridModulo, 0)), Quat())
 				
-				local adjBlocksUp = FindAdjecentBlocks(adjTransformUp)
 				local adjBlocksDown = FindAdjecentBlocks(adjTransformDown)
 				
 				connectedShapesTag = connectedShapesTag .. ConnectToAdjecentBlocks(selectedBlockData, adjecentBlocks, tempPos, redstoneOffset, {12, 46, 123, 124, 125, 126, 127}, 4) -- Vec(-0.155, 0, -0.205)
-				connectedShapesTag = connectedShapesTag .. ConnectToAdjecentBlocks(selectedBlockData, adjBlocksUp, adjTransformUp.pos, VecAdd(redstoneOffset, Vec(0, -gridModulo, 0)), 123, 4, "_cu") -- Vec(-0.155, 0, -0.205)
-				connectedShapesTag = connectedShapesTag .. ConnectToAdjecentBlocks(selectedBlockData, adjBlocksDown, adjTransformDown.pos, redstoneOffset, 123, 4, "_cd") -- Vec(-0.155, 0, -0.205)
+				
+				if #FindBlocksAt(tempTransform, Vec(0, gridModulo * 1.5, 0)) <= 0 then
+					local adjBlocksUp = FindAdjecentBlocks(adjTransformUp)
+					connectedShapesTag = connectedShapesTag .. ConnectToAdjecentBlocks(selectedBlockData, adjBlocksUp, adjTransformUp.pos, VecAdd(redstoneOffset, Vec(0, -gridModulo, 0)), 123, 4, "_cu") -- Vec(-0.155, 0, -0.205)
+				end
+				
+				local newAdjDown = {}
+				local indexOffset = 0
+				
+				for i = 1, #adjBlocksDown do
+					local currDown = adjBlocksDown[i]
+					local currDownTransform = GetShapeWorldTransform(currDown)
+					
+					local aboveBlock = FindBlocksAt(currDownTransform, Vec(0, gridModulo * 1.5, 0))
+					
+					if #aboveBlock <= 0 then
+						newAdjDown[#newAdjDown + 1] = currDown
+					end
+				end
+				
+				connectedShapesTag = connectedShapesTag .. ConnectToAdjecentBlocks(selectedBlockData, newAdjDown, adjTransformDown.pos, redstoneOffset, 123, 4, "_cd") -- Vec(-0.155, 0, -0.205)
 			end
 		elseif selectedBlockData[9] == 8 then
 			local tempRot = QuatEuler(blockEulerX, blockEulerY, blockEulerZ)
@@ -918,6 +934,12 @@ function PlaceBlock()
 	SetTag(block, "minecraftblockid", selectedBlockId)
 	if hasSpecialData > 0 then
 		SetTag(block, "minecraftspecialdata", hasSpecialData)
+	end
+	
+	if selectedBlockId == 127 or selectedBlockId == 127 then
+		local light = FindLight("MCL_" .. tostring(uniqueLightId), true)
+		SetLightIntensity(light, 0)
+		SetLightEnabled(light, false)
 	end
 	
 	if selectedBlockData[9] ~= 4 and selectedBlockId ~= 123 and not dynamicBlock then
@@ -1095,6 +1117,18 @@ function FilterNonBlocks(shapeList)
 	end
 	
 	return newList
+end
+
+function FindBlocksAt(blockTransform, offset)
+	local position = TransformToParentPoint(blockTransform, offset)
+	
+	local searchSize = {gridModulo, gridModulo, gridModulo}
+	
+	local shapeList = CollisionCheckCenterPivot(position, searchSize)
+	
+	shapeList = FilterNonBlocks(shapeList)
+	
+	return shapeList
 end
 
 function FindAdjecentBlocks(blockTransform)

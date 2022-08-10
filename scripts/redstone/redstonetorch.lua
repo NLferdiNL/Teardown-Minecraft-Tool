@@ -117,6 +117,11 @@ function HandleRedstoneTorch(x, y, z, rsBlockData, dt)
 	end]]--
 	
 	SetLightEnabled(rsLight, rsBlockData[3] >= 1)
+	if rsPower >= 1 then
+		SetShapeEmissiveScale(rsShape, 1)
+	else
+		SetShapeEmissiveScale(rsShape, 0)
+	end
 	
 	return rsBlockData[3] >= 1
 end

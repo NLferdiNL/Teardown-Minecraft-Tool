@@ -31,6 +31,16 @@ function HandleTnt(x, y, z, rsBlockData, dt)
 		
 		DrawShapeHighlight(rsShape, math.sin(((4.0 - rsExtra + timeExtra)) % (rsExtra + timeExtra)))
 		
+		--[[local currTime = GetTime()
+		local transparancyTime = rsBlockData[6] % 1
+		
+		if currTime % 2 > 1 then
+			transparancyTime = 1 - transparancyTime
+		end
+		
+		--transparancyTime = math.abs(transparancyTime)
+		
+		DrawShapeHighlight(rsShape, transparancyTime)]]--
 	else
 		local shapePos = GetRealBlockCenter(rsShape)
 		RemoveTag(rsShape, "unbreakable")

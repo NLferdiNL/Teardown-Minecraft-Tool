@@ -20,6 +20,7 @@ function HandleButton(x, y, z, rsBlockData, dt)
 	
 	if timer > 0 then
 		rsExtra[3] = rsExtra[3] - dt
+		timer = rsExtra[3]
 		rsBlockData[3] = 16
 	
 		--SetTag(otherShape, "minecraftredstonehardpower", 16)
@@ -30,25 +31,22 @@ function HandleButton(x, y, z, rsBlockData, dt)
 		if fakeRsData ~= nil then
 			fakeRsData[3] = 16
 		end
-	else
-		if rsBlockData[5] > 0 and rsBlockData[3] <= 0 then
+		
+		if timer <= 0 then
 			PlaySound(sfxUnpress, GetShapeWorldTransform(rsBlockData[1]).pos, 5)
 		end
-	
+	else
 		rsBlockData[5] = rsBlockData[3]
 		rsBlockData[3] = 0
 	end
 end
 
 function HandleButtonInteraction(rsBlockData)
-	rsBlockData[3] = 16
-	rsBlockData[6][3] = rsBlockData[6][2]
-	
-	--if rsBlockData[5] <= 0 then
-	
-		local rsExtra = rsBlockData[6]
+	local rsExtra = rsBlockData[6]
 		
-		local sfxPress = rsExtra[5]
-		PlaySound(sfxPress, GetShapeWorldTransform(rsBlockData[1]).pos, 5)
-	--end
+	local sfxPress = rsExtra[5]
+	PlaySound(sfxPress, GetShapeWorldTransform(rsBlockData[1]).pos, 5)
+
+	rsBlockData[3] = 16
+	rsExtra[3] = rsBlockData[6][2]
 end
