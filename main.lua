@@ -16,15 +16,19 @@ toolReadableName = "Minecraft Tool"
 local toolSlot = nil
 
 -- TODO List Redstone Update: (Release once empty.)
+
+-- Repeater refactor/rework:
+-- Repeater not pulling soft power sometimes.
+-- Repeater backpowering.
+
 -- Fix conn shapes sometimes not using spaces.
--- Block power when dust downwards blocked off.
 -- Reconnect disconnected redstone dust when blocked off.
 -- Disconnect when blocked off.
 -- Fix redstone to side button connecting.
--- Fix (redstone)torch emissiveness.
--- Repeater not pulling soft power sometimes.
+-- Fix redstone upwards connecting not working when block next to up redstone.
 -- Tnt Anim less rapid.
 -- Replace dev art for Dust, Repeater, Lamp
+-- Fix dust powering repeaters.
 -- Maybe pressure plates.
 
 -- TODO List Redstone Update 2: (Release once empty.)
@@ -34,6 +38,7 @@ local toolSlot = nil
 -- Torch burnout timers.
 -- Power interactions with items such as doors.
 -- Maybe pistons.
+-- Ignored block lists (soft power and etc, think glass)
 
 -- Unimportant for now:
 
@@ -304,6 +309,8 @@ function draw(dt)
 	renderHud()
 	
 	Redstone_Draw(dt)
+	
+	renderHeldItem()
 	
 	inventory_draw()
 	
@@ -1559,6 +1566,52 @@ function renderHud()
 		drawStatusBox("[" .. binds["Toggle_Dynamic"]:upper() .. "] Dynamic Block", dynamicBlock)
 		--drawToggle("[" .. binds["Toggle_Walk_Mode"]:upper() .. "] to toggle walk speed.", walkModeActive)
 		
+	UiPop()
+end
+
+function renderHeldItem()
+	local heldItem = getCurrentHeldBlockData()
+	
+	if heldItem == nil then
+		return
+	end
+	
+	local currBlockId = heldItem[1]
+	local blockName = blocks[currBlockId][1]
+	
+	local toolBody = GetToolBody()
+	local toolTransform = GetBodyTransform(toolBody)
+	
+	local toolMin, toolMax = GetBodyBounds(toolBody)
+	
+	toolTransform.pos = VecLerp(toolMin, toolMax, 0.5)
+	
+	local toolCenter = TransformToParentPoint(toolTransform, Vec(0.1, 0, -0.5))
+	
+	--local toolMin, toolMax = GetBodyBounds(toolBody)
+	
+	--toolMax[2] = toolMin[2]
+	
+	--local toolCenter = VecLerp(toolMin, toolMax, 0.5)
+	
+	--local playerCameraTransform = GetPlayerCameraTransform()
+	--local toolCenter = TransformToParentPoint(playerCameraTransform, Vec(-0.90, 0.45, 1))
+	
+	UiPush()
+		local x, y, distance = UiWorldToPixel(toolCenter)
+		
+		UiTranslate(x, y)
+		UiAlign("center middle")
+		
+		if distance > 0.1 then
+			distance = 0.1
+		end
+		
+		local spriteSize = 300-- / 0.1 * distance
+		
+		if distance > 0 then
+			UiImageBox("MOD/sprites/blocks/" .. blockName .. ".png", spriteSize, spriteSize, 0, 0)
+		end
 	UiPop()
 end
 

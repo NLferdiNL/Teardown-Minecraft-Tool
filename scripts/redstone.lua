@@ -286,7 +286,7 @@ function Redstone_Add(id, shape, connections, extraData, posOverride)
 		power = 16
 	elseif id == 124 then
 		SetTag(shape, "interact", "Tick: 0.1")
-		extra = {"interact", 0.1, 0.1, false, 0.1, 0.0}
+		extra = {"interact", 0.1, 0.0, 0.0}
 	elseif id == 125 then
 		extra = {"interact", 1.0, 0.0, extraData, sfx[1], sfx[2]}
 	elseif id == 126 then
@@ -424,7 +424,7 @@ function GetRSDataFromShape(shape)
 	
 	local softBlockId = tonumber(GetTagValue(shape, "minecraftblockid"))
 	
-	if softBlockId == nil or softBlockId == "" then
+	if softBlockId == nil or softBlockId == "" or softBlockId == 16 then
 		return nil, nil
 	end
 	
@@ -850,7 +850,16 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 			upAdj = GetAdjecent(x, y + blockSize, z, rsShape, 123);
 		end
 		
-		local downAdj = GetAdjecent(x, y - blockSize, z, rsShape, 123);
+		local tempDownAdj = GetAdjecent(x, y - blockSize, z, rsShape, 123);
+		local downAdj = {}
+		
+		for i = 1, #tempDownAdj do
+			local currAdj = tempDownAdj[i]
+			local fakeDownBlock = GetNonRedstoneBlock(currAdj[1][1], Vec(0.25, 1.5, 0.25))
+			if fakeDownBlock == nil then
+				downAdj[#downAdj + 1] = currAdj
+			end
+		end
 		
 		for i = 1, #upAdj + #downAdj do
 			local index = i

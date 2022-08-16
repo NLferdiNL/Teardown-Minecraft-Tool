@@ -2,6 +2,11 @@ local mult = 100
 local origBlockSize = 1.6
 local blockSize = origBlockSize * mult
 
+--    1       2   		3		4					5				6					7			8
+-- {shape, block id, power, connection shapes, power last tick, extra(repeaterdata), softPower, softPowerLast}
+
+--				tag	   tick  curr
+-- extra = {"interact", 0.1, 0.0}
 function HandleRedstoneRepeater(x, y, z, rsBlockData, dt)
 	if rsBlockData == nil then
 		return
@@ -13,7 +18,7 @@ function HandleRedstoneRepeater(x, y, z, rsBlockData, dt)
 	
 	local shapeTransform = GetShapeWorldTransform(rsShape)
 		
-	local frontObject = TransformToParentPoint(shapeTransform, Vec(0.8, 0, -origBlockSize / 2))
+	--[[local frontObject = TransformToParentPoint(shapeTransform, Vec(0.8, 0, -origBlockSize / 2))
 	local rearObject = TransformToParentPoint(shapeTransform, Vec(0.8, 0, origBlockSize * 1.5))
 
 	--spawnDebugParticle(frontObject, 2, Color4.Yellow)
@@ -28,109 +33,73 @@ function HandleRedstoneRepeater(x, y, z, rsBlockData, dt)
 	
 	rearObject[1] = roundOne(rearObject[1])
 	rearObject[2] = y
-	rearObject[3] = roundOne(rearObject[3])
+	rearObject[3] = roundOne(rearObject[3])]]--
 	
-	local frontRsData = nil --GetFromDB(frontObject[1], frontObject[2], frontObject[3])
-	local rearRsData = nil --GetFromDB(rearObject[1], rearObject[2], rearObject[3])
-	
-	local frontAltBlock = nil
-	local rearAltBlock = nil
 	local rotX, rotY, rotZ = GetQuatEuler(shapeTransform.rot)
 	
-	local overridePos = Vec(x / mult, y / mult, z / mult)
+	local shapeRot = QuatEuler(0, roundToNearest(rotY, 90) - 90, 0)
 	
-	--DebugPrint(roundOne(rotY / 100))
+	local frontBlock = GetNonRedstoneBlock(rsShape, Vec(-0.5, 0.5, -0.5), nil, shapeTransform.pos, shapeRot)
+	local rearBlock = GetNonRedstoneBlock(rsShape, Vec(1.5, 0.5, -0.5), nil, shapeTransform.pos, shapeRot)
 	
-	rotY = roundOne(rotY / 100)
+	local frontRsData = GetRSDataFromShape(frontBlock)
+	local rearRsData = GetRSDataFromShape(rearBlock)
 	
-	if rotY == -90 then
-		overridePos[1] = overridePos[1] + 1.6
-	elseif rotY == 90 then
-		overridePos[3] = overridePos[3] + 1.6
-	elseif rotY == 180 then
-		overridePos[1] = overridePos[1] + 1.6
-		overridePos[3] = overridePos[3] + 1.6
-	end
+	local tickMax = rsExtra[2]
+	local tickCurr = rsExtra[3]
+	local tickLinger = rsExtra[4]
 	
-	if frontRsData == nil then
-		frontAltBlock = GetNonRedstoneBlock(rsShape, Vec(0.5, 0.5, -0.5), nil, overridePos, QuatEuler(0, rotY, 0))
-		frontRsData = GetRSDataFromShape(frontAltBlock)
-	end
+	local rearPowered = false
 	
-	if rearRsData == nil then
-		rearAltBlock = GetNonRedstoneBlock(rsShape, Vec(0.5, 0.5, 1.5), nil, overridePos, QuatEuler(0, rotY, 0))
-		rearRsData = GetRSDataFromShape(rearAltBlock)
-	end
-	
-	if rearRsData ~= nil and rearRsData[7] ~= nil and rearRsData[3] <= 0 then
-		rearRsData[3] = rearRsData[7]
-	end
-	
-	local rearPower = 0
+	DrawShapeOutline(frontBlock, 1, 0, 0, 1)
+	DrawShapeOutline(rearBlock, 0, 1, 0, 1)
 	
 	if rearRsData ~= nil then
-		rearPower = rearRsData[3]
-		if rearRsData[5] > rearPower then
+		local rearPower = 0
+		
+		if rearRsData[3] >= 1 and rearRsData[5] >= 1 then
 			rearPower = rearRsData[5]
 		end
 		
-		if rearRsData[7] ~= nil then
-			if rearRsData[7] > rearPower then
-				rearPower = rearRsData[7]
-			end
+		if rearRsData[7] ~= nil and rearRsData[7] >= 1 and rearRsData[8] ~= nil and rearRsData[8] >= 1 then
+			rearPower = rearRsData[7]
+		end
+		
+		rearPowered = rearPower >= 1
+	end
+	
+	DebugPrint(rsExtra[3])
+	
+	if rearPowered or tickCurr > 0 then
+		if tickCurr < tickMax then
+			rsExtra[3] = tickCurr + dt
+			tickCurr = rsExtra[3]
+		else
+			rsBlockData[3] = 15
+			rsPower = rsBlockData[3]
 			
-			--[[if rearRsData[8] > rearPower then
-				rearPower = rearRsData[8]
-			end]]--
+			rsExtra[3] = tickMax
+			
+			rsExtra[4] = 0.1
+			tickLinger = 0.1
 		end
 	end
 	
-	if (rearRsData ~= nil and (rearPower > 0)) or rsExtra[4] then
-		SetShapeEmissiveScale(rsShape, 1)
-		if rsExtra[3] > 0 then
-			rsExtra[4] = true
-			rsExtra[3] = rsExtra[3] - dt
-		end
-		
-		local usableBlock = false
-		
-		if frontRsData ~= nil then
-			usableBlock = frontRsData[2] ~= 46 and frontRsData[2] ~= 124 and frontRsData[2] ~= 125 and frontRsData[2] ~= 126 and frontRsData[2] ~= 129
-		end
-		
-		if frontRsData ~= nil and usableBlock and rsExtra[3] <= 0 then
-			--DebugPrint("HAA")
-			--if frontAltBlock ~= nil then
-				--SetTag(frontAltBlock, "minecraftredstonehardpower", 16)
-				--SetTag(frontAltBlock, "minecraftredstonehardpowerlast", 16)
-				
-				--[[local fakeBlockIndex = fakePoweredBlocksShapeIndex[frontAltBlock]
-				
-				if fakeBlockIndex == nil then
-					fakeBlockIndex = #fakePoweredBlocks + 1
-					
-					fakePoweredBlocksShapeIndex[frontAltBlock] = #fakePoweredBlocks + 1
-					
-				end
-				
-				if fakePoweredBlocks[fakeBlockIndex] == nil then
-					fakePoweredBlocks[fakeBlockIndex] = frontRsData
-				end]]--
-				
-				--frontRsData[3] = 15
-			--else
-			frontRsData[3] = 16
-			--DebugPrint(tableToText(frontRsData))
-			--end
-		end
-		
-		if rsExtra[3] <= 0 then
-			rsBlockData[3] = 15
-			rsExtra[4] = false
-		end
-	else
-		rsExtra[3] = rsExtra[2]
-		SetShapeEmissiveScale(rsShape, 0)
+	if not rearPowered and tickLinger > 0 then
+		rsExtra[4] = tickLinger - dt
+		rsExtra[3] = 0
+	elseif not rearPowered and tickLinger <= 0 then
 		rsBlockData[3] = 0
 	end
+	
+	if rsPower >= 1 then
+		if frontRsData ~= nil and frontRsData[2] ~= 124 then
+			frontRsData[3] = 15
+		end
+		SetShapeEmissiveScale(rsShape, 1)
+	elseif rsPower <= 0 then
+		SetShapeEmissiveScale(rsShape, 0)
+	end
+	
+	rsBlockData[5] = rsBlockData[3]
 end
