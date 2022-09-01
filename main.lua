@@ -17,21 +17,18 @@ local toolSlot = nil
 
 -- TODO List Redstone Update: (Release once empty.)
 
--- Repeater refactor/rework:
--- Repeater not pulling soft power sometimes.
--- Repeater backpowering.
-
--- Fix conn shapes sometimes not using spaces.
 -- Reconnect disconnected redstone dust when blocked off.
 -- Disconnect when blocked off.
 -- Fix redstone to side button connecting.
--- Fix redstone upwards connecting not working when block next to up redstone.
--- Tnt Anim less rapid.
 -- Replace dev art for Dust, Repeater, Lamp
--- Fix dust powering repeaters.
--- Maybe pressure plates.
+
+-- Can't replicate yet:
+-- Fix conn shapes sometimes not using spaces.
+-- Fix redstone upwards connecting not working when block next to up redstone.
 
 -- TODO List Redstone Update 2: (Release once empty.)
+-- Maybe pressure plates.
+-- Tnt Anim less rapid.
 -- Repeater stay on delay (requires a refactor)
 -- Add straight redstone soft powering. (And connections for visuals) (Just double up the connection if one of the two axis sides meets conditions?)
 -- SetBodyDynamic false, button, press anim.
@@ -996,6 +993,8 @@ function PlaceBlock()
 						
 					connectedShapesTag = connectedShapesTag .. currPieces
 					
+					--DebugPrint(connectedShapesTag)
+					
 					local otherShapeConnectedTag = GetTagValue(currBlock, "minecraftconnectedshapes")
 					
 					if otherShapeConnectedTag == nil or otherShapeConnectedTag == "" then
@@ -1032,6 +1031,8 @@ function PlaceBlock()
 			end
 			
 			otherConnectedShapes = otherConnectedShapes .. " " .. block
+			
+			--DebugPrint(otherConnectedShapes)
 			
 			SetTag(otherBlock, "minecraftconnectedshapes", otherConnectedShapes)
 		end
@@ -1607,7 +1608,7 @@ function renderHeldItem()
 			distance = 0.1
 		end
 		
-		local spriteSize = 300-- / 0.1 * distance
+		local spriteSize = 225-- / 0.1 * distance
 		
 		if distance > 0 then
 			UiImageBox("MOD/sprites/blocks/" .. blockName .. ".png", spriteSize, spriteSize, 0, 0)

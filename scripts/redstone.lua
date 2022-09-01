@@ -41,9 +41,9 @@ function redstone_update(dt)
 	--[[if ticker > 0 then
 		ticker = ticker - dt
 		return
-	end
+	end]]--
 	
-	ticker = 1]]--
+	ticker = 1
 	--[[for x, xArray in pairs(redstoneDB) do
 		for y, yArray in pairs(xArray) do
 			for z, rsBlockData in pairs(yArray) do
@@ -286,7 +286,7 @@ function Redstone_Add(id, shape, connections, extraData, posOverride)
 		power = 16
 	elseif id == 124 then
 		SetTag(shape, "interact", "Tick: 0.1")
-		extra = {"interact", 0.1, 0.0, 0.0}
+		extra = {"interact", 0.1, 0.0, 0.0, false}
 	elseif id == 125 then
 		extra = {"interact", 1.0, 0.0, extraData, sfx[1], sfx[2]}
 	elseif id == 126 then
@@ -949,7 +949,7 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 		end
 	end
 	
-	if rsBlockId ~= 46 and rsBlockId ~= 125 and rsBlockId ~= 126 and rsBlockId ~= 129 then
+	if rsBlockId ~= 46 and rsBlockId ~= 124 and rsBlockId ~= 125 and rsBlockId ~= 126 and rsBlockId ~= 129 then
 		rsBlockData[5] = rsPower
 		rsBlockData[3] = 0
 		
