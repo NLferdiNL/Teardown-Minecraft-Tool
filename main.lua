@@ -17,8 +17,6 @@ local toolSlot = nil
 
 -- TODO List Redstone Update: (Release once empty.)
 
--- Reconnect disconnected redstone dust when blocked off.
--- Disconnect when blocked off.
 -- Fix redstone to side button connecting.
 -- Replace dev art for Dust, Repeater, Lamp
 
@@ -27,6 +25,7 @@ local toolSlot = nil
 -- Fix redstone upwards connecting not working when block next to up redstone.
 
 -- TODO List Redstone Update 2: (Release once empty.)
+-- Update connected shapes end points to remove blocked connection (Give connection shape a list of end points)
 -- Maybe pressure plates.
 -- Tnt Anim less rapid.
 -- Repeater stay on delay (requires a refactor)
@@ -414,7 +413,6 @@ function RemoveBlock(blockToRemove)
 	local blockData = blocks[blockTag]
 	
 	local blockRedstonePos = GetTagValue(blockToRemove, "minecraftredstonepos")
-	local blockRedstoneInfluenced = GetTagValue(blockToRemove, "minecraftredstoneinfluenced")
 	
 	local redstonePos = nil
 	
@@ -430,7 +428,7 @@ function RemoveBlock(blockToRemove)
 	if redstonePos ~= nil then
 		--DebugPrint(VecToString(redstonePos))
 		Redstone_Remove_Pos(redstonePos[1], redstonePos[2], redstonePos[3])
-	elseif blockData[9] == 7 or blockRedstoneInfluenced ~= nil then
+	elseif blockData[9] == 7 then
 		Redstone_Remove(blockToRemove)
 	end
 	
@@ -451,7 +449,32 @@ function RemoveBlock(blockToRemove)
 	
 	spawnBrokenBlockParticles(blockToRemove)
 	
+	local blockMin, blockMax = GetShapeBounds(blockToRemove)
+	local blockCenter = VecLerp(blockMin, blockMax, 0.5)
+	
 	Delete(blockToRemove)
+	
+	local blockBelow = FindBlocksAt(Transform(blockCenter), Vec(0, -gridModulo, 0))
+	
+	if blockBelow ~= nil then
+		blockBelow = blockBelow[1]
+		
+		local blockBelowId = tonumber(GetTagValue(blockBelow, "minecraftblockid"))
+		local blockBelowConnected = GetTagValue(blockBelow, "minecraftconnectedshapes")
+		
+		local blockBelowMin, blockBelowMax = GetShapeBounds(blockBelow)
+		local blockBelowCenter = VecLerp(blockBelowMin, blockBelowMax, 0.5)
+		
+		if blockBelowId == 123 then
+			local connectedShape = ConnectRedstoneToAdjecent(blockBelowCenter, blocks[123], {}, true, false, true)
+			
+			blockBelowConnected = blockBelowConnected .. " " .. connectedShape
+			
+			SetTag(blockBelow, "minecraftconnectedshapes", blockBelowConnected)
+			
+			Redstone_Update(blockBelow, blockBelowConnected)
+		end
+	end
 end
 
 function PlaceBlock()
@@ -739,34 +762,8 @@ function PlaceBlock()
 			end
 		elseif selectedBlockData[9] == 7 and not dynamicBlock then
 			if selectedBlockId == 123 then
-				local tempTransform = Transform(tempPos, Quat())
-				local adjTransformUp = Transform(VecAdd(tempPos, Vec(0, gridModulo, 0)), Quat())
-				local adjTransformDown = Transform(VecAdd(tempPos, Vec(0, -gridModulo, 0)), Quat())
-				
-				local adjBlocksDown = FindAdjecentBlocks(adjTransformDown)
-				
-				connectedShapesTag = connectedShapesTag .. ConnectToAdjecentBlocks(selectedBlockData, adjecentBlocks, tempPos, redstoneOffset, {12, 46, 123, 124, 125, 126, 127}, 4) -- Vec(-0.155, 0, -0.205)
-				
-				if #FindBlocksAt(tempTransform, Vec(0, gridModulo * 1.5, 0)) <= 0 then
-					local adjBlocksUp = FindAdjecentBlocks(adjTransformUp)
-					connectedShapesTag = connectedShapesTag .. ConnectToAdjecentBlocks(selectedBlockData, adjBlocksUp, adjTransformUp.pos, VecAdd(redstoneOffset, Vec(0, -gridModulo, 0)), 123, 4, "_cu") -- Vec(-0.155, 0, -0.205)
-				end
-				
-				local newAdjDown = {}
-				local indexOffset = 0
-				
-				for i = 1, #adjBlocksDown do
-					local currDown = adjBlocksDown[i]
-					local currDownTransform = GetShapeWorldTransform(currDown)
-					
-					local aboveBlock = FindBlocksAt(currDownTransform, Vec(0, gridModulo * 1.5, 0))
-					
-					if #aboveBlock <= 0 then
-						newAdjDown[#newAdjDown + 1] = currDown
-					end
-				end
-				
-				connectedShapesTag = connectedShapesTag .. ConnectToAdjecentBlocks(selectedBlockData, newAdjDown, adjTransformDown.pos, redstoneOffset, 123, 4, "_cd") -- Vec(-0.155, 0, -0.205)
+				connectedShapesTag = connectedShapesTag .. ConnectRedstoneToAdjecent(tempPos, selectedBlockData, adjecentBlocks)
+				--connectedShapesTag = connectedShapesTag .. ConnectToAdjecentBlocks(selectedBlockData, newAdjDown, adjTransformDown.pos, redstoneOffset, 123, 4, "_cd") -- Vec(-0.155, 0, -0.205)
 			end
 		elseif selectedBlockData[9] == 8 then
 			local tempRot = QuatEuler(blockEulerX, blockEulerY, blockEulerZ)
@@ -1042,6 +1039,8 @@ function PlaceBlock()
 		SetTag(block, "minecraftconnectedshapes", connectedShapesTag)
 	end
 	
+	RemoveConnectionsInBlock(gridAlignedPreOffset, connectedShapesTag .. " " .. block)
+	
 	if not creativeMode then
 		selectedBlockInvData[2] = selectedBlockInvData[2] - 1
 		if selectedBlockInvData[2] <= 0 then
@@ -1087,6 +1086,26 @@ function AimLogic()
 						playerPos[3] + gridModulo / 2)
 		
 		DebugLine(playerPos, blockOffset)
+	end
+end
+
+function RemoveConnectionsInBlock(gridAligned, shapeIgnoreList)
+	local gridAlignedCentered = VecAdd(gridAligned, Vec(gridModulo / 2, gridModulo / 2, gridModulo / 2))
+	
+	local searchSize = {gridModulo, gridModulo, gridModulo}
+	
+	local blocksInGridAligned = CollisionCheckCenterPivot(gridAlignedCentered, searchSize)--(Transform(gridAligned), Vec(gridModulo / 2, gridModulo / 2, gridModulo / 2), false)
+	
+	local ignoreShapes = {}
+	
+	for shape in string.gmatch(shapeIgnoreList, "%d+") do
+		ignoreShapes[tonumber(shape)] = 1
+	end
+	
+	for i = 1, #blocksInGridAligned do
+		if ignoreShapes[blocksInGridAligned[i]] == nil then
+			Delete(blocksInGridAligned[i])
+		end
 	end
 end
 
@@ -1137,6 +1156,45 @@ function FindBlocksAt(blockTransform, offset)
 	shapeList = FilterNonBlocks(shapeList)
 	
 	return shapeList
+end
+
+function ConnectRedstoneToAdjecent(tempPos, selectedBlockData, adjecentBlocks, connectUp, connectDown)
+	connectUp = connectUp or true
+	connectDown = connectDown or true
+	
+	local tempTransform = Transform(tempPos, Quat())
+	local adjTransformUp = Transform(VecAdd(tempPos, Vec(0, gridModulo, 0)), Quat())
+	local adjTransformDown = Transform(VecAdd(tempPos, Vec(0, -gridModulo, 0)), Quat())
+
+	local adjBlocksDown = FindAdjecentBlocks(adjTransformDown)
+
+	local connectedShapesTag = ConnectToAdjecentBlocks(selectedBlockData, adjecentBlocks, tempPos, redstoneOffset, {12, 46, 123, 124, 125, 126, 127}, 4) -- Vec(-0.155, 0, -0.205)
+
+	if #FindBlocksAt(tempTransform, Vec(0, gridModulo * 1.5, 0)) <= 0 and connectUp then
+		local adjBlocksUp = FindAdjecentBlocks(adjTransformUp)
+		connectedShapesTag = connectedShapesTag .. ConnectToAdjecentBlocks(selectedBlockData, adjBlocksUp, adjTransformUp.pos, VecAdd(redstoneOffset, Vec(0, -gridModulo, 0)), 123, 4, "_cu") -- Vec(-0.155, 0, -0.205)
+	end
+
+	if connectDown then
+		local newAdjDown = {}
+		local indexOffset = 0
+
+		for i = 1, #adjBlocksDown do
+			local currDown = adjBlocksDown[i]
+			local currDownTransform = GetShapeWorldTransform(currDown)
+			
+			local aboveBlock = FindBlocksAt(currDownTransform, Vec(0, gridModulo * 1.5, 0))
+			
+			if #aboveBlock <= 0 then
+				newAdjDown[#newAdjDown + 1] = currDown
+			end
+		end
+		
+		
+		connectedShapesTag = connectedShapesTag .. ConnectToAdjecentBlocks(selectedBlockData, newAdjDown, adjTransformDown.pos, redstoneOffset, 123, 4, "_cd")
+	end
+	
+	return connectedShapesTag
 end
 
 function FindAdjecentBlocks(blockTransform)

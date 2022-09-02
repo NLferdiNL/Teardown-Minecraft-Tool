@@ -18,8 +18,8 @@ local mouseInCreativeInventory = false
 
 local font = "MOD/fonts/MinecraftRegular.ttf"
 local fontSize = 26
-local descriptionBoxBg = "MOD/sprites/square.png"
-local descriptionBoxMargin = 20
+local descriptionBoxBg = "MOD/sprites/container/hover_box.png"
+local descriptionBoxMargin = 40
 
 function inventory_init(uiScale)
 	setInventoryScaling(uiScale)
@@ -437,19 +437,17 @@ function drawDescriptionOnMouse(text)
 					
 			local boxWidth = mX + textWidth + descriptionBoxMargin
 			
-			local textOffsetX = 10
+			local textOffsetX = descriptionBoxMargin / 2
 			
 			if boxWidth > UiWidth() then
 				UiAlign("top right")
-				textOffsetX = -10
+				textOffsetX = -descriptionBoxMargin / 2
 			end
 			
-			UiColor(0, 0, 0, 1)
-			UiImageBox(descriptionBoxBg, textWidth + descriptionBoxMargin, textHeight + descriptionBoxMargin, 0, 0)
+			UiImageBox(descriptionBoxBg, textWidth + descriptionBoxMargin, textHeight + descriptionBoxMargin, descriptionBoxMargin / 2, descriptionBoxMargin / 2)
 			
-			UiTranslate(textOffsetX, 10)
+			UiTranslate(textOffsetX, descriptionBoxMargin / 2)
 			
-			UiColor(1, 1, 1, 1)
 			UiText(text)
 		end
 	UiPop()
