@@ -22,7 +22,7 @@ function HandleRedstoneRepeater(x, y, z, rsBlockData, dt)
 	
 	local shapeRot = QuatEuler(0, roundToNearest(rotY, 90) - 90, 0)
 	
-	local frontBlock = GetNonRedstoneBlock(rsShape, Vec(-0.5, 0.5, -0.5), nil, shapeTransform.pos, shapeRot)
+	local frontBlock = GetNonRedstoneBlock(rsShape, Vec(-0.5, 0.5, -0.5), nil, shapeTransform.pos, shapeRot, {0.8, 0.95, 0.8})
 	local rearBlock = GetNonRedstoneBlock(rsShape, Vec(1.5, 0.5, -0.5), nil, shapeTransform.pos, shapeRot)
 	
 	local frontRsData = GetRSDataFromShape(frontBlock)
@@ -105,6 +105,11 @@ function HandleRedstoneRepeater(x, y, z, rsBlockData, dt)
 	if rsPower > 0 and frontRsData ~= nil and frontRsData[2] ~= 124 then
 		frontRsData[3] = 15
 	end
+	
+	--[[rsPowerLastTick = rsPower
+	rsPower = 0
+	rsBlockData[3] = rsPower
+	rsBlockData[5] = rsPowerLastTick]]--
 	
 	if rsPower > 0 or currTick > 0 or afterTick > 0 then
 		SetShapeEmissiveScale(rsShape, 1)

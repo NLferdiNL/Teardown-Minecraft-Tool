@@ -669,10 +669,12 @@ function roundOne(a)
 	--return math.floor(a * 10)/10
 end
 
-function GetNonRedstoneBlock(shape, localSide, color4, posOverride, rotOverride)
+function GetNonRedstoneBlock(shape, localSide, color4, posOverride, rotOverride, posSizeModifierOverride)
 	localSide[1] = localSide[1] * origBlockSize
 	localSide[2] = localSide[2] * origBlockSize
 	localSide[3] = localSide[3] * origBlockSize
+	
+	posSizeModifierOverride = posSizeModifierOverride or {0.95, 0.95, 0.95}
 	
 	local sMin = GetShapeBounds(shape) -- Don't even need sMax.
 	local shapeTransform = Transform(posOverride or sMin, rotOverride or Quat())
@@ -692,7 +694,7 @@ function GetNonRedstoneBlock(shape, localSide, color4, posOverride, rotOverride)
 		renderAabbZone(VecAdd(side, Vec(-aabbSize, -aabbSize, -aabbSize)), VecAdd(side, Vec(aabbSize, aabbSize, aabbSize)), 1, 0, 0, 1, true)
 	end
 	
-	local searchSize = {origBlockSize * 0.95, origBlockSize * 0.95, origBlockSize  * 0.95}
+	local searchSize = {origBlockSize * posSizeModifierOverride[1], origBlockSize * posSizeModifierOverride[2], origBlockSize * posSizeModifierOverride[3]}
 	
 	local objectsOnSide = CollisionCheckCenterPivot(side, searchSize)
 	

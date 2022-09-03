@@ -25,6 +25,7 @@ local toolSlot = nil
 -- Fix redstone upwards connecting not working when block next to up redstone.
 
 -- TODO List Redstone Update 2: (Release once empty.)
+-- Right click interact when on the mod tool.
 -- Search feature.
 -- Update connected shapes end points to remove blocked connection (Give connection shape a list of end points)
 -- Maybe pressure plates.
