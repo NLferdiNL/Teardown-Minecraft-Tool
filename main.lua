@@ -18,13 +18,14 @@ local toolSlot = nil
 -- TODO List Redstone Update: (Release once empty.)
 
 -- Fix redstone to side button connecting.
--- Replace dev art for Dust, Repeater, Lamp
+-- Replace dev art for Repeater
 
 -- Can't replicate yet:
 -- Fix conn shapes sometimes not using spaces.
 -- Fix redstone upwards connecting not working when block next to up redstone.
 
 -- TODO List Redstone Update 2: (Release once empty.)
+-- Search feature.
 -- Update connected shapes end points to remove blocked connection (Give connection shape a list of end points)
 -- Maybe pressure plates.
 -- Tnt Anim less rapid.
@@ -38,6 +39,7 @@ local toolSlot = nil
 
 -- Unimportant for now:
 
+-- TODO: Move fence/redstone offset to blockconnector file.
 -- TODO: Gridalign finding blocks for collision checks.
 -- TODO: Add dropping items.
 -- TODO: Fix "block of ___" insides to be random.
@@ -143,7 +145,7 @@ local shape = 0
 
 local blockCenterPosOffset = gridModulo / 2
 local fenceOffset = Vec(0, gridModulo / 16 * 6, 0)
-local redstoneOffset = Vec(0, 0, gridModulo / 16 * -2)
+local redstoneOffset = Vec(gridModulo / 16 * -1, 0, gridModulo / 16 * -2)
 
 local canGrabObject = false
 

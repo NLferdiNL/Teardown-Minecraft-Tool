@@ -7,7 +7,7 @@ blocks =
 		{"Cobblestone",							"MOD/vox/blocks/cobblestone.vox",					{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil},
 		{"Cobblestone Slab",					"MOD/vox/blocks/cobblestoneslab.vox",				{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 8, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		3, nil},
 		{"Cobblestone Stairs",      			"MOD/vox/blocks/cobblestonestairs.vox",     		{x = 0, y = 1,  z = 0},   	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		5, nil},
-		{"Mossy Cobblestone",       			"MOD/vox/blocks/mossycobble.vox", 		  			{x = 0, y = 1,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil},
+		{"Mossy Cobblestone",       			"MOD/vox/blocks/mossycobble.vox", 		  			{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil},
 		{"Oak Log", 		  	    			"MOD/vox/blocks/oaklog.vox", 		          		{x = 1, y = 0,  z = 1}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil},
 		{"Oak Leaves",   		      			"MOD/vox/blocks/oakleaves.vox", 	          		{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil},
 		{"Oak Planks", 	          				"MOD/vox/blocks/oakplanks.vox", 	          		{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil},
