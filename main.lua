@@ -15,16 +15,14 @@ toolName = "minecraftbuildtool"
 toolReadableName = "Minecraft Tool"
 local toolSlot = nil
 
--- TODO List Redstone Update: (Release once empty.)
-
--- Fix redstone to side button connecting.
--- Replace dev art for Repeater
-
 -- Can't replicate yet:
 -- Fix conn shapes sometimes not using spaces.
 -- Fix redstone upwards connecting not working when block next to up redstone.
 
 -- TODO List Redstone Update 2: (Release once empty.)
+-- Fix redstone to side button connecting.
+-- Add all colors of wool/carpet (cuz carpet is free with wool anyway lol, cant make circuits without wool either)
+-- Multipart blocks redirect to head part through tags.
 -- Right click interact when on the mod tool.
 -- Search feature.
 -- Update connected shapes end points to remove blocked connection (Give connection shape a list of end points)
@@ -104,7 +102,7 @@ for i = 1, mainInventorySize + miscInventorySlots do
 		inventory[i] = {i - 31, 1}
 	end
 	
-	if i == 32 then
+	--[[if i == 32 then
 		inventory[i][1] = 123
 	end
 	
@@ -130,7 +128,7 @@ for i = 1, mainInventorySize + miscInventorySlots do
 	
 	if i == 38 then
 		inventory[i][1] = 129
-	end
+	end]]--
 end
 
 inventoryHotBarStartIndex = #inventory - 8
@@ -150,7 +148,7 @@ local redstoneOffset = Vec(gridModulo / 16 * -1, 0, gridModulo / 16 * -2)
 
 local canGrabObject = false
 
-debugstart = true
+debugstart = false
 local debugstarted = false
 
 function init()
@@ -868,8 +866,8 @@ function PlaceBlock()
 	if string.find(selectedBlockData[2], "xml") ~= nil then
 		blockXML = selectedBlockData[2]
 	end
-	
-	local block = Spawn(blockXML, blockTransform, not dynamicBlock, true)[1]
+	local blockArray = Spawn(blockXML, blockTransform, not dynamicBlock, true)
+	local block = blockArray[1]
 	
 	local hasSpecialData = 0
 	
@@ -886,8 +884,16 @@ function PlaceBlock()
 		local offsetPos = gridAlignedPreOffset
 		
 		--DebugPrint(tostring(offsetPos == nil) .. " " .. selectedBlockId)
-		
-		if selectedBlockId == 125 or selectedBlockId == 126 then
+		if selectedBlockId == 124 then
+			local torch = blockArray[2]
+			
+			SetTag(torch, "minecraftconnectedshapes", block)
+			SetTag(block, "minecraftconnectedshapes", torch)
+			
+			local returnPos = Redstone_Add(selectedBlockId, block, connectedShapesTag, torch, offsetPos)
+			
+			SetTag(block, "minecraftredstonepos", returnPos[1] .. " " .. returnPos[2] .. " " .. returnPos[3])
+		elseif selectedBlockId == 125 or selectedBlockId == 126 then
 			local returnPos = Redstone_Add(selectedBlockId, block, connectedShapesTag, shape, offsetPos)
 			
 			SetTag(block, "minecraftredstonepos", returnPos[1] .. " " .. returnPos[2] .. " " .. returnPos[3])

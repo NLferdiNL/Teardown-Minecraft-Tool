@@ -153,7 +153,7 @@ function redstone_update(dt)
 		fakePoweredBlocks = {}
 		fakePoweredBlocksShapeIndex = {}
 	--elseif #fakePoweredBlocks > 0 then
-		--DebugPrint("Dirty Dancer")
+		--DebugPrint("No blocks")
 	end]]--
 end
 
@@ -271,6 +271,12 @@ function Redstone_Add(id, shape, connections, extraData, posOverride)
 		redstoneDB[pos[1]][pos[2]] = {}
 	end
 	
+	if redstoneDB[pos[1]][pos[2]][pos[3]] ~= nil then
+		local rsData = redstoneDB[pos[1]][pos[2]][pos[3]]
+		
+		RemoveBlock(rsData[1])
+	end
+	
 	--[[if redstoneDB[pos[1]*][pos[2]*][pos[3]*] ~= nil then
 		rsCount = rsCount - 1
 		dupeRs = dupeRs + 1
@@ -286,7 +292,12 @@ function Redstone_Add(id, shape, connections, extraData, posOverride)
 		power = 16
 	elseif id == 124 then
 		SetTag(shape, "interact", "Tick: 0.1")
-		extra = {"interact", 0.1, 0.0, 0.0, false}
+		
+		local torchPos = GetBodyTransform(extraData).pos
+		
+		extra = {"interact", 0.1, 0.0, 0.0, false, extraData, torchPos}
+		
+		--SetBodyDynamic(extraData, true)
 	elseif id == 125 then
 		extra = {"interact", 1.0, 0.0, extraData, sfx[1], sfx[2]}
 	elseif id == 126 then
@@ -730,7 +741,7 @@ function DrawInteractText(x, y, z, rsBlockData, dt, aimShape)
 		if (dist >= 0 and dist <= 3) or (dist <= 3.3 and rsShape == aimShape) then
 			UiTranslate(-textWidth / 2, 0)
 			UiTranslate(posX, posY)
-			UiText(interactText)
+			UiText("[E] " .. interactText)
 		end
 	UiPop()
 end
@@ -752,7 +763,9 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 		HandleTnt(x, y, z, rsBlockData, dt)
 		return
 	elseif rsBlockId == 124 then -- Don't need adjecent for this. Calculate manually.
-		HandleRedstoneRepeater(x, y, z, rsBlockData, dt)
+		if not HandleRedstoneRepeater(x, y, z, rsBlockData, dt) then
+			Redstone_Remove(rsShape)
+		end
 		return
 	elseif rsBlockId == 125 or rsBlockId == 126 then
 		HandleButton(x, y, z, rsBlockData, dt)
