@@ -455,6 +455,11 @@ function GetRSDataFromShape(shape)
 	
 	if indexPos ~= nil then
 		local rsData = redstoneDB[indexPos[1]][indexPos[2]][indexPos[3]]
+		
+		if rsData == nil then
+			return nil, nil
+		end
+		
 		return rsData, rsData[7] ~= nil
 	else
 		indexPos = GetBlockCenter(shape)

@@ -16,10 +16,10 @@ toolReadableName = "Minecraft Tool"
 local toolSlot = nil
 
 -- Can't replicate yet:
--- Fix conn shapes sometimes not using spaces.
 -- Fix redstone upwards connecting not working when block next to up redstone.
 
 -- TODO List Redstone Update 2: (Release once empty.)
+-- SIGNS!
 -- Fix redstone to side button connecting.
 -- Add all colors of wool/carpet (cuz carpet is free with wool anyway lol, cant make circuits without wool either)
 -- Multipart blocks redirect to head part through tags.
@@ -997,7 +997,7 @@ function PlaceBlock()
 						currPieces = ""
 					end
 						
-					connectedShapesTag = connectedShapesTag .. currPieces
+					connectedShapesTag = connectedShapesTag .. " " .. currPieces
 					
 					--DebugPrint(connectedShapesTag)
 					
@@ -1181,7 +1181,7 @@ function ConnectRedstoneToAdjecent(tempPos, selectedBlockData, adjecentBlocks, c
 
 	if #FindBlocksAt(tempTransform, Vec(0, gridModulo * 1.5, 0)) <= 0 and connectUp then
 		local adjBlocksUp = FindAdjecentBlocks(adjTransformUp)
-		connectedShapesTag = connectedShapesTag .. ConnectToAdjecentBlocks(selectedBlockData, adjBlocksUp, adjTransformUp.pos, VecAdd(redstoneOffset, Vec(0, -gridModulo, 0)), 123, 4, "_cu") -- Vec(-0.155, 0, -0.205)
+		connectedShapesTag = connectedShapesTag .. " " .. ConnectToAdjecentBlocks(selectedBlockData, adjBlocksUp, adjTransformUp.pos, VecAdd(redstoneOffset, Vec(0, -gridModulo, 0)), 123, 4, "_cu") -- Vec(-0.155, 0, -0.205)
 	end
 
 	if connectDown then
