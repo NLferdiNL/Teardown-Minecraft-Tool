@@ -1,7 +1,7 @@
 <group pos="0.0 0.0 0.0" rot="0.0 0.0 0.0">
 	<voxbox name="redstonerepeater" size="16 8 16" brush="MOD/vox/blocks/redstonerepeater.vox"/>
 	<body>
-	<vox pos="0.8 0.0 0.9" rot="0.0 0.0 0.0" file="MOD/vox/blocks/redstonerepeater_torch.vox"/>
+	<vox pos="0.8 0.0 0.3" rot="0.0 0.0 0.0" file="MOD/vox/blocks/redstonerepeater_torch.vox" scale="1"/>
 	</body>
 </group>
 

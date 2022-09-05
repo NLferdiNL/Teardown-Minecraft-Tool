@@ -39,7 +39,7 @@ function HandleRedstoneRepeater(x, y, z, rsBlockData, dt)
 		return false
 	end
 	
-	local forwardVec = TransformToParentVec(rsShapeTransform, Vec(0, 0, -1))
+	local forwardVec = TransformToParentVec(rsShapeTransform, Vec(0, 0, 1))
 	local tickOffset = maxTick - 0.1
 	
 	local torchPos = VecAdd(rearTorchDefaultPos, VecScale(forwardVec, tickOffset * 2))
