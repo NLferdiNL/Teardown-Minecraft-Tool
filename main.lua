@@ -16,21 +16,28 @@ toolReadableName = "Minecraft Tool"
 local toolSlot = nil
 
 -- TODO List Redstone Update 2: (Release once empty.)
--- Fix redstone torch powered block not powering dust.
+
+-- Components:
+-- Pressure plates.
 -- SIGNS!
--- Fix redstone to side button connecting.
--- Add all colors of wool/carpet (cuz carpet is free with wool anyway lol, cant make circuits without wool)
--- Multipart blocks redirect to head part through tags.
--- Right click interact when on the mod tool.
--- Search feature.
--- Update connected shapes end points to remove blocked connection (Give connection shape a list of end points)
--- Maybe pressure plates.
--- Tnt Anim less rapid.
--- Add straight redstone soft powering. (And connections for visuals) (Just double up the connection if one of the two axis sides meets conditions?)
--- Torch burnout timers.
--- Power interactions with items such as doors.
 -- Pistons. (dont receive power from pusher side)
+-- Add all colors of wool/carpet (cuz carpet is free with wool anyway lol, cant make circuits without wool)
+
+-- Features:
+-- Search feature.
+-- Right click interact when on the mod tool.
+-- Multipart blocks redirect to head part through tags. (Allow breaking of blocks through them)
+-- Torch burnout timers.
+-- Add straight redstone soft powering. (And connections for visuals) (Just double up the connection if one of the two axis sides meets conditions?)
+-- Power interactions with items such as doors.
 -- Ignored block lists (soft power and etc, think glass)
+
+-- Fixes:
+
+-- Fix redstone torch powered block not powering dust.
+-- Fix redstone to side button connecting.
+-- Update connected shapes end points to remove blocked connection (Give connection shape a list of end points)
+-- Tnt Anim less rapid.
 
 -- Can't replicate yet:
 -- Fix redstone upwards connecting not working when block next to up redstone.
@@ -182,6 +189,8 @@ function tick(dt)
 
 	HandleSpecialBlocks()
 	
+	AimLogic()
+	
 	local playerInteractShape = GetPlayerInteractShape()
 	local playerInteractingWithAimShape = playerInteractShape == shape
 	
@@ -218,7 +227,7 @@ function tick(dt)
 		return
 	end
 	
-	if InputPressed(binds["Open_Inventory"]) or (getInventoryOpen() and InputPressed("esc")) then
+	if InputPressed(binds["Open_Inventory"]) or (getInventoryOpen() and InputPressed("esc")) or (not playerInteractingWithAimShape and InputPressed(binds["Interact"])) then
 		if InputPressed("esc") then
 			SetPaused(false)
 		end
@@ -254,8 +263,6 @@ function tick(dt)
 	if InputPressed(binds["Quit_Tool"]) then
 		SetString("game.player.tool", "sledge")
 	end
-	
-	AimLogic()
 	
 	if InputPressed(binds["Mine"]) then
 		RemoveBlock()
@@ -1676,14 +1683,16 @@ function renderHeldItem()
 		UiTranslate(x, y)
 		UiAlign("center middle")
 		
-		if distance > 0.1 then
+		--[[if distance > 0.1 then
 			distance = 0.1
-		end
+		end]]--
 		
-		local spriteSize = 225-- / 0.1 * distance
-		
-		if distance > 0 then
-			UiImageBox("MOD/sprites/blocks/" .. blockName .. ".png", spriteSize, spriteSize, 0, 0)
+		if distance < 5 then
+			local spriteSize = 225-- / 0.1 * distance
+			
+			if distance > 0 then
+				UiImageBox("MOD/sprites/blocks/" .. blockName .. ".png", spriteSize, spriteSize, 0, 0)
+			end
 		end
 	UiPop()
 end
