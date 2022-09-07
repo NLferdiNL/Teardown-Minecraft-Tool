@@ -25,7 +25,6 @@ local toolSlot = nil
 
 -- Features:
 -- Search feature.
--- Right click interact when on the mod tool.
 -- Multipart blocks redirect to head part through tags. (Allow breaking of blocks through them)
 -- Torch burnout timers.
 -- Add straight redstone soft powering. (And connections for visuals) (Just double up the connection if one of the two axis sides meets conditions?)
@@ -194,7 +193,7 @@ function tick(dt)
 	local playerInteractShape = GetPlayerInteractShape()
 	local playerInteractingWithAimShape = playerInteractShape == shape
 	
-	if playerInteractingWithAimShape and InputPressed(binds["Interact"]) then
+	if playerInteractingWithAimShape and (InputPressed(binds["Interact"]) or InputPressed(binds["Place"])) then
 		Redstone_Interact(playerInteractShape)
 	end
 	
@@ -293,7 +292,7 @@ function tick(dt)
 			ToolPlaceBlockAnim()
 			animTimer = animTimerMax
 		end
-	elseif InputReleased(binds["Place"]) then
+	elseif InputReleased(binds["Place"]) and not playerInteractingWithAimShape then
 		holdTimer = 0
 	end
 end
