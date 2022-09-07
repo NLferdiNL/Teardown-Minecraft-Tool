@@ -58,7 +58,9 @@ function redstone_update(dt)
 	
 	for shape, index in pairs(redstoneBlocksPosIndex) do
 		local rsData = GetFromDB(index[1], index[2], index[3])
-		if IsShapeBroken(shape) or (GetShapeBody(shape) ~= 1 and (rsData == nil or (rsData ~= nil and rsData[2] ~= 12))) then
+		local shapeToCheck = shape
+		
+		if IsShapeBroken(shapeToCheck) or (GetShapeBody(shapeToCheck) ~= 1 and (rsData == nil or (rsData ~= nil and rsData[2] ~= 12 and rsData[2] ~= 125 and rsData[2] ~= 126))) then
 			if rsData ~= nil then
 				rsData[3] = 0
 				rsData[5] = 0
@@ -69,6 +71,8 @@ function redstone_update(dt)
 				
 				HandleRedstone(index[1], index[2], index[3], rsData, dt)
 			end
+			
+			DebugPrint("BROK")
 			
 			Redstone_Remove(shape)
 		elseif rsData then
@@ -244,6 +248,8 @@ function Redstone_Add(id, shape, connections, extraData, posOverride)
 	--pos = Vec(pos[1] / blockSize, pos[2] / blockSize, pos[3] / blockSize)
 	local pos = posOverride --or GetBlockCenter(shape)
 	
+	DebugPrint(GetEntityType(shape))
+	
 	if posOverride ~= nil then
 		pos[1] = roundOne(pos[1])-- + (mult - roundOne(pos[1]) % mult)
 		pos[2] = roundOne(pos[2])-- + (mult - roundOne(pos[2]) % mult)
@@ -299,9 +305,15 @@ function Redstone_Add(id, shape, connections, extraData, posOverride)
 		
 		--SetBodyDynamic(extraData, true)
 	elseif id == 125 then
-		extra = {"interact", 1.0, 0.0, extraData, sfx[1], sfx[2]}
+		local buttonPos = GetBodyTransform(extraData).pos
+	
+		extra = {"interact", 1.0, 0.0, extraData, sfx[1], sfx[2], buttonPos}
+		DebugPrint("HIT")
 	elseif id == 126 then
-		extra = {"interact", 1.5, 0.0, extraData, sfx[3], sfx[4]}
+		local buttonPos = GetBodyTransform(extraData).pos
+		
+		extra = {"interact", 1.5, 0.0, extraData, sfx[3], sfx[4], buttonPos}
+		DebugPrint("HIT2")
 	elseif id == 127 then
 		extra = FindLight(extraData, true)
 		SetShapeEmissiveScale(shape, 0)

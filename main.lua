@@ -15,10 +15,8 @@ toolName = "minecraftbuildtool"
 toolReadableName = "Minecraft Tool"
 local toolSlot = nil
 
--- Can't replicate yet:
--- Fix redstone upwards connecting not working when block next to up redstone.
-
 -- TODO List Redstone Update 2: (Release once empty.)
+-- Fix redstone torch powered block not powering dust.
 -- SIGNS!
 -- Fix redstone to side button connecting.
 -- Add all colors of wool/carpet (cuz carpet is free with wool anyway lol, cant make circuits without wool either)
@@ -30,11 +28,13 @@ local toolSlot = nil
 -- Tnt Anim less rapid.
 -- Repeater stay on delay (requires a refactor)
 -- Add straight redstone soft powering. (And connections for visuals) (Just double up the connection if one of the two axis sides meets conditions?)
--- SetBodyDynamic false, button, press anim.
 -- Torch burnout timers.
 -- Power interactions with items such as doors.
--- Maybe pistons.
+-- Pistons. (dont receive power from pusher side)
 -- Ignored block lists (soft power and etc, think glass)
+
+-- Can't replicate yet:
+-- Fix redstone upwards connecting not working when block next to up redstone.
 
 -- Unimportant for now:
 
@@ -148,7 +148,7 @@ local redstoneOffset = Vec(gridModulo / 16 * -1, 0, gridModulo / 16 * -2)
 
 local canGrabObject = false
 
-debugstart = false
+debugstart = true
 local debugstarted = false
 
 function init()
@@ -869,6 +869,11 @@ function PlaceBlock()
 	local blockArray = Spawn(blockXML, blockTransform, not dynamicBlock, true)
 	local block = blockArray[1]
 	
+	if selectedBlockId == 125 or selectedBlockId == 126 then
+		blockArray = GetBodyShapes(block)
+		block = blockArray[1]
+	end
+	
 	local hasSpecialData = 0
 	
 	if selectedBlockData[7] ~= nil then
@@ -894,7 +899,7 @@ function PlaceBlock()
 			
 			SetTag(block, "minecraftredstonepos", returnPos[1] .. " " .. returnPos[2] .. " " .. returnPos[3])
 		elseif selectedBlockId == 125 or selectedBlockId == 126 then
-			local returnPos = Redstone_Add(selectedBlockId, block, connectedShapesTag, shape, offsetPos)
+			local returnPos = Redstone_Add(selectedBlockId, block, connectedShapesTag, GetShapeBody(block), offsetPos)
 			
 			SetTag(block, "minecraftredstonepos", returnPos[1] .. " " .. returnPos[2] .. " " .. returnPos[3])
 		elseif selectedBlockId == 127 then
@@ -957,7 +962,7 @@ function PlaceBlock()
 			local currBlock = adjecentBlocks[i]
 			local currBlockId = tonumber(GetTagValue(currBlock, "minecraftblockid"))
 			
-			if currBlockId ~= nil then
+			if currBlockId ~= nil and (currBlockId == 41 or currBlockId == 123) then
 				local blockTransform = GetShapeWorldTransform(currBlock)
 				local currBlockData = blocks[currBlockId]
 				local currBlockType = currBlockData[9]
@@ -1112,8 +1117,9 @@ function RemoveConnectionsInBlock(gridAligned, shapeIgnoreList)
 	end
 	
 	for i = 1, #blocksInGridAligned do
-		if ignoreShapes[blocksInGridAligned[i]] == nil then
-			Delete(blocksInGridAligned[i])
+		local currShape = blocksInGridAligned[i]
+		if ignoreShapes[currShape] == nil and HasTag(currShape, "minecraftblockid") then
+			Delete(currShape)
 		end
 	end
 end

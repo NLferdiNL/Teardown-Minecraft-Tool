@@ -1,0 +1,15 @@
+<prefab version="1.1.0">
+	<group name="RegularPiston" pos="0.0 0.0 2.8" rot="0.0 0.0 0.0">
+		<voxbox name="Lower" size="16 12 16" brush="MOD/vox/blocks/pistonlower.vox"/>
+		<body name="UpperPlate" pos="0.0 2.1 0.0" dynamic="true">
+			<voxbox name="UpperPlate" pos="0.0 -0.9 0.0" size="16 4 16" brush="MOD/vox/blocks/pistonupper.vox" object="RegularTop"/>
+		</body>
+		<body name="RodUpper" pos="0.6 0.4 0.6" dynamic="true">
+			<voxbox name="RodUpper" pos="0.0 0.0 0.0" size="4 8 4" brush="MOD/vox/blocks/pistonupper.vox" object="PistonRod" offset="0 8 0"/>
+		</body>
+		<body name="RodUpper" pos="0.6 0.4 0.6" dynamic="true">
+			<voxbox name="RodLower" pos="0.0 0.0 0.0" size="4 8 4" brush="MOD/vox/blocks/pistonupper.vox" object="PistonRod"/>
+		</body>
+	</group>
+</prefab>
+

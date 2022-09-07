@@ -1,0 +1,8 @@
+<prefab version="1.1.0">
+	<group name="StoneButton">
+		<body name="StoneButton" pos="0.5 0.0 0.6" dynamic="false">
+			<voxbox size="6 2 4" tags='interact=Interact' brush="MOD/vox/blocks/stonebutton.vox" offset="6 0 6"/>
+		</body>
+	</group>
+</prefab>
+
