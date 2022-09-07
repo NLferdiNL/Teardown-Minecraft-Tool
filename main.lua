@@ -19,14 +19,13 @@ local toolSlot = nil
 -- Fix redstone torch powered block not powering dust.
 -- SIGNS!
 -- Fix redstone to side button connecting.
--- Add all colors of wool/carpet (cuz carpet is free with wool anyway lol, cant make circuits without wool either)
+-- Add all colors of wool/carpet (cuz carpet is free with wool anyway lol, cant make circuits without wool)
 -- Multipart blocks redirect to head part through tags.
 -- Right click interact when on the mod tool.
 -- Search feature.
 -- Update connected shapes end points to remove blocked connection (Give connection shape a list of end points)
 -- Maybe pressure plates.
 -- Tnt Anim less rapid.
--- Repeater stay on delay (requires a refactor)
 -- Add straight redstone soft powering. (And connections for visuals) (Just double up the connection if one of the two axis sides meets conditions?)
 -- Torch burnout timers.
 -- Power interactions with items such as doors.

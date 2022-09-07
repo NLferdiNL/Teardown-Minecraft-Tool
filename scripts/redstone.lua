@@ -72,8 +72,6 @@ function redstone_update(dt)
 				HandleRedstone(index[1], index[2], index[3], rsData, dt)
 			end
 			
-			DebugPrint("BROK")
-			
 			Redstone_Remove(shape)
 		elseif rsData then
 			HandleRedstone(index[1], index[2], index[3], rsData, dt)
@@ -248,8 +246,6 @@ function Redstone_Add(id, shape, connections, extraData, posOverride)
 	--pos = Vec(pos[1] / blockSize, pos[2] / blockSize, pos[3] / blockSize)
 	local pos = posOverride --or GetBlockCenter(shape)
 	
-	DebugPrint(GetEntityType(shape))
-	
 	if posOverride ~= nil then
 		pos[1] = roundOne(pos[1])-- + (mult - roundOne(pos[1]) % mult)
 		pos[2] = roundOne(pos[2])-- + (mult - roundOne(pos[2]) % mult)
@@ -308,12 +304,10 @@ function Redstone_Add(id, shape, connections, extraData, posOverride)
 		local buttonPos = GetBodyTransform(extraData).pos
 	
 		extra = {"interact", 1.0, 0.0, extraData, sfx[1], sfx[2], buttonPos}
-		DebugPrint("HIT")
 	elseif id == 126 then
 		local buttonPos = GetBodyTransform(extraData).pos
 		
 		extra = {"interact", 1.5, 0.0, extraData, sfx[3], sfx[4], buttonPos}
-		DebugPrint("HIT2")
 	elseif id == 127 then
 		extra = FindLight(extraData, true)
 		SetShapeEmissiveScale(shape, 0)
