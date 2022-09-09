@@ -28,6 +28,7 @@ local toolSlot = nil
 -- Multipart blocks redirect to head part through tags. (Allow breaking of blocks through them)
 -- Torch burnout timers.
 -- Add straight redstone soft powering. (And connections for visuals) (Just double up the connection if one of the two axis sides meets conditions?)
+-- If redstone has connections ignore certain sides (no connections means all sides, straight conn = forward, corner = connected corners only)
 -- Power interactions with items such as doors.
 -- Ignored block lists (soft power and etc, think glass)
 
@@ -36,7 +37,14 @@ local toolSlot = nil
 -- Fix redstone torch powered block not powering dust.
 -- Fix redstone to side button connecting.
 -- Update connected shapes end points to remove blocked connection (Give connection shape a list of end points)
+-- Dust down > up connector misaligned to right
+-- This weird edge case: https://i.gyazo.com/0c13976cd4244eda1dbfb0ba96b82121.png
+-- Rework visual disconnecting redstone through blocking. Currently very busted.
+
+--Unimportant for now:
 -- Tnt Anim less rapid.
+
+----------------------------------------------------
 
 -- Can't replicate yet:
 -- Fix redstone upwards connecting not working when block next to up redstone.
@@ -107,7 +115,7 @@ for i = 1, mainInventorySize + miscInventorySlots do
 		inventory[i] = {i - 31, 1}
 	end
 	
-	--[[if i == 32 then
+	if i == 32 then
 		inventory[i][1] = 123
 	end
 	
@@ -133,7 +141,7 @@ for i = 1, mainInventorySize + miscInventorySlots do
 	
 	if i == 38 then
 		inventory[i][1] = 129
-	end]]--
+	end
 end
 
 inventoryHotBarStartIndex = #inventory - 8
@@ -758,7 +766,7 @@ function PlaceBlock()
 				gridAligned = VecAdd(gridAligned, Vec(0, blockSize / 10 / 2, 0))
 			end
 		elseif selectedBlockData[9] == 4 and not dynamicBlock then
-			connectedShapesTag = ConnectToAdjecentBlocks(selectedBlockData, adjecentBlocks, tempPos, fenceOffset, nil, 2)
+			connectedShapesTag = ConnectToAdjecentBlocks(selectedBlockId, selectedBlockData, adjecentBlocks, tempPos, fenceOffset, nil, 2)
 		elseif selectedBlockData[9] == 6 then
 		
 			if hitPoint[2] + normal[2] * 0.01 > gridAligned[2] + blockSize / 10 / 2 then
@@ -1188,11 +1196,11 @@ function ConnectRedstoneToAdjecent(tempPos, selectedBlockData, adjecentBlocks, c
 
 	local adjBlocksDown = FindAdjecentBlocks(adjTransformDown)
 
-	local connectedShapesTag = ConnectToAdjecentBlocks(selectedBlockData, adjecentBlocks, tempPos, redstoneOffset, {12, 46, 123, 124, 125, 126, 127}, 4) -- Vec(-0.155, 0, -0.205)
+	local connectedShapesTag = ConnectToAdjecentBlocks(123, selectedBlockData, adjecentBlocks, tempPos, redstoneOffset, {12, 46, 123, 124, 125, 126, 127, 129}, 4) -- Vec(-0.155, 0, -0.205)
 
 	if #FindBlocksAt(tempTransform, Vec(0, gridModulo * 1.5, 0)) <= 0 and connectUp then
 		local adjBlocksUp = FindAdjecentBlocks(adjTransformUp)
-		connectedShapesTag = connectedShapesTag .. " " .. ConnectToAdjecentBlocks(selectedBlockData, adjBlocksUp, adjTransformUp.pos, VecAdd(redstoneOffset, Vec(0, -gridModulo, 0)), 123, 4, "_cu") -- Vec(-0.155, 0, -0.205)
+		connectedShapesTag = connectedShapesTag .. " " .. ConnectToAdjecentBlocks(123, selectedBlockData, adjBlocksUp, adjTransformUp.pos, VecAdd(redstoneOffset, Vec(0, -gridModulo, 0)), 123, 4, "_cu") -- Vec(-0.155, 0, -0.205)
 	end
 
 	if connectDown then
@@ -1211,7 +1219,7 @@ function ConnectRedstoneToAdjecent(tempPos, selectedBlockData, adjecentBlocks, c
 		end
 		
 		
-		connectedShapesTag = connectedShapesTag .. ConnectToAdjecentBlocks(selectedBlockData, newAdjDown, adjTransformDown.pos, redstoneOffset, 123, 4, "_cd")
+		connectedShapesTag = connectedShapesTag .. ConnectToAdjecentBlocks(123, selectedBlockData, newAdjDown, adjTransformDown.pos, redstoneOffset, 123, 4, "_cd")
 	end
 	
 	return connectedShapesTag
@@ -1261,7 +1269,7 @@ function IsBlockInFilter(filter, id)
 	return false
 end
 
-function ConnectToAdjecentBlocks(selectedBlockData, adjecentBlocks, middlePos, blockOffset, blockFilter, dirMultiplier, suffix)
+function ConnectToAdjecentBlocks(selectedBlockId, selectedBlockData, adjecentBlocks, middlePos, blockOffset, blockFilter, dirMultiplier, suffix)
 	local connectedShapesTag = ""
 	
 	for i = 1, #adjecentBlocks do
@@ -1455,7 +1463,7 @@ function SpawnAdjustedConnector(selectedBlockData, selectedBlockId, otherShape, 
 				if selectedBlockType == 4 then
 					sizeModifier[1] = 0.5
 				elseif selectedBlockType == 7 then
-					sizeModifier[1] = 0.75
+					sizeModifier[1] = 0.5
 				end
 			end
 		end

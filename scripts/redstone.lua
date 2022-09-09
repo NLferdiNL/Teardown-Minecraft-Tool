@@ -859,7 +859,7 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 		end
 	elseif rsBlockId == 123 then
 		if rsPower > 0 then
-			local fakeDownBlock = GetNonRedstoneBlock(rsShape, Vec(0.25, -0.5, 0.25))
+			local fakeDownBlock = GetNonRedstoneBlock(rsShape, Vec(0.2, -0.5, 0.2))
 			local fakeDownRsData, actualFake = GetRSDataFromShape(fakeDownBlock)
 			
 			if fakeDownRsData ~= nil then
@@ -867,7 +867,7 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 			end
 		end
 		
-		local fakeUpBlock = GetNonRedstoneBlock(rsShape, Vec(0.25, 1.5, 0.25))--, Color4.Green)
+		local fakeUpBlock = GetNonRedstoneBlock(rsShape, Vec(0.2, 1.5, 0.2))--, Color4.Green)
 		--local fakeUpRsData, actualFake = GetRSDataFromShape(fakeDownBlock)
 		
 		local upAdj = {}
@@ -955,7 +955,7 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 		end
 		
 		if (rsBlockId == 129 and currRsShape ~= rsExtra[2]) or rsBlockId ~= 129 then
-			if ((currRsToSoftPower and currRsSoftPower ~= nil) or IsRealRedstoneId(currRsBlockId))and rsBlockId ~= 46 then
+			if ((currRsToSoftPower and currRsSoftPower ~= nil) or IsRealRedstoneId(currRsBlockId)) and rsBlockId ~= 46 and rsBlockId ~= 129 then
 				if currRsSoftPower < rsPower - 1 then
 					currRsData[7] = rsPower - 1
 				end

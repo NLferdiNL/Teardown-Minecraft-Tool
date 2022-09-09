@@ -1,10 +1,10 @@
 <group name="Fence Gate" pos="0.0 0.0 0.0" rot="0.0 0.0 0.0">
-	<vox name="frame" pos="0.0 0.0 0.0" rot="0.0 0.0 0.0" file="MOD/vox/blocks/oakfencegate.vox" object="Fgatepost">
-		<vox name="blade" tags='gateL' pos="-0.3 0.1 0.0" rot="0.0 0.0 0.0" prop="true" file="MOD/vox/blocks/oakfencegate.vox" object="FgateL">
+	<vox name="frame" pos="0.0 0.0 0.0" rot="0.0 0.0 0.0" file="MOD/vox/blocks/oakfencegate.vox" tags="nocull" object="Fgatepost">
+		<vox name="blade" tags='gateL' pos="-0.3 0.1 0.0" rot="0.0 0.0 0.0" prop="true" tags="nocull" file="MOD/vox/blocks/oakfencegate.vox" object="FgateL">
 			<joint pos="-0.3 0.8 0.0" rot="90.0 0.0 0.0" limits="-90 90" type="hinge" size="0.1" rotstrength="0.01" rotspring="0"/>
 			<joint pos="-0.3 0.1 0.0" rot="90.0 0.0 0.0" limits="-90 90" type="hinge" size="0.1" rotstrength="0.01" rotspring="0"/>
 		</vox>
-		<vox name="blade" tags='gateR' pos="0.3 0.1 0.0" rot="0.0 0.0 0.0" prop="true" file="MOD/vox/blocks/oakfencegate.vox" object="FgateR">
+		<vox name="blade" tags='gateR' pos="0.3 0.1 0.0" rot="0.0 0.0 0.0" prop="true" tags="nocull" file="MOD/vox/blocks/oakfencegate.vox" object="FgateR">
 			<joint pos="0.3 0.8 0.0" rot="90.0 0.0 0.0" limits="-90 90" type="hinge" size="0.1" rotstrength="0.01" rotspring="0"/>
 			<joint pos="0.3 0.1 0.0" rot="90.0 0.0 0.0" limits="-90 90" type="hinge" size="0.1" rotstrength="0.01" rotspring="0"/>
 		</vox>
