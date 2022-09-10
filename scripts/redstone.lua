@@ -3,6 +3,7 @@
 #include "scripts/redstone/button.lua" 
 #include "scripts/redstone/lamp.lua" 
 #include "scripts/redstone/redstonetorch.lua" 
+#include "scripts/redstone/lever.lua" 
 
 redstoneDB = {}
 redstoneBlocksPosIndex = {}
@@ -318,6 +319,9 @@ function Redstone_Add(id, shape, connections, extraData, posOverride)
 		local attachedBlock = extraData[2]
 		
 		extra = {light, attachedBlock, 0.125, 0.0, extraData[3]}
+	elseif id == 130 then
+		local lever = extraData
+		extra = lever
 	end
 	
 	redstoneDB[pos[1]][pos[2]][pos[3]] = {shape, id, power, ConnectionToTable(connections), power, extra, softPower, softPower}
@@ -603,7 +607,7 @@ function IsRealRedstone(rsData)
 end
 
 function IsRealRedstoneId(rsBlockId)
-	return rsBlockId ~= 12 and rsBlockId ~= 46 and rsBlockId ~= 123 and rsBlockId ~= 124 and rsBlockId ~= 125 and rsBlockId ~= 126 and rsBlockId ~= 127 and rsBlockId ~= 129
+	return rsBlockId ~= 12 and rsBlockId ~= 46 and rsBlockId ~= 123 and rsBlockId ~= 124 and rsBlockId ~= 125 and rsBlockId ~= 126 and rsBlockId ~= 127 and rsBlockId ~= 129 and rsBlockId ~= 130
 end
 
 function FilterNonRedstoneBlocks(tbl)
@@ -787,11 +791,17 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 		if not HandleRedstoneTorch(x, y, z,rsBlockData, dt) then
 			return
 		end
+	elseif rsBlockId == 130 then
+		HandleLever(x, y, z, rsBlockData, dt)
 	end
 	
 	--DebugWatch("pos", Vec(x, y, z))
 	
 	local adjecentRs = GetAdjecent(x, y, z, rsShape); -- {RSDATA, POS}
+	
+	if rsBlockId == 130 then
+		DebugPrint(#adjecentRs)
+	end
 	
 	if rsBlockId ~= 46 and rsBlockId ~= 125 and rsBlockId ~= 126 and rsPower ~= nil then
 		SetShapeEmissiveScale(rsShape, 1 / 15 * rsPower)
@@ -955,27 +965,35 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 		end
 		
 		if (rsBlockId == 129 and currRsShape ~= rsExtra[2]) or rsBlockId ~= 129 then
-			if ((currRsToSoftPower and currRsSoftPower ~= nil) or IsRealRedstoneId(currRsBlockId)) and rsBlockId ~= 46 and rsBlockId ~= 129 then
+			--DebugPrint("0-0")
+			if ((currRsToSoftPower and currRsSoftPower ~= nil) or IsRealRedstoneId(currRsBlockId)) and rsBlockId ~= 46 and rsBlockId ~= 129 and rsBlockId ~= 130 then
+				--DebugPrint("1-0")
 				if currRsSoftPower < rsPower - 1 then
+					--DebugPrint("1-1")
 					currRsData[7] = rsPower - 1
 				end
 			elseif currRsData[2] == 12 or currRsData[2] == 127 then
+				--DebugPrint("2-0")
 				if rsSoftPower ~= nil and rsSoftPower > rsPower then
+					--DebugPrint("2-1")
 					rsPower = rsSoftPower
 				end
 				
 				if rsPower >= 1 then
+					--DebugPrint("2-2")
 					currRsData[3] = rsPower
 				end
 			elseif currRsBlockId ~= 129 and ((rsBlockId == 46 and IsPowerAcceptingRedstone(currRsData)) or rsBlockId ~= 46) then
+				--DebugPrint("3-0")
 				if currRsPower < rsPower - 1 then
+					--DebugPrint("3-1")
 					currRsData[3] = rsPower - 1
 				end
 			end
 		end
 	end
 	
-	if rsBlockId ~= 46 and rsBlockId ~= 124 and rsBlockId ~= 125 and rsBlockId ~= 126 and rsBlockId ~= 129 then
+	if rsBlockId ~= 46 and rsBlockId ~= 124 and rsBlockId ~= 125 and rsBlockId ~= 126 and rsBlockId ~= 129 and rsBlockId ~= 130 then
 		rsBlockData[5] = rsPower
 		rsBlockData[3] = 0
 		

@@ -22,7 +22,6 @@ local toolSlot = nil
 -- SIGNS!
 -- Pistons. (dont receive power from pusher side)
 -- Add all colors of wool/carpet (cuz carpet is free with wool anyway lol, cant make circuits without wool)
--- Levers
 
 -- Features:
 -- Search feature.
@@ -941,6 +940,15 @@ function PlaceBlock()
 			local returnPos = Redstone_Add(selectedBlockId, block, connectedShapesTag, {"MCL_" .. tostring(uniqueLightId), otherBlock, blockEulerX ~= 0 or blockEulerY ~= 0 or blockEulerZ ~= 0}, offsetPos)--VecSub(gridAligned, blockPosOffset))
 			
 			SetTag(block, "minecraftredstonepos", returnPos[1] .. " " .. returnPos[2] .. " " .. returnPos[3])
+		elseif selectedBlockId == 130 then
+			local lever = blockArray[2]
+			
+			SetTag(lever, "minecraftconnectedshapes", block)
+			SetTag(block, "minecraftconnectedshapes", lever)
+			
+			local returnPos = Redstone_Add(selectedBlockId, block, connectedShapesTag, lever, offsetPos)--VecSub(gridAligned, blockPosOffset))
+			
+			SetTag(block, "minecraftredstonepos", returnPos[1] .. " " .. returnPos[2] .. " " .. returnPos[3])
 		else
 			local returnPos = Redstone_Add(selectedBlockId, block, connectedShapesTag, nil, offsetPos)
 			
@@ -1049,7 +1057,7 @@ function PlaceBlock()
 	-- Wood Button = 126
 	-- Lamp = 127
 	-- Redstone Torch = 129
-	if selectedBlockId == 123 or selectedBlockId == 124 or selectedBlockId == 125 or selectedBlockId == 126 or selectedBlockId == 129 then
+	if selectedBlockId == 123 or selectedBlockId == 124 or selectedBlockId == 125 or selectedBlockId == 126 or selectedBlockId == 129 or selectedBlockId == 130 then
 		local otherBlock = shape
 		
 		if HasTag(shape, "minecraftblockid") then
@@ -1201,7 +1209,7 @@ function ConnectRedstoneToAdjecent(tempPos, selectedBlockData, adjecentBlocks, c
 
 	local adjBlocksDown = FindAdjecentBlocks(adjTransformDown)
 
-	local connectedShapesTag = ConnectToAdjecentBlocks(123, selectedBlockData, adjecentBlocks, tempPos, redstoneOffset, {12, 46, 123, 124, 125, 126, 127, 129}, 4) -- Vec(-0.155, 0, -0.205)
+	local connectedShapesTag = ConnectToAdjecentBlocks(123, selectedBlockData, adjecentBlocks, tempPos, redstoneOffset, {12, 46, 123, 124, 125, 126, 127, 129, 130}, 4) -- Vec(-0.155, 0, -0.205)
 
 	if #FindBlocksAt(tempTransform, Vec(0, gridModulo * 1.5, 0)) <= 0 and connectUp then
 		local adjBlocksUp = FindAdjecentBlocks(adjTransformUp)
