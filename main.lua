@@ -22,6 +22,7 @@ local toolSlot = nil
 -- SIGNS!
 -- Pistons. (dont receive power from pusher side)
 -- Add all colors of wool/carpet (cuz carpet is free with wool anyway lol, cant make circuits without wool)
+-- Levers
 
 -- Features:
 -- Search feature.
@@ -141,6 +142,10 @@ for i = 1, mainInventorySize + miscInventorySlots do
 	
 	if i == 38 then
 		inventory[i][1] = 129
+	end
+	
+	if i == 39 then
+		inventory[i][1] = 130
 	end
 end
 

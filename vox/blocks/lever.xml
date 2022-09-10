@@ -1,0 +1,8 @@
+<group name="instance=MOD/lever.xml" pos="0.0 0.0 0.0" rot="0.0 0.0 0.0">
+	<voxbox name="LeverBase" pos="0.4 0.0 1.1" rot="0 90 0" size="6 3 8" tags="nocull" brush="MOD/vox/blocks/lever.vox" object="Base"/>
+	<body name="Lever" pos="0.8 0.1 1.0" rot="45 90 0" dynamic="true">
+		<voxbox name="Lever" pos="0.1 0.0 -0.1" size="2 8 2" tags="nocull" brush="MOD/vox/blocks/lever.vox" object="Lever" offset="0 2 0"/>
+	</body>
+	<joint name="LeverJoint" pos="0.8 0.1 0.8" rot="0 0 0" type="hinge" rotstrength="1" limits="-90 0" sound="true"/>
+</group>
+

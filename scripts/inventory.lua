@@ -8,7 +8,8 @@ local creativeInventoryScrollBarImagePath = "MOD/sprites/container/scrollbar.png
 local creativeInventoryScrollBarDownImagePath = "MOD/sprites/container/scrollbar_down.png"
 
 local scaling = 1
-local itemIconSize = 30 * scaling
+local defaultItemIconSize = 32
+local itemIconSize = defaultItemIconSize * scaling
 local creativeInventoryScroll = 0
 local maxCreativeInventoryScroll = 0
 local scrollbarHeld = false
@@ -110,12 +111,13 @@ function inventory_draw()
 			UiImageBox(creativeInventoryItemsTabImagePath, bgImageWidth, bgImageHeight, -5, -5)
 			
 			UiPush()
-				local itemIconOffsetX = marginX + itemIconSize * 0.7
-				local itemIconOffsetY = marginY + itemIconSize * 0.7
+				local itemIconOffsetX = marginX + itemIconSize * 0.65
+				local itemIconOffsetY = marginY + itemIconSize * 0.65
 				
 				mouseInInventory = UiIsMouseInRect(bgImageWidth - marginX * 2, bgImageHeight - marginY * 2)
 				
-				local itemInventoryOffset = itemIconSize + 7.2 * scaling
+				local itemInventoryOffsetX = (itemIconSize) * (scaling / 1.725)
+				local itemInventoryOffsetY = (itemIconSize) * (scaling / 1.71)
 				
 				UiTranslate(-bgImageWidth / 2, -bgImageHeight / 2)
 				
@@ -145,11 +147,11 @@ function inventory_draw()
 									drawCreativeBlockButton(currItemId, mouseOver)
 									
 								end
-								UiTranslate(itemInventoryOffset, 0)
+								UiTranslate(itemInventoryOffsetX, 0)
 							end
 						UiPop()
 						
-						UiTranslate(0, itemInventoryOffset)
+						UiTranslate(0, itemInventoryOffsetY + 0.5)
 					end
 				UiPop()
 				
@@ -181,7 +183,7 @@ function inventory_draw()
 					end
 				UiPop()
 				
-				UiTranslate(0, 5 * itemInventoryOffset + 10 * scaling)
+				UiTranslate(0, 5 * itemInventoryOffsetY + 10 * scaling)
 				UiPush() -- Hotbar
 					for i = 0, 8 do
 						local currInvSlot = inventoryHotBarStartIndex + i
@@ -195,7 +197,7 @@ function inventory_draw()
 						
 						drawSurvivalBlockButton(currInvSlot, mouseOver)
 						
-						UiTranslate(itemInventoryOffset, 0)
+						UiTranslate(itemInventoryOffsetX, 0)
 					end
 				UiPop()
 			UiPop()
@@ -455,7 +457,7 @@ end
 
 function setInventoryScaling(newValue)
 	scaling = newValue
-	itemIconSize = 30 * scaling
+	itemIconSize = defaultItemIconSize * scaling
 end
 
 function setInventoryOpen(newValue)
