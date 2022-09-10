@@ -40,6 +40,8 @@ local toolSlot = nil
 -- Dust down > up connector misaligned to right
 -- This weird edge case: https://i.gyazo.com/0c13976cd4244eda1dbfb0ba96b82121.png
 -- Rework visual disconnecting redstone through blocking. Currently very busted.
+-- Fix lever placement rot (currently left to right on sideways)
+-- Lever power block its attached to.
 
 --Unimportant for now:
 -- Tnt Anim less rapid.

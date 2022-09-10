@@ -17,8 +17,10 @@ function HandleLever(x, y, z, rsBlockData, dt)
 	local rsSoftPowerLastTick = rsBlockData[8]
 	
 	
+	local shapeTransform = GetShapeWorldTransform(rsShape)
 	local bodyTransform = GetBodyTransform(rsExtra)
-	local rotX, rotY, rotZ = GetQuatEuler(bodyTransform.rot)
+	local localBodyTransform = TransformToLocalTransform(shapeTransform, bodyTransform)
+	local rotX, rotY, rotZ = GetQuatEuler(localBodyTransform.rot)
 	
 	local roundRot = round(rotX)
 	
