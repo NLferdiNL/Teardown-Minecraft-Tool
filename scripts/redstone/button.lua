@@ -22,8 +22,6 @@ function HandleButton(x, y, z, rsBlockData, dt)
 	if timer > 0 then
 		local shapeBody = GetShapeBody(rsShape)
 		local shapeTransform = GetShapeWorldTransform(rsShape)
-		local downDir = TransformToParentVec(shapeTransform, Vec(0, -1, 0))
-		local downDirScaled = VecScale(downDir, 0.1)
 		
 		rsExtra[3] = rsExtra[3] - dt
 		timer = rsExtra[3]
@@ -42,6 +40,9 @@ function HandleButton(x, y, z, rsBlockData, dt)
 			PlaySound(sfxUnpress, shapeTransform.pos, 5)
 			SetBodyTransform(shapeBody, Transform(originalPos, shapeTransform.rot))
 		else
+			local downDir = TransformToParentVec(shapeTransform, Vec(0, -1, 0))
+			local downDirScaled = VecScale(downDir, 0.1)
+		
 			SetBodyTransform(shapeBody, Transform(VecAdd(originalPos, downDirScaled), shapeTransform.rot))
 		end
 	else

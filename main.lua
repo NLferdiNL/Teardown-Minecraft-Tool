@@ -34,14 +34,15 @@ local toolSlot = nil
 
 -- Fixes:
 
--- Fix redstone torch powered block not powering dust.
 -- Fix redstone to side button connecting.
 -- Update connected shapes end points to remove blocked connection (Give connection shape a list of end points)
 -- Dust down > up connector misaligned to right
 -- This weird edge case: https://i.gyazo.com/0c13976cd4244eda1dbfb0ba96b82121.png
 -- Rework visual disconnecting redstone through blocking. Currently very busted.
 -- Fix lever placement rot (currently left to right on sideways)
--- Lever power block its attached to.
+-- Lever power block its attached to (up and down)
+-- Fix sideways/upside down lever not deleting parts.
+-- Right sided doors delete 2 blocks to right front of it
 
 --Unimportant for now:
 -- Tnt Anim less rapid.
@@ -148,6 +149,10 @@ for i = 1, mainInventorySize + miscInventorySlots do
 	if i == 39 then
 		inventory[i][1] = 130
 	end
+	
+	if i == 40 then
+		inventory[i][1] = 3
+	end
 end
 
 inventoryHotBarStartIndex = #inventory - 8
@@ -202,7 +207,7 @@ function tick(dt)
 
 	HandleSpecialBlocks()
 	
-	AimLogic()
+	AimLogic(canUseTool() or lastFrameTool == toolName or isMenuOpenRightNow or getInventoryOpen())
 	
 	local playerInteractShape = GetPlayerInteractShape()
 	local playerInteractingWithAimShape = playerInteractShape == shape
@@ -784,6 +789,16 @@ function PlaceBlock()
 			if selectedBlockId == 123 then
 				connectedShapesTag = connectedShapesTag .. ConnectRedstoneToAdjecent(tempPos, selectedBlockData, adjecentBlocks)
 				--connectedShapesTag = connectedShapesTag .. ConnectToAdjecentBlocks(selectedBlockData, newAdjDown, adjTransformDown.pos, redstoneOffset, 123, 4, "_cd") -- Vec(-0.155, 0, -0.205)
+			elseif selectedBlockId == 130 and blockEulerX == 0 and blockEulerZ == 0 then
+				local blockRotY = blockEulerY / 90
+				
+				if blockEulerY / 90 == 0 then
+					blockPosOffset[3] = blockPosOffset[3] + gridModulo
+					blockEulerY = blockEulerY + 90
+				elseif blockRotY == 1 then
+					blockPosOffset[1] = blockPosOffset[1] + gridModulo
+					blockEulerY = blockEulerY + 90
+				end
 			end
 		elseif selectedBlockData[9] == 8 then
 			local tempRot = QuatEuler(blockEulerX, blockEulerY, blockEulerZ)
@@ -918,7 +933,16 @@ function PlaceBlock()
 			
 			SetTag(block, "minecraftredstonepos", returnPos[1] .. " " .. returnPos[2] .. " " .. returnPos[3])
 		elseif selectedBlockId == 125 or selectedBlockId == 126 then
-			local returnPos = Redstone_Add(selectedBlockId, block, connectedShapesTag, GetShapeBody(block), offsetPos)
+			local otherBlock = shape
+			local otherBlockId = GetTagValue(shape, "minecraftblockid")
+			
+			if otherBlockId == nil or otherBlockId == "" then
+				otherBlock = nil
+			end
+			
+			DebugPrint(GetShapeBody(block))
+		
+			local returnPos = Redstone_Add(selectedBlockId, block, connectedShapesTag, {GetShapeBody(block), otherBlock}, offsetPos)
 			
 			SetTag(block, "minecraftredstonepos", returnPos[1] .. " " .. returnPos[2] .. " " .. returnPos[3])
 		elseif selectedBlockId == 127 then
@@ -1092,7 +1116,7 @@ function PlaceBlock()
 	end
 end
 
-function AimLogic()
+function AimLogic(renderBlock)
 	hit, hitPoint, distance, normal, shape = GetAimTarget()
 	
 	if not hit then
@@ -1104,6 +1128,10 @@ function AimLogic()
 	end
 	
 	canGrabObject = distance <= 3 and IsBodyDynamic(GetShapeBody(shape))
+	
+	if not renderBlock then
+		return
+	end
 	
 	local normalOffset = VecAdd(hitPoint, VecScale(normal, -gridModulo * 0.1))
 	local gridAligned = getGridAlignedPos(normalOffset)

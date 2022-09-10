@@ -19,6 +19,7 @@ redstoneBlocksPosIndex = {}
 -- Wood Button = 126
 -- Lamp = 127
 -- Redstone Torch = 129
+-- Lever = 130
 
 -- rsBlockData = {shape, block id, power, connection shapes, power last tick, extra(repeaterdata), softPower, softPowerLast}
 local mult = 100
@@ -166,7 +167,7 @@ function Redstone_Draw(dt)
 		for y, yArray in pairs(xArray) do
 			for z, rsBlockData in pairs(yArray) do
 				if rsBlockData ~= nil then
-					if rsBlockData[2] == 124 or rsBlockData[2] == 125 or rsBlockData[2] == 126 then
+					if rsBlockData[2] == 124 or rsBlockData[2] == 125 or rsBlockData[2] == 126 or rsBlockData[2] == 130 then
 						DrawInteractText(x, y, z, rsBlockData, dt, aimShape)
 					end
 				end
@@ -302,13 +303,13 @@ function Redstone_Add(id, shape, connections, extraData, posOverride)
 		
 		--SetBodyDynamic(extraData, true)
 	elseif id == 125 then
-		local buttonPos = GetBodyTransform(extraData).pos
+		local buttonPos = GetBodyTransform(extraData[1]).pos
 	
-		extra = {"interact", 1.0, 0.0, extraData, sfx[1], sfx[2], buttonPos}
+		extra = {"interact", 1.0, 0.0, extraData[2], sfx[1], sfx[2], buttonPos}
 	elseif id == 126 then
-		local buttonPos = GetBodyTransform(extraData).pos
+		local buttonPos = GetBodyTransform(extraData[1]).pos
 		
-		extra = {"interact", 1.5, 0.0, extraData, sfx[3], sfx[4], buttonPos}
+		extra = {"interact", 1.5, 0.0, extraData[2], sfx[3], sfx[4], buttonPos}
 	elseif id == 127 then
 		extra = FindLight(extraData, true)
 		SetShapeEmissiveScale(shape, 0)
@@ -321,7 +322,9 @@ function Redstone_Add(id, shape, connections, extraData, posOverride)
 		extra = {light, attachedBlock, 0.125, 0.0, extraData[3]}
 	elseif id == 130 then
 		local lever = extraData
-		extra = lever
+		extra = {lever, true}
+		
+		SetTag(shape, "interact", "Toggle Stiffness")
 	end
 	
 	redstoneDB[pos[1]][pos[2]][pos[3]] = {shape, id, power, ConnectionToTable(connections), power, extra, softPower, softPower}
@@ -408,7 +411,7 @@ function Redstone_Interact(shape)
 		return
 	end
 	
-	if rsBlockData[6] == nil or rsBlockData[6][1] ~= "interact" then
+	if rsBlockData[6] == nil then --or rsBlockData[6][1] ~= "interact" then
 		return nil
 	end
 	
@@ -425,6 +428,10 @@ function Redstone_Interact(shape)
 		rsExtra[2] = rsTick
 		
 		SetTag(rsBlockData[1], "interact", "Tick: " .. rsTick)
+	elseif rsBlockData[2] == 130 then
+		local rsExtra = rsBlockData[6]
+		
+		rsExtra[2] = not rsExtra[2]
 	end
 end
 
@@ -793,15 +800,21 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 		end
 	elseif rsBlockId == 130 then
 		HandleLever(x, y, z, rsBlockData, dt)
+	elseif blocks[rsBlockId][9] == 2 then
+		local doorBody = GetShapeBody(rsShape)
+			
+			DrawBodyHighlight(doorBody, 1, 0, 0, 1)
+			DebugPrint(rsPower > 0)
+			DebugPrint(rsSoftPower > 0)
+		if rsPower > 0 or rsSoftPower > 0 then
+			
+			SetBodyAngularVelocity(doorBody, Vec(0, -10, 0))
+		end
 	end
 	
 	--DebugWatch("pos", Vec(x, y, z))
 	
 	local adjecentRs = GetAdjecent(x, y, z, rsShape); -- {RSDATA, POS}
-	
-	if rsBlockId == 130 then
-		DebugPrint(#adjecentRs)
-	end
 	
 	if rsBlockId ~= 46 and rsBlockId ~= 125 and rsBlockId ~= 126 and rsPower ~= nil then
 		SetShapeEmissiveScale(rsShape, 1 / 15 * rsPower)
@@ -966,7 +979,9 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 		
 		if (rsBlockId == 129 and currRsShape ~= rsExtra[2]) or rsBlockId ~= 129 then
 			--DebugPrint("0-0")
-			if ((currRsToSoftPower and currRsSoftPower ~= nil) or IsRealRedstoneId(currRsBlockId)) and rsBlockId ~= 46 and rsBlockId ~= 129 and rsBlockId ~= 130 then
+			if ((currRsToSoftPower and currRsSoftPower ~= nil) or IsRealRedstoneId(currRsBlockId)) and 
+				rsBlockId ~= 46 and rsBlockId ~= 129 and rsBlockId ~= 130 and 
+				((rsBlockId ~= 125 and rsBlockId ~= 126) or ((rsBlockId == 125 or rsBlockId == 126) and currRsShape ~= rsExtra[4])) then
 				--DebugPrint("1-0")
 				if currRsSoftPower < rsPower - 1 then
 					--DebugPrint("1-1")
