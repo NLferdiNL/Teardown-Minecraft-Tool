@@ -8,6 +8,7 @@
 #include "datascripts/inputList.lua"
 #include "datascripts/color4.lua"
 #include "datascripts/blockData.lua"
+#include "datascripts/itemData.lua"
 #include "datascripts/blockConnectorSizing.lua"
 #include "datascripts/savedVars.lua"
 
@@ -22,6 +23,7 @@ local toolSlot = nil
 -- SIGNS!
 -- Pistons. (dont receive power from pusher side)
 -- Add all colors of wool/carpet (cuz carpet is free with wool anyway lol, cant make circuits without wool)
+-- (Double) chests
 
 -- Features:
 -- Search feature.
@@ -29,8 +31,9 @@ local toolSlot = nil
 -- Torch burnout timers.
 -- Add straight redstone soft powering. (And connections for visuals) (Just double up the connection if one of the two axis sides meets conditions?)
 -- If redstone has connections ignore certain sides (no connections means all sides, straight conn = forward, corner = connected corners only)
--- Power interactions with items such as doors.
+-- Power interactions with items such as doors. (Not working yet)
 -- Ignored block lists (soft power and etc, think glass)
+-- Health bar lost hearts highlight.
 
 -- Fixes:
 
@@ -151,7 +154,7 @@ for i = 1, mainInventorySize + miscInventorySlots do
 	end
 	
 	if i == 40 then
-		inventory[i][1] = 3
+		inventory[i][1] = 131
 	end
 end
 
@@ -175,11 +178,14 @@ local canGrabObject = false
 debugstart = true
 local debugstarted = false
 
+local activeEntities = {}
+
 function init()
 	saveFileInit(savedVars)
 	menu_init()
 	inventory_init(inventoryScales[GetValue("InventoryUIScale")])
 	redstone_init()
+	itemSprites_init()
 	
 	if toolSlot ~= nil then
 		RegisterTool(toolName, toolReadableName, toolVox, toolSlot)
@@ -206,6 +212,7 @@ function tick(dt)
 	end
 
 	HandleSpecialBlocks()
+	HandleActiveEntities(dt)
 	
 	AimLogic(canUseTool() or lastFrameTool == toolName or isMenuOpenRightNow or getInventoryOpen())
 	
@@ -327,7 +334,7 @@ function draw(dt)
 		return
 	end
 	
-	renderHud()
+	renderHud(dt)
 	
 	Redstone_Draw(dt)
 	
@@ -502,6 +509,26 @@ function RemoveBlock(blockToRemove)
 	end
 end
 
+function UseItem(selectedBlockId)
+	local selectedBlockData = blocks[selectedBlockId]
+	local selectedItemData = itemData[selectedBlockData[1]]
+	
+	local activeEntity, entityData, stackEdit = selectedItemData[1]()
+	
+	if activeEntity then
+		activeEntities[#activeEntities + 1] = entityData
+	end
+	
+	if stackEdit ~= nil and not creativeMode then
+		local selectedBlockInvData = getCurrentHeldBlockData()
+		selectedBlockInvData[2] = selectedBlockInvData[2] - 1
+		
+		if selectedBlockInvData[2] <= 0 then
+			selectedBlockInvData[1] = 0
+		end
+	end
+end
+
 function PlaceBlock()
 	if not hit then
 		return
@@ -515,6 +542,11 @@ function PlaceBlock()
 	
 	local selectedBlockId = selectedBlockInvData[1]
 	local selectedBlockData = blocks[selectedBlockId]
+	
+	if selectedBlockData[9] == 10 then
+		UseItem(selectedBlockId)
+		return
+	end
 	
 	local normalOffset = 0.45
 	
@@ -1574,6 +1606,25 @@ function HandleSpecialBlocks()
 	end
 end
 
+function HandleActiveEntities(dt)
+	local playerCamera = GetPlayerCameraTransform()
+	local pos = playerCamera.pos
+	local dir = TransformToParentVec(pos, Vec(0, 0, -1))
+	local spritePos = VecAdd(pos, VecScale(dir, 10))
+	
+	DrawSprite(itemSprites["Fire Charge"], Transform(spritePos, QuatLookAt(spritePos, pos)))
+
+	for i = #activeEntities, 1, -1 do
+		local currEntity = activeEntities[i]
+		
+		if currEntity ~= nil then
+			local entityData = itemData[currEntity[1]]			if not entityData[2](currEntity, dt) then
+				activeEntities[i] = nil
+			end
+		end
+	end
+end
+
 function canUseTool()
 	return GetString("game.player.tool") == toolName and GetPlayerVehicle() == 0
 end
@@ -1600,7 +1651,7 @@ function getCurrentHeldBlockData(index)
 	return currInvData
 end
 
-function renderHud()
+function renderHud(dt)
 	UiPush()
 		UiAlign("center middle")
 		
@@ -1619,6 +1670,34 @@ function renderHud()
 		UiAlign("center left")
 		
 		UiTranslate(-hotbarWidth / 2 + selectorWidth / 2 - 5, -selectorHeight / 2)
+		
+		local heartSize = 36 * 0.75
+		
+		UiPush()
+			UiTranslate(-selectorWidth * 0.35, -selectorHeight * 0.35)
+			
+			local playerHealth = GetPlayerHealth() * 100
+			
+			DebugWatch("h", playerHealth)
+			
+			for i = 0, 9 do
+				UiPush()
+					local yOffset = 0
+					
+					if playerHealth <= 40 then
+						yOffset = round(math.sin(GetTime() * 20 + i + math.random() * 10)) * 2
+					end
+					
+					UiTranslate(heartSize * i, yOffset)
+					UiImageBox("MOD/sprites/empty_heart.png", heartSize, heartSize, 0, 0)
+					if playerHealth >= (i + 1) * 10 then
+						UiImageBox("MOD/sprites/full_heart.png", heartSize, heartSize, 0, 0)
+					elseif playerHealth >= (i) * 10 + 5 or (playerHealth > 0 and playerHealth < 5 and i == 0) then
+						UiImageBox("MOD/sprites/half_heart.png", heartSize, heartSize, 0, 0)
+					end
+				UiPop()
+			end
+		UiPop()
 		
 		UiPush()
 			UiTranslate((hotbarSelectedIndex - 1) * (selectorWidth * arbitraryIndexNumber), 0)
