@@ -800,7 +800,7 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 		end
 	elseif rsBlockId == 130 then
 		HandleLever(x, y, z, rsBlockData, dt)
-	--[[elseif blocks[rsBlockId][9] == 2 then
+	elseif blocks[rsBlockId][9] == 2 then
 		local doorBody = GetShapeBody(rsShape)
 			
 			DrawBodyHighlight(doorBody, 1, 0, 0, 1)
@@ -809,7 +809,7 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 		if rsPower > 0 or rsSoftPower > 0 then
 			
 			SetBodyAngularVelocity(doorBody, Vec(0, -10, 0))
-		end]]--
+		end
 	end
 	
 	--DebugWatch("pos", Vec(x, y, z))

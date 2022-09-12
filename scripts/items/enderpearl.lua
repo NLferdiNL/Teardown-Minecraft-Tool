@@ -1,4 +1,4 @@
-function enderPearlInit()
+function enderPearlInit(extraData)
 	return true, {}
 end 
 

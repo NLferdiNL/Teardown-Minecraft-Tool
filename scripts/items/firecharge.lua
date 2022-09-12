@@ -1,4 +1,4 @@
-function fireChargeInit()
+function fireChargeInit(extraData)
 	local playerCamera = GetPlayerCameraTransform()
 	local lifetime = 10
 	local pos = playerCamera.pos

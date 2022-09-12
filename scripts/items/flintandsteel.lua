@@ -1,4 +1,4 @@
-function flintAndSteelInit()
+function flintAndSteelInit(extraData)
 	local hit, hitPoint, distance, normal, shape = GetAimVariables()
 	
 	if hit and distance <= 5 then

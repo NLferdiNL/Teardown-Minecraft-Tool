@@ -34,6 +34,8 @@ local toolSlot = nil
 -- Power interactions with items such as doors. (Not working yet)
 -- Ignored block lists (soft power and etc, think glass)
 -- Health bar lost hearts highlight.
+-- Add picking up items.
+-- Fake dropped item shadow using sprite.
 
 -- Fixes:
 
@@ -59,7 +61,6 @@ local toolSlot = nil
 
 -- TODO: Move fence/redstone offset to blockconnector file.
 -- TODO: Gridalign finding blocks for collision checks.
--- TODO: Add dropping items.
 -- TODO: Fix "block of ___" insides to be random.
 -- TODO: Fix block break particles moving one way, sometimes.
 -- TODO: Add corner stairs.
@@ -113,6 +114,8 @@ local itemSwitchTimer = 0
 local itemSwitchTimerMax = 10
 local itemSwitchTimerHalf = itemSwitchTimerMax / 2
 local uniqueLightId = 0
+local healthLastFrame = 100
+local damageFlash = 0
 
 for i = 1, mainInventorySize + miscInventorySlots do
 	inventory[i] = {0, 0} --{BLOCKID, STACKSIZE}
@@ -293,6 +296,24 @@ function tick(dt)
 		RemoveBlock()
 		animTimer = animTimerMax
 		ToolPlaceBlockAnim()
+	end
+	
+	if InputPressed(binds["Drop_Item"]) then
+		local selectedBlockInvData = getCurrentHeldBlockData()
+		selectedBlockInvData[2] = selectedBlockInvData[2] - 1
+		
+		if selectedBlockInvData == nil then
+			return
+		end
+		
+		local selectedBlockId = selectedBlockInvData[1]
+		
+		UseItem(selectedBlockId)
+		
+		if selectedBlockInvData[2] <= 0 then
+			selectedBlockInvData[1] = 0
+			selectedBlockInvData[2] = 0
+		end
 	end
 	
 	if InputPressed(binds["Pick_Block"]) then
@@ -512,10 +533,17 @@ end
 function UseItem(selectedBlockId)
 	local selectedBlockData = blocks[selectedBlockId]
 	local selectedItemData = itemData[selectedBlockData[1]]
+	local extraData = nil
 	
-	local activeEntity, entityData, stackEdit = selectedItemData[1]()
+	if selectedItemData == nil then
+		selectedItemData = itemData["Dropped Item"]
+		extraData = selectedBlockId
+	end
+	
+	local activeEntity, entityData, stackEdit = selectedItemData[1](extraData)
 	
 	if activeEntity then
+		DebugPrint(entityData)
 		activeEntities[#activeEntities + 1] = entityData
 	end
 	
@@ -1612,8 +1640,6 @@ function HandleActiveEntities(dt)
 	local dir = TransformToParentVec(pos, Vec(0, 0, -1))
 	local spritePos = VecAdd(pos, VecScale(dir, 10))
 	
-	DrawSprite(itemSprites["Fire Charge"], Transform(spritePos, QuatLookAt(spritePos, pos)))
-
 	for i = #activeEntities, 1, -1 do
 		local currEntity = activeEntities[i]
 		
@@ -1678,7 +1704,14 @@ function renderHud(dt)
 			
 			local playerHealth = GetPlayerHealth() * 100
 			
-			DebugWatch("h", playerHealth)
+			local doDamageFlash = healthLastFrame > playerHealth or damageFlash > 0
+			
+			if damageFlash > 0 then
+				damageFlash = damageFlash - dt
+				doDamageFlash = round(math.sin(GetTime() * 20)) > 0.5
+			elseif healthLastFrame > playerHealth then
+				damageFlash = 1
+			end
 			
 			for i = 0, 9 do
 				UiPush()
@@ -1689,7 +1722,12 @@ function renderHud(dt)
 					end
 					
 					UiTranslate(heartSize * i, yOffset)
-					UiImageBox("MOD/sprites/empty_heart.png", heartSize, heartSize, 0, 0)
+					if doDamageFlash then
+						UiImageBox("MOD/sprites/damaged_heart.png", heartSize, heartSize, 0, 0)
+					else
+						UiImageBox("MOD/sprites/empty_heart.png", heartSize, heartSize, 0, 0)
+					end
+					
 					if playerHealth >= (i + 1) * 10 then
 						UiImageBox("MOD/sprites/full_heart.png", heartSize, heartSize, 0, 0)
 					elseif playerHealth >= (i) * 10 + 5 or (playerHealth > 0 and playerHealth < 5 and i == 0) then
@@ -1697,6 +1735,8 @@ function renderHud(dt)
 					end
 				UiPop()
 			end
+			
+			healthLastFrame = playerHealth
 		UiPop()
 		
 		UiPush()
