@@ -77,8 +77,6 @@ function menu_tick(dt)
 		end
 	end
 	
-	textboxClass_tick()
-	
 	if erasingBinds > 0 then
 		erasingBinds = erasingBinds - dt
 	end

@@ -1,5 +1,5 @@
 function enderPearlInit(extraData)
-	return true, {}
+	return false, {}
 end 
 
 function enderPearlUpdate(itemData, dt)

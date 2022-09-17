@@ -34,6 +34,8 @@ local descBoxBg = "MOD/sprites/square.png" -- "ui/hud/infobox.png"
 local textBoxBgBorderWidth = 0
 local textBoxBgBorderHeight = 0
 
+local textBoxDefaultNameTextColor = {1, 1, 1, 1}
+
 local textBoxDefaultTextColor = {1, 1, 1, 1}
 local textBoxHoverTextColor = {1, 1, 0, 1}
 local textBoxActiveTextColor = {0, 1, 0, 1}
@@ -66,7 +68,7 @@ function textboxClass_render(me)
 	end
 
 	UiPush()
-		UiFont(font, 26)
+		UiFont(font, defaultTextSize)
 		UiAlign("left middle")
 		
 		local labelString = me.name
@@ -76,6 +78,9 @@ function textboxClass_render(me)
 		
 		UiPush()
 			UiAlign("right middle")
+			
+			UiColor(textBoxDefaultNameTextColor[1], textBoxDefaultNameTextColor[2], textBoxDefaultNameTextColor[3], textBoxDefaultNameTextColor[4])
+			
 			UiText(labelString)
 		UiPop()
 		
@@ -96,13 +101,25 @@ function textboxClass_render(me)
 			
 			local tempVal = me.value
 			
+			local textTicker = "  "
+			
+			local tickerTime = math.abs(math.sin(GetTime() * 5))
+			
+			if tickerTime > 0.5 and me.inputActive then
+				textTicker = "I"
+			end
+			
 			if tempVal == "" then
-				tempVal = " "
+				tempVal = textTicker
+			else
+				tempVal = me.value .. textTicker
 			end
 			
 			if me.disabled then
 				disableButtonStyle()
 			end
+			
+			UiButtonPressDist(0)
 			
 			if UiTextButton(tempVal, me.width, me.height) then
 				if not me.disabled then
@@ -156,6 +173,10 @@ function textboxClass_drawDescriptions()
 			end
 		end
 	UiPop()
+end
+
+function textboxClass_getNextId()
+	return #textboxes + 1
 end
 
 function textboxClass_getTextBox(id)
@@ -301,6 +322,18 @@ function getMaxTextSize(text, fontSize, maxSize, minFontSize)
 		end
 	UiPop()
 	return fontSize, fontSize > minFontSize
+end
+
+function textboxClass_setTextFont(newFont, newFontSize)
+	font = newFont
+	defaultTextSize = newFontSize
+end
+
+function textboxClass_setTextColor(defaultNameTextColor, defaultTextColor, hoverTextColor, activeTextColor)
+	textBoxDefaultNameTextColor = defaultNameTextColor or {1, 1, 1, 1}
+	textBoxDefaultTextColor = defaultTextColor or {1, 1, 1, 1}
+	textBoxHoverTextColor = hoverTextColor or {1, 1, 0, 1}
+	textBoxActiveTextColor = activeTextColor or {0, 1, 0, 1}
 end
 
 function textboxClass_setTextBoxBg(bg, borderWidth, borderHeight, color, disabledColor)

@@ -28,6 +28,21 @@ function HandleRedstoneTorch(x, y, z, rsBlockData, dt)
 		--DrawShapeHighlight(attachedShape, 1)
 	end
 	
+	if rsExtra[6] > 0 then
+		rsExtra[6] = rsExtra[6] - dt
+		
+		if rsExtra[6] <= 0 then
+			rsExtra[6] = 0
+			rsExtra[7] = false
+		end
+	end
+	
+	if rsExtra[7] then
+		SetLightEnabled(rsLight, false)
+		SetShapeEmissiveScale(rsShape, 0)
+		return
+	end
+	
 	--[[if IsShapeBroken(attachedShape) then
 		DebugPrint("BREAK")
 		local breakPoint = GetRealBlockCenter(rsShape, 2)
@@ -121,7 +136,21 @@ function HandleRedstoneTorch(x, y, z, rsBlockData, dt)
 		SetShapeEmissiveScale(rsShape, 1)
 	else
 		SetShapeEmissiveScale(rsShape, 0)
+		rsExtra[6] = rsExtra[6] + dt * (math.random(15, 20) / 10)
+		
+		if rsExtra[6] > 0.5 then
+			rsExtra[7] = true
+			PlaySound(getFizzSfx(), GetShapeWorldTransform(rsShape).pos, math.random(25, 50) / 100)
+		end
 	end
 	
 	return rsBlockData[3] >= 1
+end
+
+function getFizzSfx()
+	if soundSfx["fizz"] == nil then
+		soundSfx["fizz"] = LoadSound("MOD/sfx/fizz.ogg")
+	end
+	
+	return soundSfx["fizz"]
 end

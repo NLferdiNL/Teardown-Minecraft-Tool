@@ -1,9 +1,11 @@
+#include "scripts/textbox.lua"
+
 local inventoryWidth = 9
 local inventoryOpen = false
 local inventoryBlockDataOnMouse = {0, 0}
 local inventoryIdMouseOver = {0, 0}
 
-local creativeInventoryItemsTabImagePath = "MOD/sprites/container/creative_tab_items.png"
+local creativeInventoryItemsTabImagePath = "MOD/sprites/container/creative_menu.png"
 local creativeInventoryScrollBarImagePath = "MOD/sprites/container/scrollbar.png"
 local creativeInventoryScrollBarDownImagePath = "MOD/sprites/container/scrollbar_down.png"
 
@@ -22,13 +24,26 @@ local fontSize = 26
 local descriptionBoxBg = "MOD/sprites/container/hover_box.png"
 local descriptionBoxMargin = 40
 
+local searchTextboxId = nil
+local searchTextbox = nil
+local searchFilteredBlocks = {}
+
 function inventory_init(uiScale)
 	setInventoryScaling(uiScale)
 	maxCreativeInventoryScroll = math.ceil(#blocks / 9) - 5
+	
+	setupSearchbox()
+	
+	textboxClass_setTextBoxBg(nil, nil, nil, {0, 0, 0, 0}, nil)
+	textboxClass_setTextColor({0.247, 0.247, 0.247, 1}, {1, 1, 1, 1}, {1, 1, 1, 1}, {1, 1, 1, 1})
 end
 
 function inventory_tick(dt)
 	if not inventoryOpen then
+		if searchTextbox.inputActive then
+			textboxClass_setActiveState(searchTextbox, false)
+		end
+		
 		return
 	end
 	
@@ -111,13 +126,21 @@ function inventory_draw()
 			UiImageBox(creativeInventoryItemsTabImagePath, bgImageWidth, bgImageHeight, -5, -5)
 			
 			UiPush()
-				local itemIconOffsetX = marginX + itemIconSize * 0.65
-				local itemIconOffsetY = marginY + itemIconSize * 0.65
+				UiTranslate(-35.5 * scaling, -bgImageHeight / 2 + marginX * 1.5 + 0.5 * scaling)
+				
+				textboxClass_setTextFont(font, (fontSize - 5) * scaling)
+				--UiTextShadow(0.25, 0.25, 0.25, 1, 2 / 26 * 40, 0)
+				textboxClass_render(searchTextbox)
+			UiPop()
+			
+			UiPush()
+				local itemIconOffsetX = marginX + itemIconSize * 0.7
+				local itemIconOffsetY = marginY + itemIconSize * 0.7
 				
 				mouseInInventory = UiIsMouseInRect(bgImageWidth - marginX * 2, bgImageHeight - marginY * 2)
 				
-				local itemInventoryOffsetX = (itemIconSize) * (scaling / 1.725)
-				local itemInventoryOffsetY = (itemIconSize) * (scaling / 1.71)
+				local itemInventoryOffsetX = (itemIconSize) + scaling * 4.75 --* (scaling / 1.7425)
+				local itemInventoryOffsetY = (itemIconSize) + scaling * 4.75--* (scaling / 1.74)
 				
 				UiTranslate(-bgImageWidth / 2, -bgImageHeight / 2)
 				
@@ -208,6 +231,8 @@ function inventory_draw()
 	
 	drawItemOnMouse()
 	drawItemDescOnMouse()
+	
+	textboxClass_drawDescriptions()
 end
 
 function drawCreativeBlockButton(blockId, mouseOver)
@@ -426,7 +451,7 @@ end
 
 function drawDescriptionOnMouse(text)
 	UiPush()
-		UiFont(font, fontSize)
+		UiFont(font, fontSize * 1.5)
 		
 		if text ~= nil and text ~= "" then
 			local mX, mY = UiGetMousePos()
@@ -450,9 +475,34 @@ function drawDescriptionOnMouse(text)
 			
 			UiTranslate(textOffsetX, descriptionBoxMargin / 2)
 			
+			UiTextShadow(0.25, 0.25, 0.25, 1, 2 / 26 * 40, 0)
+			
 			UiText(text)
 		end
 	UiPop()
+end
+
+function setupSearchbox()
+	local freeTextBoxId = textboxClass_getNextId()
+	
+	searchTextboxId = freeTextBoxId
+	
+	local textBox01, newBox01 = textboxClass_getTextBox(searchTextboxId)
+	
+	if newBox01 then
+		textBox01.name = "Search Items     "
+		textBox01.value = ""
+		textBox01.width = 180 * scaling
+		textBox01.height = 22.5 * scaling
+		--textBox01.numbersOnly = true
+		--textBox01.limitsActive = true
+		--textBox01.numberMin = 0.1
+		--textBox01.numberMax = 50
+		--textBox01.description = nil
+		--textBox01.onInputFinished = function(v) SetValue("PerUnit", tonumber(v)) end
+		
+		searchTextbox = textBox01
+	end
 end
 
 function setInventoryScaling(newValue)
@@ -466,6 +516,7 @@ function setInventoryOpen(newValue)
 	if not inventoryOpen then
 		mouseInInventory = false
 		creativeInventoryScroll = 0
+		textboxClass_setActiveState(searchTextbox, false)
 	end
 end
 
@@ -480,4 +531,8 @@ end
 function setInventoryBlockDataOnMouse(a, b)
 	inventoryBlockDataOnMouse[1] = a
 	inventoryBlockDataOnMouse[2] = b
+end
+
+function getTypingStateInventory()
+	return textboxClass_anyInputActive()
 end

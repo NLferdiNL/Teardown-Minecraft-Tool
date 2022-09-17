@@ -22,20 +22,20 @@ local toolSlot = nil
 -- Pressure plates.
 -- SIGNS!
 -- Pistons. (dont receive power from pusher side)
--- Add all colors of wool/carpet (cuz carpet is free with wool anyway lol, cant make circuits without wool)
 -- (Double) chests
 
 -- Features:
--- Search feature.
+-- Search feature. (Text box inplace, just add functionality.)
 -- Multipart blocks redirect to head part through tags. (Allow breaking of blocks through them)
--- Torch burnout timers.
+-- Torch burnout particle effects.
 -- Add straight redstone soft powering. (And connections for visuals) (Just double up the connection if one of the two axis sides meets conditions?)
 -- If redstone has connections ignore certain sides (no connections means all sides, straight conn = forward, corner = connected corners only)
 -- Power interactions with items such as doors. (Not working yet)
 -- Ignored block lists (soft power and etc, think glass)
 -- Health bar lost hearts highlight.
--- Add picking up items.
 -- Fake dropped item shadow using sprite.
+-- Add picking up items.
+-- Pickup_Block(data)
 
 -- Fixes:
 
@@ -157,7 +157,7 @@ for i = 1, mainInventorySize + miscInventorySlots do
 	end
 	
 	if i == 40 then
-		inventory[i][1] = 131
+		inventory[i][1] = 3
 	end
 end
 
@@ -182,6 +182,7 @@ debugstart = true
 local debugstarted = false
 
 local activeEntities = {}
+soundSfx = {}
 
 function init()
 	saveFileInit(savedVars)
@@ -216,6 +217,7 @@ function tick(dt)
 
 	HandleSpecialBlocks()
 	HandleActiveEntities(dt)
+	textboxClass_tick()
 	
 	AimLogic(canUseTool() or lastFrameTool == toolName or isMenuOpenRightNow or getInventoryOpen())
 	
@@ -255,7 +257,7 @@ function tick(dt)
 		return
 	end
 	
-	if InputPressed(binds["Open_Inventory"]) or (getInventoryOpen() and InputPressed("esc")) or (not playerInteractingWithAimShape and InputPressed(binds["Interact"])) then
+	if (InputPressed(binds["Open_Inventory"]) or (getInventoryOpen() and InputPressed("esc")) or (not playerInteractingWithAimShape and InputPressed(binds["Interact"]))) and not getTypingStateInventory() then
 		if InputPressed("esc") then
 			SetPaused(false)
 		end
@@ -298,7 +300,7 @@ function tick(dt)
 		ToolPlaceBlockAnim()
 	end
 	
-	if InputPressed(binds["Drop_Item"]) then
+	--[[if InputPressed(binds["Drop_Item"]) then
 		local selectedBlockInvData = getCurrentHeldBlockData()
 		selectedBlockInvData[2] = selectedBlockInvData[2] - 1
 		
@@ -314,7 +316,7 @@ function tick(dt)
 			selectedBlockInvData[1] = 0
 			selectedBlockInvData[2] = 0
 		end
-	end
+	end]]--
 	
 	if InputPressed(binds["Pick_Block"]) then
 		PickBlock()
@@ -411,6 +413,10 @@ function PickBlock()
 	if creativeMode and not found then
 		inventory[inventoryHotBarStartIndex + hotbarSelectedIndex - 1] = {aimBlockId, 1}
 	end
+end
+
+function Pickup_Block(data)
+
 end
 
 function setupBlockBreakParticles()
@@ -1760,7 +1766,7 @@ function renderHud(dt)
 							local blockName = blocks[currBlockId][1]
 							UiAlign("center middle")
 							UiTranslate(i * (selectorWidth * arbitraryIndexNumber))
-							UiImageBox("MOD/sprites/blocks/" .. blockName .. ".png", selectorWidth * 0.6, selectorHeight * 0.6, 0, 0)
+							UiImageBox("MOD/sprites/blocks/" .. blockName .. ".png", selectorWidth * 0.66, selectorHeight * 0.66, 0, 0)
 							
 							if currBlockStackSize > 1 then
 								UiTranslate(selectorHeight / 4, selectorHeight / 4)

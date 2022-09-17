@@ -319,7 +319,7 @@ function Redstone_Add(id, shape, connections, extraData, posOverride)
 		local light = FindLight(extraData[1])
 		local attachedBlock = extraData[2]
 		
-		extra = {light, attachedBlock, 0.125, 0.0, extraData[3]}
+		extra = {light, attachedBlock, 0.125, 0.0, extraData[3], 0, false}
 	elseif id == 130 then
 		local lever = extraData
 		extra = {lever, true}
