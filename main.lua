@@ -21,9 +21,10 @@ local toolSlot = nil
 -- Components:
 -- SIGNS!
 -- Pistons. (dont receive power from pusher side)
--- (Double) chests
+-- Double chests
 
 -- Features:
+-- Pressure plate reset delay.
 -- Search feature. (Text box inplace, just add functionality.)
 -- Multipart blocks redirect to head part through tags. (Allow breaking of blocks through them)
 -- Torch burnout particle effects.
@@ -38,7 +39,11 @@ local toolSlot = nil
 
 -- Fixes:
 
+-- Fix pressure plate shape break.
+-- Fix search box losing itself on quick load.
 -- Fix torch tower burnouts.
+-- Fix chest not removing lid.
+-- Replace chest sprite with better quality.
 -- Fix redstone to side button connecting.
 -- Update connected shapes end points to remove blocked connection (Give connection shape a list of end points)
 -- Dust down > up connector misaligned to right
@@ -50,6 +55,8 @@ local toolSlot = nil
 -- Right sided doors delete 2 blocks to right front of it
 
 --Unimportant for now:
+-- Structure generation? Would make screenshots a lot easier.
+-- Find a way to generate JSON from real game so I can generate structures.
 -- Tnt Anim less rapid.
 
 ----------------------------------------------------
