@@ -4,6 +4,7 @@
 #include "scripts/redstone/lamp.lua" 
 #include "scripts/redstone/redstonetorch.lua" 
 #include "scripts/redstone/lever.lua" 
+#include "scripts/redstone/pressureplate.lua" 
 
 redstoneDB = {}
 redstoneBlocksPosIndex = {}
@@ -20,6 +21,8 @@ redstoneBlocksPosIndex = {}
 -- Lamp = 127
 -- Redstone Torch = 129
 -- Lever = 130
+-- Stone Pressure Plate = 166
+-- Oak Pressure Plate = 167
 
 -- rsBlockData = {shape, block id, power, connection shapes, power last tick, extra(repeaterdata), softPower, softPowerLast}
 local mult = 100
@@ -62,7 +65,7 @@ function redstone_update(dt)
 		local rsData = GetFromDB(index[1], index[2], index[3])
 		local shapeToCheck = shape
 		
-		if IsShapeBroken(shapeToCheck) or (GetShapeBody(shapeToCheck) ~= 1 and (rsData == nil or (rsData ~= nil and rsData[2] ~= 12 and rsData[2] ~= 125 and rsData[2] ~= 126))) then
+		if IsShapeBroken(shapeToCheck) or (GetShapeBody(shapeToCheck) ~= 1 and (rsData == nil or (rsData ~= nil and rsData[2] ~= 12 and rsData[2] ~= 125 and rsData[2] ~= 126 and rsData[2] ~= 166 and rsData[2] ~= 167))) then
 			if rsData ~= nil then
 				rsData[3] = 0
 				rsData[5] = 0
@@ -325,6 +328,10 @@ function Redstone_Add(id, shape, connections, extraData, posOverride)
 		extra = {lever, true}
 		
 		SetTag(shape, "interact", "Toggle Stiffness")
+	elseif id == 166 or id == 167 then
+		local platePos = GetBodyTransform(extraData[1]).pos
+		
+		extra = {1.0, 0.0, platePos, extraData[2]}
 	end
 	
 	redstoneDB[pos[1]][pos[2]][pos[3]] = {shape, id, power, ConnectionToTable(connections), power, extra, softPower, softPower}
@@ -614,7 +621,7 @@ function IsRealRedstone(rsData)
 end
 
 function IsRealRedstoneId(rsBlockId)
-	return rsBlockId ~= 12 and rsBlockId ~= 46 and rsBlockId ~= 123 and rsBlockId ~= 124 and rsBlockId ~= 125 and rsBlockId ~= 126 and rsBlockId ~= 127 and rsBlockId ~= 129 and rsBlockId ~= 130
+	return rsBlockId ~= 12 and rsBlockId ~= 46 and rsBlockId ~= 123 and rsBlockId ~= 124 and rsBlockId ~= 125 and rsBlockId ~= 126 and rsBlockId ~= 127 and rsBlockId ~= 129 and rsBlockId ~= 130 and rsBlockId ~= 166 and rsBlockId ~= 167
 end
 
 function FilterNonRedstoneBlocks(tbl)
@@ -810,6 +817,8 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 			
 			SetBodyAngularVelocity(doorBody, Vec(0, -10, 0))
 		end
+	elseif rsBlockId == 166 or rsBlockId == 167 then
+		HandlePressurePlate(x, y, z, rsBlockData, dt)
 	end
 	
 	--DebugWatch("pos", Vec(x, y, z))
@@ -1008,7 +1017,7 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 		end
 	end
 	
-	if rsBlockId ~= 46 and rsBlockId ~= 124 and rsBlockId ~= 125 and rsBlockId ~= 126 and rsBlockId ~= 129 and rsBlockId ~= 130 then
+	if rsBlockId ~= 46 and rsBlockId ~= 124 and rsBlockId ~= 125 and rsBlockId ~= 126 and rsBlockId ~= 129 and rsBlockId ~= 130 and rsBlockId ~= 166 and rsBlockId ~= 167 then
 		rsBlockData[5] = rsPower
 		rsBlockData[3] = 0
 		

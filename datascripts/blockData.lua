@@ -166,4 +166,6 @@ blocks =
 		{"Magenta Carpet", 						"MOD/vox/blocks/wool/magentawool.vox",				{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 1, z = 16},	{x = 16, y = 17, z = 16},	nil, 					false, 		1, nil},
 		{"Pink Carpet", 						"MOD/vox/blocks/wool/pinkwool.vox",					{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 1, z = 16},	{x = 16, y = 17, z = 16},	nil, 					false, 		1, nil},
 		{"Brown Carpet", 						"MOD/vox/blocks/wool/brownwool.vox",				{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 1, z = 16},	{x = 16, y = 17, z = 16},	nil, 					false, 		1, nil},
+		{"Stone Pressure Plate", 				"MOD/vox/blocks/stonepressureplate.xml",			{x = 0, y = 0,  z = 0}, 	"",							{x = 14, y = 1, z = 14},	{x = 16, y = 16, z = 16},	nil, 					false, 		7, nil},
+		{"Oak Pressure Plate", 					"MOD/vox/blocks/oakpressureplate.xml",				{x = 0, y = 0,  z = 0}, 	"",							{x = 14, y = 1, z = 14},	{x = 16, y = 16, z = 16},	nil, 					false, 		7, nil},
 	}

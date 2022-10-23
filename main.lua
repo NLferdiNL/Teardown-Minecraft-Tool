@@ -19,7 +19,6 @@ local toolSlot = nil
 -- TODO List Redstone Update 2: (Release once empty.)
 
 -- Components:
--- Pressure plates.
 -- SIGNS!
 -- Pistons. (dont receive power from pusher side)
 -- (Double) chests
@@ -39,6 +38,7 @@ local toolSlot = nil
 
 -- Fixes:
 
+-- Fix torch tower burnouts.
 -- Fix redstone to side button connecting.
 -- Update connected shapes end points to remove blocked connection (Give connection shape a list of end points)
 -- Dust down > up connector misaligned to right
@@ -129,11 +129,11 @@ for i = 1, mainInventorySize + miscInventorySlots do
 	end
 	
 	if i == 33 then
-		inventory[i][1] = 124
+		inventory[i][1] = 166--124
 	end
 	
 	if i == 34 then
-		inventory[i][1] = 46
+		inventory[i][1] = 167--46
 	end
 	
 	if i == 35 then
@@ -248,6 +248,8 @@ function tick(dt)
 	end
 	
 	SetBool("hud.disable", true)
+	
+	SetToolTransform(Transform(), 0.1)
 	
 	if itemSwitchTimer > 0 then
 		itemSwitchTimer = itemSwitchTimer - dt * 8
@@ -969,7 +971,7 @@ function PlaceBlock()
 	local blockArray = Spawn(blockXML, blockTransform, not dynamicBlock, true)
 	local block = blockArray[1]
 	
-	if selectedBlockId == 125 or selectedBlockId == 126 then
+	if selectedBlockId == 125 or selectedBlockId == 126 or selectedBlockId == 166 or selectedBlockId == 167 then
 		blockArray = GetBodyShapes(block)
 		block = blockArray[1]
 	end
@@ -998,7 +1000,7 @@ function PlaceBlock()
 			local returnPos = Redstone_Add(selectedBlockId, block, connectedShapesTag, torch, offsetPos)
 			
 			SetTag(block, "minecraftredstonepos", returnPos[1] .. " " .. returnPos[2] .. " " .. returnPos[3])
-		elseif selectedBlockId == 125 or selectedBlockId == 126 then
+		elseif selectedBlockId == 125 or selectedBlockId == 126 or selectedBlockId == 166 or selectedBlockId == 167 then
 			local otherBlock = shape
 			local otherBlockId = GetTagValue(shape, "minecraftblockid")
 			
