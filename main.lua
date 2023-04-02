@@ -25,14 +25,12 @@ local toolSlot = nil
 
 -- Features:
 -- Pressure plate reset delay.
--- Search feature. (Text box inplace, just add functionality.)
 -- Multipart blocks redirect to head part through tags. (Allow breaking of blocks through them)
 -- Torch burnout particle effects.
 -- Add straight redstone soft powering. (And connections for visuals) (Just double up the connection if one of the two axis sides meets conditions?)
 -- If redstone has connections ignore certain sides (no connections means all sides, straight conn = forward, corner = connected corners only)
 -- Power interactions with items such as doors. (Not working yet)
 -- Ignored block lists (soft power and etc, think glass)
--- Health bar lost hearts highlight.
 -- Fake dropped item shadow using sprite.
 -- Add picking up items.
 -- Pickup_Block(data)
@@ -40,9 +38,8 @@ local toolSlot = nil
 -- Fixes:
 
 -- Fix pressure plate shape break.
--- Fix search box losing itself on quick load.
+-- Fix scaling loss on quick load.
 -- Fix torch tower burnouts.
--- Fix chest not removing lid.
 -- Replace chest sprite with better quality.
 -- Fix redstone to side button connecting.
 -- Update connected shapes end points to remove blocked connection (Give connection shape a list of end points)
@@ -1065,6 +1062,14 @@ function PlaceBlock()
 		RemoveTag(gateL, "gateL")
 		
 		connectedShapesTag = connectedShapesTag .. gateR .. " " .. gateL .. " "
+	end
+	
+	if selectedBlockId == 168 then
+		local lid = FindBody("lid", true)
+		
+		RemoveTag(lid, "lid") --To prevent future findings.
+		
+		connectedShapesTag = connectedShapesTag .. lid .. " "
 	end
 	
 	PlaySound(interactionSound, gridAligned)

@@ -53,7 +53,7 @@ function menu_tick(dt)
 		setMenuOpen(true)
 	end
 	
-	if GetString("game.player.tool") == toolName and GetPlayerVehicle() == 0 and InputPressed(binds["Open_Menu"]) then
+	if GetString("game.player.tool") == toolName and GetPlayerVehicle() == 0 and InputPressed(binds["Open_Menu"]) and not getInventoryOpen() then
 		setMenuOpen(not menuOpened)
 	end
 	

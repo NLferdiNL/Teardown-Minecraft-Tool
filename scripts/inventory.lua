@@ -28,6 +28,8 @@ local searchTextboxId = nil
 local searchTextbox = nil
 local searchFilteredBlocks = {}
 
+local lastSearchTextboxValue = ""
+
 function inventory_init(uiScale)
 	setInventoryScaling(uiScale)
 	maxCreativeInventoryScroll = math.ceil(#blocks / 9) - 5
@@ -39,12 +41,35 @@ function inventory_init(uiScale)
 end
 
 function inventory_tick(dt)
+	if searchTextbox == nil then
+		setupSearchbox()
+	end
+
 	if not inventoryOpen then
 		if searchTextbox.inputActive then
 			textboxClass_setActiveState(searchTextbox, false)
 		end
 		
 		return
+	end
+	
+	if searchTextbox.value ~= "" and lastSearchTextboxValue ~= searchTextbox.value then
+		lastSearchTextboxValue = searchTextbox.value
+		
+		searchFilteredBlocks = {}
+		
+		--DebugWatch("n", blocks[18][1])
+		--DebugWatch("s", string.find(string.lower(blocks[18][1]), lastSearchTextboxValue))
+		for i=1, #blocks do
+			if string.find(string.lower(blocks[i][1]), string.lower(lastSearchTextboxValue)) ~= nil then
+				searchFilteredBlocks[#searchFilteredBlocks + 1] = i
+			end
+		end
+		
+		--DebugWatch("c", #searchFilteredBlocks)
+	elseif searchTextbox.value == "" and lastSearchTextboxValue ~= "" then
+		lastSearchTextboxValue = ""
+		searchFilteredBlocks = {}
 	end
 	
 	--DebugWatch("scroll", creativeInventoryScroll)
@@ -150,33 +175,64 @@ function inventory_draw()
 				inventoryIdMouseOver[2] = 0
 				mouseInCreativeInventory = false
 				
-				UiPush() -- Creative inv
-					for i = 0, 4 do
-						UiPush()
-							for j = 1, 9 do
-								local currItemId = (i + creativeInventoryScroll) * 9 + j
-								if (currItemId > #blocks) then
-									drawCreativeBlockButton(0, false)
-								else
-									local mouseOver = false
-									
-									if UiIsMouseInRect(itemIconSize, itemIconSize) then
-										inventoryIdMouseOver[1] = i * 9 + j
-										inventoryIdMouseOver[2] = currItemId
-										mouseOver = true
-										mouseInCreativeInventory = true
+				if searchTextbox.value == "" then
+					UiPush() -- Creative inv
+						for i = 0, 4 do
+							UiPush()
+								for j = 1, 9 do
+									local currItemId = (i + creativeInventoryScroll) * 9 + j
+									if (currItemId > #blocks) then
+										drawCreativeBlockButton(0, false)
+									else
+										local mouseOver = false
+										
+										if UiIsMouseInRect(itemIconSize, itemIconSize) then
+											inventoryIdMouseOver[1] = i * 9 + j
+											inventoryIdMouseOver[2] = currItemId
+											mouseOver = true
+											mouseInCreativeInventory = true
+										end
+										
+										drawCreativeBlockButton(currItemId, mouseOver)
+										
 									end
-									
-									drawCreativeBlockButton(currItemId, mouseOver)
-									
+									UiTranslate(itemInventoryOffsetX, 0)
 								end
-								UiTranslate(itemInventoryOffsetX, 0)
-							end
-						UiPop()
-						
-						UiTranslate(0, itemInventoryOffsetY + 0.5)
-					end
-				UiPop()
+							UiPop()
+							
+							UiTranslate(0, itemInventoryOffsetY + 0.5)
+						end
+					UiPop()
+				else
+					UiPush() -- Creative inv
+						for i = 0, 4 do
+							UiPush()
+								for j = 1, 9 do
+									local currItemId = searchFilteredBlocks[i * 9 + j]--(i + creativeInventoryScroll) * 9 + j
+									
+									if i * 9 + j > #searchFilteredBlocks then
+										drawCreativeBlockButton(0, false)
+									else
+										local mouseOver = false
+										
+										if UiIsMouseInRect(itemIconSize, itemIconSize) then
+											inventoryIdMouseOver[1] = currItemId--i * 9 + j
+											inventoryIdMouseOver[2] = currItemId
+											mouseOver = true
+											mouseInCreativeInventory = true
+										end
+										
+										drawCreativeBlockButton(currItemId, mouseOver)
+										
+									end
+									UiTranslate(itemInventoryOffsetX, 0)
+								end
+							UiPop()
+							
+							UiTranslate(0, itemInventoryOffsetY + 0.5)
+						end
+					UiPop()
+				end
 				
 				UiPush() --Creative scroll bar
 					UiTranslate(bgImageWidth - itemIconOffsetX * 1.95, creatveInvScrolBarPositionOne * creativeInventoryScroll)
