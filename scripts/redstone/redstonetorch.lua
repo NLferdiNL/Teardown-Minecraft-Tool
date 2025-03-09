@@ -140,11 +140,35 @@ function HandleRedstoneTorch(x, y, z, rsBlockData, dt)
 		
 		if rsExtra[6] > 0.5 then
 			rsExtra[7] = true
-			PlaySound(getFizzSfx(), GetShapeWorldTransform(rsShape).pos, math.random(25, 50) / 100)
+			local shapePos = GetShapeWorldTransform(rsShape).pos
+			
+			PlaySound(getFizzSfx(), shapePos, math.random(25, 50) / 100)
+			PlayFizzParticleEffect(shapePos)
 		end
 	end
 	
 	return rsBlockData[3] >= 1
+end
+
+function PlayFizzParticleEffect(pos)
+	ParticleReset()
+	ParticleType("smoke")
+	ParticleTile(6)
+	ParticleColor(1, 0.4, 0.05, 0.1, 0.1, 0.1) 
+	ParticleRadius(0.05)
+	ParticleGravity(1.25, -5)
+	ParticleEmissive(2, 0)
+	ParticleStretch(2, 0)
+	for i = 1, math.random(7,10) do
+		local rndPos = Vec(pos[1], pos[2] + origBlockSize * 0.75, pos[3])
+		local rndDir = rndVec(5)
+		SpawnParticle(rndPos, rndDir, math.random(20, 30) / 10)
+	end
+end
+
+function rndVec(length)
+	local v = VecNormalize(Vec(math.random(-100,100), math.random(-100,100), math.random(-100,100)))
+	return VecScale(v, length)	
 end
 
 function getFizzSfx()

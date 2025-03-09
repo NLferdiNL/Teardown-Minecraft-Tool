@@ -1,5 +1,5 @@
 <group name="StonePressurePlate" pos="0.0 0.0 0.0" rot="0.0 0.0 0.0">
-	<body name="StonePressurePlate" pos="0.0 0.0 0.0" dynamic="true">
+	<body name="StonePressurePlate" pos="0.0 0.0 0.0" dynamic="false">
 		<voxbox pos="0.1 0.0 0.1" size="14 1 14" brush="MOD/vox/blocks/stonepressureplate.vox" offset="0 0 0"/>
 	</body>
 </group>

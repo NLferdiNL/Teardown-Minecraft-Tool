@@ -13,6 +13,7 @@ itemData["Fire Charge"] = {fireChargeInit, fireChargeUpdate}
 itemData["Dropped Item"] = {droppedInit, droppedUpdate}
 
 itemSprites["Fire Charge"] = "MOD/sprites/blocks/Fire Charge.png"
+itemSprites["Ender Pearl"] = "MOD/sprites/blocks/Ender Pearl.png"
 
 function itemSprites_init()
 	for name, path in pairs(itemSprites) do

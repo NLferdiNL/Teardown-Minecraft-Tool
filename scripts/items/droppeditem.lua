@@ -13,10 +13,11 @@ function droppedInit(blockId)
 	local playerCamera = GetPlayerCameraTransform()
 	local lifetime = 300
 	local pos = playerCamera.pos
-	local dir = TransformToParentVec(playerCamera, Vec(0, 0, -1))
-	local speed = 0.05
+	local dir = TransformToParentVec(playerCamera, Vec(0, 0.1, -0.2))
+	local speed = 0.25
+	local justDroppedTimer = 1.5
 	
-	return true, {"Dropped Item", lifetime, pos, dir, speed, itemSprite}, -1
+	return true, {"Dropped Item", lifetime, pos, dir, speed, itemSprite, blockId, justDroppedTimer}, -1
 end 
 
 function droppedUpdate(itemData, dt)
@@ -24,6 +25,16 @@ function droppedUpdate(itemData, dt)
 	local pos = itemData[3]
 	local dir = itemData[4]
 	local speed = itemData[5]
+	
+	lifetime = lifetime - dt
+	
+	if lifetime <= 0 then
+		return false
+	end
+	
+	if itemData[8] > 0 then
+		itemData[8] = itemData[8] - dt
+	end
 	
 	--Todo: awake when block below removed.
 	if speed ~= 0 then
@@ -59,18 +70,37 @@ function droppedUpdate(itemData, dt)
 		end
 	end
 	
-	if lifetime <= 0 then
-		return false
-	end
 	
 	local playerCamera = GetPlayerCameraTransform()
 	local lookAtPos = playerCamera.pos
 	lookAtPos[2] = pos[2]
 	
-	local playerTransform = GetPlayerTransform()
-	
-	if VecDist(playerTransform.pos, pos) then
-		-- Pick up
+	if itemData[8] <= 0 then
+		local playerTransform = GetPlayerTransform()
+		
+		if VecDist(playerTransform.pos, pos) <= 0.8 then
+			local emptySpot = -1
+			local foundFreeDuplicateSpot = -1
+			
+			for i = 9 * 4, 9 * 3, -1 do
+				if inventory[i][1] <= 0 or inventory[i][2] <= 0 then
+					emptySpot = i
+				elseif inventory[i][1] == itemData[7] and inventory[i][2] <= 63 then
+					foundFreeDuplicateSpot = i
+				end
+			end
+			
+			if foundFreeDuplicateSpot > 0 then
+				DebugPrint("AH")
+				inventory[foundFreeDuplicateSpot][2] = inventory[foundFreeDuplicateSpot][2] + 1
+				return false
+			elseif emptySpot > 0 then
+				DebugPrint("EEE")
+				inventory[emptySpot][1] = itemData[7]
+				inventory[emptySpot][2] = 1
+				return false
+			end
+		end
 	end
 	
 	local spriteSize = 0.5

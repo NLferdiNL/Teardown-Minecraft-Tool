@@ -9,6 +9,8 @@ local creativeInventoryItemsTabImagePath = "MOD/sprites/container/creative_menu.
 local creativeInventoryScrollBarImagePath = "MOD/sprites/container/scrollbar.png"
 local creativeInventoryScrollBarDownImagePath = "MOD/sprites/container/scrollbar_down.png"
 
+local survivalInventoryImagePath = "MOD/sprites/container/inventory.png"
+
 local scaling = 1
 local defaultItemIconSize = 32
 local itemIconSize = defaultItemIconSize * scaling
@@ -283,6 +285,48 @@ function inventory_draw()
 		UiPop()
 	else
 		-- TODO: Survival Inventory
+		
+		local bgImageWidth = 352 * scaling
+		local bgImageHeight = 332 * scaling
+		local marginX = 27 * scaling
+		local marginY = 35 * scaling
+		
+		local itemInventoryOffsetX = (itemIconSize) + scaling * 5.27
+		local itemInventoryOffsetY = (itemIconSize) + scaling * 4.75--* (scaling / 1.74)
+		
+		local itemIconOffsetX = marginX + itemIconSize * 0.7
+		local itemIconOffsetY = marginY + itemIconSize * 0.7
+		
+		UiPush()
+			UiMakeInteractive()
+			
+			UiAlign("center middle")
+			
+			UiTranslate(UiWidth() * 0.5, UiHeight() * 0.5)
+			
+			local creatveInvScrolBarPositionOne = (bgImageHeight - marginY * 2.7) / maxCreativeInventoryScroll
+			
+			UiImageBox(survivalInventoryImagePath, bgImageWidth, bgImageHeight, -5, -5)
+			
+			UiPush() -- Hotbar
+				UiTranslate(-bgImageWidth / 2 + marginX, itemIconSize * 0.6)
+			
+				for i = 0, 8 do
+					local currInvSlot = inventoryHotBarStartIndex + i
+					local mouseOver = false
+					
+					if UiIsMouseInRect(itemIconSize, itemIconSize) then
+						inventoryIdMouseOver[1] = currInvSlot
+						inventoryIdMouseOver[2] = inventory[currInvSlot][1]
+						mouseOver = true
+					end
+					
+					drawSurvivalBlockButton(currInvSlot, mouseOver)
+					
+					UiTranslate(itemInventoryOffsetX, 0)
+				end
+			UiPop()
+		UiPop()
 	end
 	
 	drawItemOnMouse()

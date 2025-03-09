@@ -34,7 +34,7 @@ function HandlePressurePlate(x, y, z, rsBlockData, dt)
 		local downDir = TransformToParentVec(shapeTransform, Vec(0, -1, 0))
 		local downDirScaled = VecScale(downDir, 0.075)
 
-		SetBodyTransform(shapeBody, Transform(VecAdd(originalPos, downDirScaled), shapeTransform.rot))
+		--SetBodyTransform(shapeBody, Transform(VecAdd(originalPos, downDirScaled), shapeTransform.rot))
 		
 		local fakeRsData = GetRSDataFromShape(otherShape)
 		
@@ -47,7 +47,7 @@ function HandlePressurePlate(x, y, z, rsBlockData, dt)
 		
 		rsBlockData[3] = 16
 	else
-		SetBodyTransform(shapeBody, Transform(originalPos, shapeTransform.rot))
+		--SetBodyTransform(shapeBody, Transform(originalPos, shapeTransform.rot))
 		
 		rsBlockData[5] = rsBlockData[3]
 		rsBlockData[3] = 0

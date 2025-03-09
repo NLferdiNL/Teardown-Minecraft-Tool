@@ -1,6 +1,6 @@
 function fireChargeInit(extraData)
 	local playerCamera = GetPlayerCameraTransform()
-	local lifetime = 10
+	local lifetime = 100
 	local pos = playerCamera.pos
 	local dir = TransformToParentVec(playerCamera, Vec(0, 0, -1))
 	local speed = 1

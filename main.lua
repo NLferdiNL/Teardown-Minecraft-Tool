@@ -19,14 +19,14 @@ local toolSlot = nil
 -- TODO List Redstone Update 2: (Release once empty.)
 
 -- Components:
--- SIGNS!
+-- SIGNS! (Letter sprites ready)
 -- Pistons. (dont receive power from pusher side)
 -- Double chests
+-- Survival inventory (maybe)
 
 -- Features:
 -- Pressure plate reset delay.
 -- Multipart blocks redirect to head part through tags. (Allow breaking of blocks through them)
--- Torch burnout particle effects.
 -- Add straight redstone soft powering. (And connections for visuals) (Just double up the connection if one of the two axis sides meets conditions?)
 -- If redstone has connections ignore certain sides (no connections means all sides, straight conn = forward, corner = connected corners only)
 -- Power interactions with items such as doors. (Not working yet)
@@ -37,9 +37,11 @@ local toolSlot = nil
 
 -- Fixes:
 
+-- Fix hard power blocks soft powering.
+-- Fix torch burnout sfx trigger if turned off.
+-- Fix dust connecting to sideway torches diagonally.
 -- Fix pressure plate shape break.
 -- Fix scaling loss on quick load.
--- Fix torch tower burnouts.
 -- Replace chest sprite with better quality.
 -- Fix redstone to side button connecting.
 -- Update connected shapes end points to remove blocked connection (Give connection shape a list of end points)
@@ -129,7 +131,7 @@ for i = 1, mainInventorySize + miscInventorySlots do
 	end
 	
 	if i == 32 then
-		inventory[i][1] = 123
+		inventory[i][1] = 131 --123
 	end
 	
 	if i == 33 then
@@ -228,6 +230,10 @@ function tick(dt)
 	local playerInteractShape = GetPlayerInteractShape()
 	local playerInteractingWithAimShape = playerInteractShape == shape
 	
+	if playerInteractShape == 0 then
+		playerInteractingWithAimShape = false
+	end
+	
 	if playerInteractingWithAimShape and (InputPressed(binds["Interact"]) or InputPressed(binds["Place"])) then
 		Redstone_Interact(playerInteractShape)
 	end
@@ -279,7 +285,7 @@ function tick(dt)
 		setInventoryOpen(not inventoryOpen)
 	end
 	
-	if isMenuOpenRightNow  or getInventoryOpen() then
+	if isMenuOpenRightNow or getInventoryOpen() then
 		return
 	end
 	
@@ -306,13 +312,11 @@ function tick(dt)
 		ToolPlaceBlockAnim()
 	end
 	
-	--[[if InputPressed(binds["Drop_Item"]) then
-		local selectedBlockInvData = getCurrentHeldBlockData()
-		selectedBlockInvData[2] = selectedBlockInvData[2] - 1
+	local selectedBlockInvData = getCurrentHeldBlockData()
+	
+	if InputPressed(binds["Drop_Item"]) and selectedBlockInvData ~= nil then
 		
-		if selectedBlockInvData == nil then
-			return
-		end
+		selectedBlockInvData[2] = selectedBlockInvData[2] - 1
 		
 		local selectedBlockId = selectedBlockInvData[1]
 		
@@ -322,27 +326,39 @@ function tick(dt)
 			selectedBlockInvData[1] = 0
 			selectedBlockInvData[2] = 0
 		end
-	end]]--
+	end
 	
 	if InputPressed(binds["Pick_Block"]) then
 		PickBlock()
 	end
 	
 	if canGrabObject or GetPlayerGrabBody() ~= 0 or GetPlayerGrabShape() ~= 0 then
+		DebugPrint("AHHHH")
 		return
 	end
 	
+	--[[DebugPrint(GetTime())
+	DebugPrint("---")
+	DebugPrint("press " .. tostring(InputPressed(binds["Place"])))
+	DebugPrint("hold " .. tostring(InputDown(binds["Place"])))
+	DebugPrint("getgrabbody " .. tostring(GetPlayerGrabBody() == 0))
+	DebugPrint("getgrabshape " .. tostring(GetPlayerGrabShape() == 0))
+	DebugPrint("pInteract " .. (tostring(playerInteractingWithAimShape)))]]--
+	
 	if (InputPressed(binds["Place"]) or InputDown(binds["Place"])) and (GetPlayerGrabBody() == 0 or GetPlayerGrabShape() == 0) and not playerInteractingWithAimShape then
+		--DebugPrint("OOOOOO")
 		if InputDown(binds["Place"]) then
 			holdTimer = holdTimer - dt
 			
 			if holdTimer < 0 then
+				--DebugPrint("AAA")
 				PlaceBlock()
 				ToolPlaceBlockAnim()
 				animTimer = animTimerMax
 				holdTimer = holdTimerMax[GetValue("BlockPlacementSpeed")]
 			end
 		else
+			--DebugPrint("BBB")
 			PlaceBlock()
 			ToolPlaceBlockAnim()
 			animTimer = animTimerMax
@@ -555,12 +571,14 @@ function UseItem(selectedBlockId)
 	local activeEntity, entityData, stackEdit = selectedItemData[1](extraData)
 	
 	if activeEntity then
-		DebugPrint(entityData)
+		--DebugPrint(entityData)
 		activeEntities[#activeEntities + 1] = entityData
 	end
 	
-	if stackEdit ~= nil and not creativeMode then
-		local selectedBlockInvData = getCurrentHeldBlockData()
+	local selectedBlockInvData = getCurrentHeldBlockData()
+	
+	if stackEdit ~= nil and not creativeMode and selectedBlockInvData ~= nil then
+		
 		selectedBlockInvData[2] = selectedBlockInvData[2] - 1
 		
 		if selectedBlockInvData[2] <= 0 then
@@ -570,10 +588,6 @@ function UseItem(selectedBlockId)
 end
 
 function PlaceBlock()
-	if not hit then
-		return
-	end
-	
 	local selectedBlockInvData = getCurrentHeldBlockData()
 	
 	if selectedBlockInvData == nil then
@@ -585,6 +599,10 @@ function PlaceBlock()
 	
 	if selectedBlockData[9] == 10 then
 		UseItem(selectedBlockId)
+		return
+	end
+	
+	if not hit then
 		return
 	end
 	
@@ -1012,7 +1030,7 @@ function PlaceBlock()
 				otherBlock = nil
 			end
 			
-			DebugPrint(GetShapeBody(block))
+			--DebugPrint(GetShapeBody(block))
 		
 			local returnPos = Redstone_Add(selectedBlockId, block, connectedShapesTag, {GetShapeBody(block), otherBlock}, offsetPos)
 			
@@ -1058,7 +1076,7 @@ function PlaceBlock()
 		local gateR = FindShape("gateR", true)
 		local gateL = FindShape("gateL", true)
 		
-		RemoveTag(gateR, "gateR") --To prevent future findings.
+		RemoveTag(gateR, "gateR") --To prevent from finding it again.
 		RemoveTag(gateL, "gateL")
 		
 		connectedShapesTag = connectedShapesTag .. gateR .. " " .. gateL .. " "
@@ -1067,7 +1085,7 @@ function PlaceBlock()
 	if selectedBlockId == 168 then
 		local lid = FindBody("lid", true)
 		
-		RemoveTag(lid, "lid") --To prevent future findings.
+		RemoveTag(lid, "lid") --To prevent from finding it again.
 		
 		connectedShapesTag = connectedShapesTag .. lid .. " "
 	end
