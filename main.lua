@@ -184,7 +184,7 @@ local redstoneOffset = Vec(gridModulo / 16 * -1, 0, gridModulo / 16 * -2)
 
 local canGrabObject = false
 
-debugstart = true
+debugstart = false
 local debugstarted = false
 
 local activeEntities = {}
