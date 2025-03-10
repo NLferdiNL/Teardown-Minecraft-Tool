@@ -83,7 +83,7 @@ function droppedUpdate(itemData, dt)
 			local foundFreeDuplicateSpot = -1
 			
 			for i = 9 * 4, 9 * 3, -1 do
-				if inventory[i][1] <= 0 or inventory[i][2] <= 0 then
+				if inventory[i][1] == "" or inventory[i][2] <= 0 then
 					emptySpot = i
 				elseif inventory[i][1] == itemData[7] and inventory[i][2] <= 63 then
 					foundFreeDuplicateSpot = i
@@ -91,11 +91,9 @@ function droppedUpdate(itemData, dt)
 			end
 			
 			if foundFreeDuplicateSpot > 0 then
-				DebugPrint("AH")
 				inventory[foundFreeDuplicateSpot][2] = inventory[foundFreeDuplicateSpot][2] + 1
 				return false
 			elseif emptySpot > 0 then
-				DebugPrint("EEE")
 				inventory[emptySpot][1] = itemData[7]
 				inventory[emptySpot][2] = 1
 				return false

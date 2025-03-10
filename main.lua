@@ -8,6 +8,7 @@
 #include "datascripts/inputList.lua"
 #include "datascripts/color4.lua"
 #include "datascripts/blockData.lua"
+#include "datascripts/creativeBlockList.lua"
 #include "datascripts/itemData.lua"
 #include "datascripts/blockConnectorSizing.lua"
 #include "datascripts/savedVars.lua"
@@ -124,46 +125,46 @@ local healthLastFrame = 100
 local damageFlash = 0
 
 for i = 1, mainInventorySize + miscInventorySlots do
-	inventory[i] = {0, 0} --{BLOCKID, STACKSIZE}
+	inventory[i] = {"", 1} --{BLOCKID, STACKSIZE}
 	
-	if i >= 32 then
+	--[[if i >= 32 then
 		inventory[i] = {i - 31, 1}
-	end
+	end]]--
 	
 	if i == 32 then
-		inventory[i][1] = 131 --123
+		inventory[i][1] = "Ender Pearl" --123
 	end
 	
 	if i == 33 then
-		inventory[i][1] = 166--124
+		inventory[i][1] = "Stone Pressure Plate"--124
 	end
 	
 	if i == 34 then
-		inventory[i][1] = 167--46
+		inventory[i][1] = "Oak Pressure Plate"--46
 	end
 	
 	if i == 35 then
-		inventory[i][1] = 125
+		inventory[i][1] = "Stone Button"
 	end
 	
 	if i == 36 then
-		inventory[i][1] = 126
+		inventory[i][1] = "Oak Button"
 	end
 	
 	if i == 37 then
-		inventory[i][1] = 127
+		inventory[i][1] = "Redstone Lamp"
 	end
 	
 	if i == 38 then
-		inventory[i][1] = 129
+		inventory[i][1] = "Redstone Torch"
 	end
 	
 	if i == 39 then
-		inventory[i][1] = 130
+		inventory[i][1] = "Lever"
 	end
 	
 	if i == 40 then
-		inventory[i][1] = 3
+		inventory[i][1] = "Stone"
 	end
 end
 
@@ -193,6 +194,7 @@ soundSfx = {}
 function init()
 	saveFileInit(savedVars)
 	menu_init()
+	--creativeInventory_blockData_init()
 	inventory_init(inventoryScales[GetValue("InventoryUIScale")])
 	redstone_init()
 	itemSprites_init()
@@ -208,7 +210,7 @@ function init()
 		DebugPrint("Minecraft Building Tool requires the experimental build of Teardown.")
 		modDisabled = true
 	end
-	
+
 	if binds["Open_Menu"] == "unbound" then
 		binds["Open_Menu"] = "m"
 		saveVars(savedVars)
@@ -320,7 +322,7 @@ function tick(dt)
 		
 		local selectedBlockId = selectedBlockInvData[1]
 		
-		UseItem(selectedBlockId)
+		UseItem(selectedBlockId, true)
 		
 		if selectedBlockInvData[2] <= 0 then
 			selectedBlockInvData[1] = 0
@@ -411,9 +413,8 @@ function PickBlock()
 	end
 	
 	local blockTag = GetTagValue(shape, "minecraftblockid")
-	local aimBlockId = tonumber(blockTag)
 	
-	if aimBlockId == nil or aimBlockId <= 0 then
+	if blockTag == nil or blockTag <= "" then
 		return
 	end
 	
@@ -424,7 +425,7 @@ function PickBlock()
 		if selectedBlockInvData ~= nil then
 			local currBlockId = selectedBlockInvData[1]
 			
-			if currBlockId == aimBlockId then
+			if currBlockId == blockTag then
 				found = true
 				hotbarSelectedIndex = i + 1
 				break
@@ -433,7 +434,7 @@ function PickBlock()
 	end
 	
 	if creativeMode and not found then
-		inventory[inventoryHotBarStartIndex + hotbarSelectedIndex - 1] = {aimBlockId, 1}
+		inventory[inventoryHotBarStartIndex + hotbarSelectedIndex - 1] = {blockTag, 1}
 	end
 end
 
@@ -546,8 +547,8 @@ function RemoveBlock(blockToRemove)
 		local blockBelowMin, blockBelowMax = GetShapeBounds(blockBelow)
 		local blockBelowCenter = VecLerp(blockBelowMin, blockBelowMax, 0.5)
 		
-		if blockBelowId == 123 then
-			local connectedShape = ConnectRedstoneToAdjecent(blockBelowCenter, blocks[123], {}, true, false, true)
+		if blockBelowId == "Redstone Dust" then
+			local connectedShape = ConnectRedstoneToAdjecent(blockBelowCenter, blocks["Redstone Dust"], {}, true, false, true)
 			
 			blockBelowConnected = blockBelowConnected .. " " .. connectedShape
 			
@@ -558,12 +559,12 @@ function RemoveBlock(blockToRemove)
 	end
 end
 
-function UseItem(selectedBlockId)
+function UseItem(selectedBlockId, dropItem)
 	local selectedBlockData = blocks[selectedBlockId]
 	local selectedItemData = itemData[selectedBlockData[1]]
 	local extraData = nil
 	
-	if selectedItemData == nil then
+	if selectedItemData == nil or dropItem then
 		selectedItemData = itemData["Dropped Item"]
 		extraData = selectedBlockId
 	end
@@ -876,10 +877,10 @@ function PlaceBlock()
 				mirrorJointLimits = "alt"
 			end
 		elseif selectedBlockData[9] == 7 and not dynamicBlock then
-			if selectedBlockId == 123 then
+			if selectedBlockId == "Redstone Dust" then
 				connectedShapesTag = connectedShapesTag .. ConnectRedstoneToAdjecent(tempPos, selectedBlockData, adjecentBlocks)
 				--connectedShapesTag = connectedShapesTag .. ConnectToAdjecentBlocks(selectedBlockData, newAdjDown, adjTransformDown.pos, redstoneOffset, 123, 4, "_cd") -- Vec(-0.155, 0, -0.205)
-			elseif selectedBlockId == 130 and blockEulerX == 0 and blockEulerZ == 0 then
+			elseif selectedBlockId == "Lever" and blockEulerX == 0 and blockEulerZ == 0 then
 				local blockRotY = blockEulerY / 90
 				
 				if blockEulerY / 90 == 0 then
@@ -914,7 +915,7 @@ function PlaceBlock()
 		end
 	end
 	
-	if selectedBlockId == 16 or selectedBlockId == 129 then
+	if selectedBlockId == "Torch" or selectedBlockId == "Redstone Torch" then
 		local gridAlignedHitPoint = getGridAlignedPos(VecAdd(hitPoint, VecScale(normal, -gridModulo * 0.1)))
 		local playerRotX, playerRotY, playerRotZ = GetQuatEuler(playerCameraTransform.rot)
 		
@@ -968,10 +969,10 @@ function PlaceBlock()
 	
 	if selectedBlockData[10] ~= nil then
 		extraBlockXML = selectedBlockData[10]
-		if selectedBlockId == 127 then
+		if selectedBlockId == "Redstone Lamp" then
 			uniqueLightId = uniqueLightId + 1
 			extraBlockXML = string.gsub(extraBlockXML, "LAMPID", "MCL_" .. tostring(uniqueLightId))
-		elseif selectedBlockId == 129 then
+		elseif selectedBlockId == "Redstone Torch" then
 			uniqueLightId = uniqueLightId + 1
 			extraBlockXML = string.gsub(extraBlockXML, "LAMPID", "MCL_" .. tostring(uniqueLightId))
 		end
@@ -993,7 +994,7 @@ function PlaceBlock()
 	local blockArray = Spawn(blockXML, blockTransform, not dynamicBlock, true)
 	local block = blockArray[1]
 	
-	if selectedBlockId == 125 or selectedBlockId == 126 or selectedBlockId == 166 or selectedBlockId == 167 then
+	if selectedBlockId == "Stone Button" or selectedBlockId == "Oak Button" or selectedBlockId == "Stone Pressure Plate" or selectedBlockId == "Oak Pressure Plate" then
 		blockArray = GetBodyShapes(block)
 		block = blockArray[1]
 	end
@@ -1006,14 +1007,14 @@ function PlaceBlock()
 	end
 	
 	if selectedBlockData[9] == 7 then
-		if selectedBlockId == 12 then
+		if selectedBlockId == "TNT" then
 			SetBodyDynamic(block, false)
 		end
 		
 		local offsetPos = gridAlignedPreOffset
 		
 		--DebugPrint(tostring(offsetPos == nil) .. " " .. selectedBlockId)
-		if selectedBlockId == 124 then
+		if selectedBlockId == "Redstone Repeater" then
 			local torch = blockArray[2]
 			
 			SetTag(torch, "minecraftconnectedshapes", block)
@@ -1022,7 +1023,7 @@ function PlaceBlock()
 			local returnPos = Redstone_Add(selectedBlockId, block, connectedShapesTag, torch, offsetPos)
 			
 			SetTag(block, "minecraftredstonepos", returnPos[1] .. " " .. returnPos[2] .. " " .. returnPos[3])
-		elseif selectedBlockId == 125 or selectedBlockId == 126 or selectedBlockId == 166 or selectedBlockId == 167 then
+		elseif selectedBlockId == "Stone Button" or selectedBlockId == "Oak Button" or selectedBlockId == "Stone Pressure Plate" or selectedBlockId == "Oak Pressure Plate" then
 			local otherBlock = shape
 			local otherBlockId = GetTagValue(shape, "minecraftblockid")
 			
@@ -1035,11 +1036,11 @@ function PlaceBlock()
 			local returnPos = Redstone_Add(selectedBlockId, block, connectedShapesTag, {GetShapeBody(block), otherBlock}, offsetPos)
 			
 			SetTag(block, "minecraftredstonepos", returnPos[1] .. " " .. returnPos[2] .. " " .. returnPos[3])
-		elseif selectedBlockId == 127 then
+		elseif selectedBlockId == "Redstone Lamp" then
 			local returnPos = Redstone_Add(selectedBlockId, block, connectedShapesTag, "MCL_" .. tostring(uniqueLightId), offsetPos)
 			
 			SetTag(block, "minecraftredstonepos", returnPos[1] .. " " .. returnPos[2] .. " " .. returnPos[3])
-		elseif selectedBlockId == 129 then
+		elseif selectedBlockId == "Redstone Torch" then
 			local otherBlock = shape
 			local otherBlockId = GetTagValue(shape, "minecraftblockid")
 			
@@ -1056,7 +1057,7 @@ function PlaceBlock()
 			local returnPos = Redstone_Add(selectedBlockId, block, connectedShapesTag, {"MCL_" .. tostring(uniqueLightId), otherBlock, blockEulerX ~= 0 or blockEulerY ~= 0 or blockEulerZ ~= 0}, offsetPos)--VecSub(gridAligned, blockPosOffset))
 			
 			SetTag(block, "minecraftredstonepos", returnPos[1] .. " " .. returnPos[2] .. " " .. returnPos[3])
-		elseif selectedBlockId == 130 then
+		elseif selectedBlockId == "Lever" then
 			local lever = blockArray[2]
 			
 			SetTag(lever, "minecraftconnectedshapes", block)
@@ -1082,7 +1083,7 @@ function PlaceBlock()
 		connectedShapesTag = connectedShapesTag .. gateR .. " " .. gateL .. " "
 	end
 	
-	if selectedBlockId == 168 then
+	if selectedBlockId == "Chest" then
 		local lid = FindBody("lid", true)
 		
 		RemoveTag(lid, "lid") --To prevent from finding it again.
@@ -1708,7 +1709,7 @@ function getCurrentHeldBlockData(index)
 
 	local currInvData = inventory[inventoryHotBarStartIndex + index]
 	
-	if currInvData[1] == 0 or currInvData[2] == 0 then
+	if currInvData[1] == "" or currInvData[2] == 0 then
 		return nil
 	end
 	
@@ -1716,6 +1717,18 @@ function getCurrentHeldBlockData(index)
 end
 
 function renderHud(dt)
+	UiPush()
+		UiAlign("left top")
+		
+		UiFont(font, 26)
+		UiTranslate(25, 25)
+		UiColor(0, 0, 0, 0.5)
+		UiText("DebugStart is enabled!")
+		UiTranslate(2, 2)
+		UiColor(1, 0, 0, 1)
+		UiText("DebugStart is enabled!")
+	UiPop()
+	
 	UiPush()
 		UiAlign("center middle")
 		
@@ -1794,11 +1807,10 @@ function renderHud(dt)
 						local currBlockId = currInvData[1]
 						local currBlockStackSize = currInvData[2]
 						
-						if currBlockId > 0 and currBlockStackSize > 0 then
-							local blockName = blocks[currBlockId][1]
+						if currBlockId ~= "" and currBlockStackSize > 0 then
 							UiAlign("center middle")
 							UiTranslate(i * (selectorWidth * arbitraryIndexNumber))
-							UiImageBox("MOD/sprites/blocks/" .. blockName .. ".png", selectorWidth * 0.66, selectorHeight * 0.66, 0, 0)
+							UiImageBox("MOD/sprites/blocks/" .. currBlockId .. ".png", selectorWidth * 0.66, selectorHeight * 0.66, 0, 0)
 							
 							if currBlockStackSize > 1 then
 								UiTranslate(selectorHeight / 4, selectorHeight / 4)
@@ -1864,7 +1876,7 @@ function renderHeldItem()
 	end
 	
 	local currBlockId = heldItem[1]
-	local blockName = blocks[currBlockId][1]
+	local blockName = currBlockId
 	
 	local toolBody = GetToolBody()
 	local toolTransform = GetBodyTransform(toolBody)

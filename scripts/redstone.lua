@@ -65,7 +65,7 @@ function redstone_update(dt)
 		local rsData = GetFromDB(index[1], index[2], index[3])
 		local shapeToCheck = shape
 		
-		if IsShapeBroken(shapeToCheck) or (GetShapeBody(shapeToCheck) ~= 1 and (rsData == nil or (rsData ~= nil and rsData[2] ~= 12 and rsData[2] ~= 125 and rsData[2] ~= 126 and rsData[2] ~= 166 and rsData[2] ~= 167))) then
+		if IsShapeBroken(shapeToCheck) or (GetShapeBody(shapeToCheck) ~= 1 and (rsData == nil or (rsData ~= nil and rsData[2] ~= "TNT" and rsData[2] ~= "Stone Button" and rsData[2] ~= "Oak Button" and rsData[2] ~= "Stone Pressure Plate" and rsData[2] ~= "Oak Pressure Plate"))) then
 			if rsData ~= nil then
 				rsData[3] = 0
 				rsData[5] = 0
@@ -170,7 +170,7 @@ function Redstone_Draw(dt)
 		for y, yArray in pairs(xArray) do
 			for z, rsBlockData in pairs(yArray) do
 				if rsBlockData ~= nil then
-					if rsBlockData[2] == 124 or rsBlockData[2] == 125 or rsBlockData[2] == 126 or rsBlockData[2] == 130 then
+					if rsBlockData[2] == "Redstone Repeater" or rsBlockData[2] == "Stone Button" or rsBlockData[2] == "Oak Button" or rsBlockData[2] == "Lever" then
 						DrawInteractText(x, y, z, rsBlockData, dt, aimShape)
 					end
 				end
@@ -293,11 +293,11 @@ function Redstone_Add(id, shape, connections, extraData, posOverride)
 	local extra = nil
 	local softPower = nil
 	
-	if id == 12 then
+	if id == "TNT" then
 		shape = GetBodyShapes(shape)[1]
-	elseif id == 46 then
+	elseif id == "Block Of Redstone" then
 		power = 16
-	elseif id == 124 then
+	elseif id == "Redstone Repeater" then
 		SetTag(shape, "interact", "Tick: 0.1")
 		
 		local torchPos = GetBodyTransform(extraData).pos
@@ -305,30 +305,30 @@ function Redstone_Add(id, shape, connections, extraData, posOverride)
 		extra = {"interact", 0.1, 0.0, 0.0, false, extraData, torchPos}
 		
 		--SetBodyDynamic(extraData, true)
-	elseif id == 125 then
+	elseif id == "Stone Button" then
 		local buttonPos = GetBodyTransform(extraData[1]).pos
 	
 		extra = {"interact", 1.0, 0.0, extraData[2], sfx[1], sfx[2], buttonPos}
-	elseif id == 126 then
+	elseif id == "Oak Button" then
 		local buttonPos = GetBodyTransform(extraData[1]).pos
 		
 		extra = {"interact", 1.5, 0.0, extraData[2], sfx[3], sfx[4], buttonPos}
-	elseif id == 127 then
+	elseif id == "Redstone Lamp" then
 		extra = FindLight(extraData, true)
 		SetShapeEmissiveScale(shape, 0)
 		SetLightEnabled(extra, false)
 		softPower = 0
-	elseif id == 129 then
+	elseif id == "Redstone Torch" then
 		local light = FindLight(extraData[1])
 		local attachedBlock = extraData[2]
 		
 		extra = {light, attachedBlock, 0.125, 0.0, extraData[3], 0, false}
-	elseif id == 130 then
+	elseif id == "Lever" then
 		local lever = extraData
 		extra = {lever, true}
 		
 		SetTag(shape, "interact", "Toggle Stiffness")
-	elseif id == 166 or id == 167 then
+	elseif id == "Stone Pressure Plate" or id == "Oak Pressure Plate" then
 		local platePos = GetBodyTransform(extraData[1]).pos
 		
 		extra = {1.0, 0.0, platePos, extraData[2]}
@@ -422,9 +422,9 @@ function Redstone_Interact(shape)
 		return nil
 	end
 	
-	if rsBlockData[2] == 125 or rsBlockData[2] == 126 then
+	if rsBlockData[2] == "Stone Button" or rsBlockData[2] == "Oak Button" then
 		HandleButtonInteraction(rsBlockData)
-	elseif rsBlockData[2] == 124 then
+	elseif rsBlockData[2] == "Redstone Repeater" then
 		local rsExtra = rsBlockData[6]
 		local rsTick = rsExtra[2] + 0.1
 		
@@ -435,7 +435,7 @@ function Redstone_Interact(shape)
 		rsExtra[2] = rsTick
 		
 		SetTag(rsBlockData[1], "interact", "Tick: " .. rsTick)
-	elseif rsBlockData[2] == 130 then
+	elseif rsBlockData[2] == "Lever" then
 		local rsExtra = rsBlockData[6]
 		
 		rsExtra[2] = not rsExtra[2]
@@ -457,9 +457,9 @@ function GetRSDataFromShape(shape)
 		return nil, nil
 	end
 	
-	local softBlockId = tonumber(GetTagValue(shape, "minecraftblockid"))
+	local softBlockId = GetTagValue(shape, "minecraftblockid")
 	
-	if softBlockId == nil or softBlockId == "" or softBlockId == 16 then
+	if softBlockId == nil or softBlockId == "" or softBlockId == "Torch" then
 		return nil, nil
 	end
 	
@@ -621,7 +621,7 @@ function IsRealRedstone(rsData)
 end
 
 function IsRealRedstoneId(rsBlockId)
-	return rsBlockId ~= 12 and rsBlockId ~= 46 and rsBlockId ~= 123 and rsBlockId ~= 124 and rsBlockId ~= 125 and rsBlockId ~= 126 and rsBlockId ~= 127 and rsBlockId ~= 129 and rsBlockId ~= 130 and rsBlockId ~= 166 and rsBlockId ~= 167
+	return rsBlockId ~= "TNT" and rsBlockId ~= "Block Of Redstone" and rsBlockId ~= "Redstone Dust" and rsBlockId ~= "Redstone Repeater" and rsBlockId ~= "Stone Button" and rsBlockId ~= "Oak Button" and rsBlockId ~= "Redstone Lamp" and rsBlockId ~= "Redstone Torch" and rsBlockId ~= "Lever" and rsBlockId ~= "Stone Pressure Plate" and rsBlockId ~= "Oak Pressure Plate"
 end
 
 function FilterNonRedstoneBlocks(tbl)
@@ -645,7 +645,7 @@ function IsPowerAcceptingShape(shape)
 end
 
 function IsPowerAcceptingRedstone(rsData)
-	return rsData[2] == 12 or rsData[2] == 123 or rsData[2] == 127
+	return rsData[2] == "TNT" or rsData[2] == "Redstone Dust" or rsData[2] == "Redstone Lamp"
 end
 
 function GetBlockCenter_Old(shape)
@@ -788,36 +788,36 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 	local rsExtra = rsBlockData[6]
 	local rsSoftPower = rsBlockData[7] -- Only valid for fake blocks.
 	
-	if rsBlockId == 12 then
+	if rsBlockId == "TNT" then
 		HandleTnt(x, y, z, rsBlockData, dt)
 		return
-	elseif rsBlockId == 124 then -- Don't need adjecent for this. Calculate manually.
+	elseif rsBlockId == "Redstone Repeater" then -- Don't need adjecent for this. Calculate manually.
 		if not HandleRedstoneRepeater(x, y, z, rsBlockData, dt) then
 			Redstone_Remove(rsShape)
 		end
 		return
-	elseif rsBlockId == 125 or rsBlockId == 126 then
+	elseif rsBlockId == "Stone Button" or rsBlockId == "Oak Button" then
 		HandleButton(x, y, z, rsBlockData, dt)
-	elseif rsBlockId == 127 then
+	elseif rsBlockId == "Redstone Lamp" then
 		HandleLamp(x, y, z, rsBlockData, dt)
 		return
-	elseif rsBlockId == 129 then
+	elseif rsBlockId == "Redstone Torch" then
 		if not HandleRedstoneTorch(x, y, z,rsBlockData, dt) then
 			return
 		end
-	elseif rsBlockId == 130 then
+	elseif rsBlockId == "Lever" then
 		HandleLever(x, y, z, rsBlockData, dt)
 	elseif blocks[rsBlockId][9] == 2 then
 		local doorBody = GetShapeBody(rsShape)
 			
 			DrawBodyHighlight(doorBody, 1, 0, 0, 1)
-			DebugPrint(rsPower > 0)
-			DebugPrint(rsSoftPower > 0)
+			--DebugPrint(rsPower > 0)
+			--DebugPrint(rsSoftPower > 0)
 		if rsPower > 0 or rsSoftPower > 0 then
 			
 			SetBodyAngularVelocity(doorBody, Vec(0, -10, 0))
 		end
-	elseif rsBlockId == 166 or rsBlockId == 167 then
+	elseif rsBlockId == "Stone Pressure Plate" or rsBlockId == "Oak Pressure Plate" then
 		HandlePressurePlate(x, y, z, rsBlockData, dt)
 	end
 	
@@ -825,7 +825,7 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 	
 	local adjecentRs = GetAdjecent(x, y, z, rsShape); -- {RSDATA, POS}
 	
-	if rsBlockId ~= 46 and rsBlockId ~= 125 and rsBlockId ~= 126 and rsPower ~= nil then
+	if rsBlockId ~= "Block Of Redstone" and rsBlockId ~= "Stone Button" and rsBlockId ~= "Oak Button" and rsPower ~= nil then
 		SetShapeEmissiveScale(rsShape, 1 / 15 * rsPower)
 		--DrawShapeHighlight(rsShape, 1 / 15 * rsPower)
 	end
@@ -878,7 +878,7 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 		end
 	end
 	
-	if rsBlockId == 46 then
+	if rsBlockId == "Block Of Redstone" then
 		local upBlock = GetFromDB(x, y + blockSize, z)
 		local downBlock = GetFromDB(x, y - blockSize, z)
 		
@@ -889,13 +889,13 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 		if downBlock ~= nil and IsPowerAcceptingRedstone(downBlock) then
 			adjecentRs[#adjecentRs + 1] = {downBlock, Vec(x, y - blockSize, z), false}
 		end
-	elseif rsBlockId == 123 then
+	elseif rsBlockId == "Redstone Dust" then
 		if rsPower > 0 then
 			local fakeDownBlock = GetNonRedstoneBlock(rsShape, Vec(0.2, -0.5, 0.2))
 			local fakeDownRsData, actualFake = GetRSDataFromShape(fakeDownBlock)
 			
 			if fakeDownRsData ~= nil then
-				adjecentRs[#adjecentRs + 1] = {fakeDownRsData, Vec(x, y - blockSize, z), fakeDownRsData[2] ~= 127}
+				adjecentRs[#adjecentRs + 1] = {fakeDownRsData, Vec(x, y - blockSize, z), fakeDownRsData[2] ~= "Redstone Lamp"}
 			end
 		end
 		
@@ -905,10 +905,10 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 		local upAdj = {}
 		
 		if fakeUpBlock == nil then
-			upAdj = GetAdjecent(x, y + blockSize, z, rsShape, 123);
+			upAdj = GetAdjecent(x, y + blockSize, z, rsShape, "Redstone Dust");
 		end
 		
-		local tempDownAdj = GetAdjecent(x, y - blockSize, z, rsShape, 123);
+		local tempDownAdj = GetAdjecent(x, y - blockSize, z, rsShape, "Redstone Dust");
 		local downAdj = {}
 		
 		for i = 1, #tempDownAdj do
@@ -934,7 +934,7 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 		--[[if #rsConnections <= 2 then -- Straight softpowering.
 		
 		end]]--
-	elseif rsBlockId == 129 then
+	elseif rsBlockId == "Redstone Torch" then
 		--local downOffset = Vec(0.0, -0.5, 0.0)
 		--local upOffset = Vec(0.0, -0.5, 0.0)
 		
@@ -986,17 +986,17 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 			currRsToSoftPower = false
 		end
 		
-		if (rsBlockId == 129 and currRsShape ~= rsExtra[2]) or rsBlockId ~= 129 then
+		if (rsBlockId == "Redstone Torch" and currRsShape ~= rsExtra[2]) or rsBlockId ~= "Redstone Torch" then
 			--DebugPrint("0-0")
 			if ((currRsToSoftPower and currRsSoftPower ~= nil) or IsRealRedstoneId(currRsBlockId)) and 
-				rsBlockId ~= 46 and rsBlockId ~= 129 and rsBlockId ~= 130 and 
-				((rsBlockId ~= 125 and rsBlockId ~= 126) or ((rsBlockId == 125 or rsBlockId == 126) and currRsShape ~= rsExtra[4])) then
+				rsBlockId ~= "Block Of Redstone" and rsBlockId ~= "Redstone Torch" and rsBlockId ~= "Lever" and 
+				((rsBlockId ~= "Stone Button" and rsBlockId ~= "Oak Button") or ((rsBlockId == "Stone Button" or rsBlockId == "Oak Button") and currRsShape ~= rsExtra[4])) then
 				--DebugPrint("1-0")
 				if currRsSoftPower < rsPower - 1 then
 					--DebugPrint("1-1")
 					currRsData[7] = rsPower - 1
 				end
-			elseif currRsData[2] == 12 or currRsData[2] == 127 then
+			elseif currRsData[2] == "TNT" or currRsData[2] == "Redstone Lamp" then
 				--DebugPrint("2-0")
 				if rsSoftPower ~= nil and rsSoftPower > rsPower then
 					--DebugPrint("2-1")
@@ -1007,7 +1007,7 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 					--DebugPrint("2-2")
 					currRsData[3] = rsPower
 				end
-			elseif currRsBlockId ~= 129 and ((rsBlockId == 46 and IsPowerAcceptingRedstone(currRsData)) or rsBlockId ~= 46) then
+			elseif currRsBlockId ~= "Redstone Torch" and ((rsBlockId == "Block Of Redstone" and IsPowerAcceptingRedstone(currRsData)) or rsBlockId ~= "Block Of Redstone") then
 				--DebugPrint("3-0")
 				if currRsPower < rsPower - 1 then
 					--DebugPrint("3-1")
@@ -1017,7 +1017,7 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 		end
 	end
 	
-	if rsBlockId ~= 46 and rsBlockId ~= 124 and rsBlockId ~= 125 and rsBlockId ~= 126 and rsBlockId ~= 129 and rsBlockId ~= 130 and rsBlockId ~= 166 and rsBlockId ~= 167 then
+	if rsBlockId ~= "Block Of Redstone" and rsBlockId ~= "Redstone Repeater" and rsBlockId ~= "Stone Button" and rsBlockId ~= "Oak Button" and rsBlockId ~= "Redstone Torch" and rsBlockId ~= "Lever" and rsBlockId ~= "Stone Pressure Plate" and rsBlockId ~= "Oak Pressure Plate" then
 		rsBlockData[5] = rsPower
 		rsBlockData[3] = 0
 		
