@@ -3,17 +3,19 @@
 #include "scripts/items/firecharge.lua"
 #include "scripts/items/droppeditem.lua"
 
-itemData = {}
-itemSprites = {}
+itemData = {
+--	Name		    = {init,		   update			 finish
+	["Ender Pearl"] = {enderPearlInit, enderPearlUpdate},
+	["Flint And Steel"] = {flintAndSteelInit, flintAndSteelUpdate}
+	["Fire Charge"] = {fireChargeInit, fireChargeUpdate}
+	["Dropped Item"] = {droppedInit, droppedUpdate}
+}
 
---		  Name		    = {init,		   update			 finish
-itemData["Ender Pearl"] = {enderPearlInit, enderPearlUpdate}
-itemData["Flint And Steel"] = {flintAndSteelInit, flintAndSteelUpdate}
-itemData["Fire Charge"] = {fireChargeInit, fireChargeUpdate}
-itemData["Dropped Item"] = {droppedInit, droppedUpdate}
-
-itemSprites["Fire Charge"] = "MOD/sprites/blocks/Fire Charge.png"
-itemSprites["Ender Pearl"] = "MOD/sprites/blocks/Ender Pearl.png"
+itemSprites = {
+--	Name		    = spritePath.png
+	["Fire Charge"] = "MOD/sprites/blocks/Fire Charge.png"
+	["Ender Pearl"] = "MOD/sprites/blocks/Ender Pearl.png"
+}
 
 function itemSprites_init()
 	for name, path in pairs(itemSprites) do

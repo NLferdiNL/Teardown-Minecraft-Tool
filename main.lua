@@ -579,7 +579,6 @@ function UseItem(selectedBlockId, dropItem)
 	local selectedBlockInvData = getCurrentHeldBlockData()
 	
 	if stackEdit ~= nil and not creativeMode and selectedBlockInvData ~= nil then
-		
 		selectedBlockInvData[2] = selectedBlockInvData[2] - 1
 		
 		if selectedBlockInvData[2] <= 0 then

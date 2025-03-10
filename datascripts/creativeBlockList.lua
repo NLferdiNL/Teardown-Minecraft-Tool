@@ -1,3 +1,6 @@
+-- This list is used for the order in which blocks appear in the creative menu.
+-- Blocks not in this list will not appear. Useful for hiding internal blocks etc.
+
 blockList = {
 "Grass",
 "Dirt",
