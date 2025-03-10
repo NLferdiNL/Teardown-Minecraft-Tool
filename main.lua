@@ -17,6 +17,9 @@ toolName = "minecraftbuildtool"
 toolReadableName = "Minecraft Tool"
 local toolSlot = nil
 
+debugstart = true
+local debugstarted = false
+
 -- TODO List Redstone Update 2: (Release once empty.)
 
 -- Components:
@@ -127,16 +130,16 @@ local damageFlash = 0
 for i = 1, mainInventorySize + miscInventorySlots do
 	inventory[i] = {"", 1} --{BLOCKID, STACKSIZE}
 	
-	--[[if i >= 32 then
-		inventory[i] = {i - 31, 1}
-	end]]--
-	
-	if i == 32 then
-		inventory[i][1] = "Ender Pearl" --123
+	if i >= 32 then
+		inventory[i] = {blockList[i - 31], 1}
 	end
 	
-	if i == 33 then
-		inventory[i][1] = "Stone Pressure Plate"--124
+	if i == 32 then
+		inventory[i][1] = "Chest" --123
+	end
+	
+	--[[  if i == 33 then
+		inventory[i][1] = "Oak Fence Gate"--124
 	end
 	
 	if i == 34 then
@@ -165,7 +168,7 @@ for i = 1, mainInventorySize + miscInventorySlots do
 	
 	if i == 40 then
 		inventory[i][1] = "Stone"
-	end
+	end]]--
 end
 
 inventoryHotBarStartIndex = #inventory - 8
@@ -184,9 +187,6 @@ local fenceOffset = Vec(0, gridModulo / 16 * 6, 0)
 local redstoneOffset = Vec(gridModulo / 16 * -1, 0, gridModulo / 16 * -2)
 
 local canGrabObject = false
-
-debugstart = false
-local debugstarted = false
 
 local activeEntities = {}
 soundSfx = {}
@@ -281,7 +281,7 @@ function tick(dt)
 			-- Drop Mouse Held Item()
 			local blockId, stackSize = getInventoryBlockDataOnMouse()
 			
-			setInventoryBlockDataOnMouse(0, 0)
+			setInventoryBlockDataOnMouse("", 0)
 		end
 		
 		setInventoryOpen(not inventoryOpen)
@@ -325,7 +325,7 @@ function tick(dt)
 		UseItem(selectedBlockId, true)
 		
 		if selectedBlockInvData[2] <= 0 then
-			selectedBlockInvData[1] = 0
+			selectedBlockInvData[1] = ""
 			selectedBlockInvData[2] = 0
 		end
 	end
@@ -335,7 +335,7 @@ function tick(dt)
 	end
 	
 	if canGrabObject or GetPlayerGrabBody() ~= 0 or GetPlayerGrabShape() ~= 0 then
-		DebugPrint("AHHHH")
+		--DebugPrint("AHHHH")
 		return
 	end
 	
@@ -414,7 +414,7 @@ function PickBlock()
 	
 	local blockTag = GetTagValue(shape, "minecraftblockid")
 	
-	if blockTag == nil or blockTag <= "" then
+	if blockTag == nil or blockTag == "" then
 		return
 	end
 	
@@ -486,9 +486,9 @@ function RemoveBlock(blockToRemove)
 		blockToRemove = shape
 	end
 	
-	local blockTag = tonumber(GetTagValue(blockToRemove, "minecraftblockid"))
+	local blockTag = GetTagValue(blockToRemove, "minecraftblockid")
 	
-	if blockTag == nil or blockTag <= 0 then
+	if blockTag == nil or blockTag == "" then
 		return
 	end
 	
@@ -541,7 +541,7 @@ function RemoveBlock(blockToRemove)
 	if blockBelow ~= nil then
 		blockBelow = blockBelow[1]
 		
-		local blockBelowId = tonumber(GetTagValue(blockBelow, "minecraftblockid"))
+		local blockBelowId = GetTagValue(blockBelow, "minecraftblockid")
 		local blockBelowConnected = GetTagValue(blockBelow, "minecraftconnectedshapes")
 		
 		local blockBelowMin, blockBelowMax = GetShapeBounds(blockBelow)
@@ -579,10 +579,10 @@ function UseItem(selectedBlockId, dropItem)
 	local selectedBlockInvData = getCurrentHeldBlockData()
 	
 	if stackEdit ~= nil and not creativeMode and selectedBlockInvData ~= nil then
-		selectedBlockInvData[2] = selectedBlockInvData[2] - 1
+		selectedBlockInvData[2] = selectedBlockInvData[2] - stackEdit
 		
 		if selectedBlockInvData[2] <= 0 then
-			selectedBlockInvData[1] = 0
+			selectedBlockInvData[1] = ""
 		end
 	end
 end
@@ -813,7 +813,7 @@ function PlaceBlock()
 		local otherBlockTransform = GetShapeWorldTransform(otherBlock)
 		
 		if HasTag(shape, "minecraftblockid") then
-			otherBlockId = tonumber(GetTagValue(shape, "minecraftblockid"))
+			otherBlockId = GetTagValue(shape, "minecraftblockid")
 			otherBlockType = blocks[otherBlockId][9]
 		end
 	
@@ -1073,21 +1073,21 @@ function PlaceBlock()
 	end
 	
 	if selectedBlockData[9] == 8 then
-		local gateR = FindShape("gateR", true)
-		local gateL = FindShape("gateL", true)
+		local gateR = FindEntity("gateR", true)
+		local gateL = FindEntity("gateL", true)
 		
 		RemoveTag(gateR, "gateR") --To prevent from finding it again.
 		RemoveTag(gateL, "gateL")
 		
-		connectedShapesTag = connectedShapesTag .. gateR .. " " .. gateL .. " "
+		connectedShapesTag = connectedShapesTag .. " " .. gateR .. " " .. gateL
 	end
 	
 	if selectedBlockId == "Chest" then
-		local lid = FindBody("lid", true)
+		local lid = FindEntity("lid", true)
 		
 		RemoveTag(lid, "lid") --To prevent from finding it again.
 		
-		connectedShapesTag = connectedShapesTag .. lid .. " "
+		connectedShapesTag = connectedShapesTag .. " " .. lid 
 	end
 	
 	PlaySound(interactionSound, gridAligned)
@@ -1110,9 +1110,9 @@ function PlaceBlock()
 	if selectedBlockData[9] ~= 4 and selectedBlockId ~= 123 and not dynamicBlock then
 		for i = 1, #adjecentBlocks do
 			local currBlock = adjecentBlocks[i]
-			local currBlockId = tonumber(GetTagValue(currBlock, "minecraftblockid"))
+			local currBlockId = GetTagValue(currBlock, "minecraftblockid")
 			
-			if currBlockId ~= nil and (currBlockId == 41 or currBlockId == 123) then
+			if currBlockId ~= nil and (currBlockId == "Oak Fence" or currBlockId == "Redstone Dust") then
 				local blockTransform = GetShapeWorldTransform(currBlock)
 				local currBlockData = blocks[currBlockId]
 				local currBlockType = currBlockData[9]
@@ -1208,7 +1208,7 @@ function PlaceBlock()
 	if not creativeMode then
 		selectedBlockInvData[2] = selectedBlockInvData[2] - 1
 		if selectedBlockInvData[2] <= 0 then
-			selectedBlockInvData[1] = 0
+			selectedBlockInvData[1] = ""
 			selectedBlockInvData[2] = 0
 		end
 	end
@@ -1272,7 +1272,8 @@ function RemoveConnectionsInBlock(gridAligned, shapeIgnoreList)
 	
 	for i = 1, #blocksInGridAligned do
 		local currShape = blocksInGridAligned[i]
-		if ignoreShapes[currShape] == nil and HasTag(currShape, "minecraftblockid") then
+		
+		if ignoreShapes[currShape] == nil and not HasTag(currShape, "minecraftblockid") then
 			Delete(currShape)
 		end
 	end
@@ -1285,7 +1286,7 @@ function FilterBlockType(shapeList, typeId, blacklist)
 	for i = 1, #shapeList do
 		local currShape = shapeList[i]
 		
-		local blockId = tonumber(GetTagValue(currShape, "minecraftblockid"))
+		local blockId = GetTagValue(currShape, "minecraftblockid")
 		
 		if blockId ~= nil and blockId > 0 then
 			local otherTypeId = blocks[blockId][9]
@@ -1305,9 +1306,9 @@ function FilterNonBlocks(shapeList)
 	for i = 1, #shapeList do
 		local currShape = shapeList[i]
 		
-		local blockId = tonumber(GetTagValue(currShape, "minecraftblockid"))
+		local blockId = GetTagValue(currShape, "minecraftblockid")
 		
-		if blockId ~= nil and blockId > 0 then
+		if blockId ~= nil and blockId ~= "" then
 			newList[#newList + 1] = currShape
 		end
 	end
@@ -1416,7 +1417,7 @@ function ConnectToAdjecentBlocks(selectedBlockId, selectedBlockData, adjecentBlo
 	for i = 1, #adjecentBlocks do
 		if adjecentBlocks[i] ~= -1 then
 			local otherShape = adjecentBlocks[i]
-			local otherBlockId = tonumber(GetTagValue(otherShape, "minecraftblockid"))
+			local otherBlockId = GetTagValue(otherShape, "minecraftblockid")
 			
 			if blockFilter == nil or IsBlockInFilter(blockFilter, otherBlockId) then
 				local otherShapeTransform = GetShapeWorldTransform(otherShape)
@@ -1575,11 +1576,9 @@ function SpawnAdjustedConnector(selectedBlockData, selectedBlockId, otherShape, 
 		DebugPrint(toolName .. " WARNING: invalid otherShape passed in SpawnAdjustedConnector()")
 	end
 	
-	otherBlockId = tonumber(otherBlockId)
-	
 	local sizeModifier = Vec(1, 1, 1)
 	
-	if otherBlockId == nil or otherBlockId == 0 then
+	if otherBlockId == nil or otherBlockId == "" then
 		DebugPrint(toolName .. " WARNING: invalid block id from otherShape in SpawnAdjustedConnector()")
 	else
 		local otherShapeBlockType = blocks[otherBlockId][9]
@@ -1716,17 +1715,19 @@ function getCurrentHeldBlockData(index)
 end
 
 function renderHud(dt)
-	UiPush()
-		UiAlign("left top")
-		
-		UiFont(font, 26)
-		UiTranslate(25, 25)
-		UiColor(0, 0, 0, 0.5)
-		UiText("DebugStart is enabled!")
-		UiTranslate(2, 2)
-		UiColor(1, 0, 0, 1)
-		UiText("DebugStart is enabled!")
-	UiPop()
+	if debugstart then
+		UiPush()
+			UiAlign("left top")
+			
+			UiFont(font, 26)
+			UiTranslate(25, 25)
+			UiColor(0, 0, 0, 0.5)
+			UiText("DebugStart is enabled!")
+			UiTranslate(2, 2)
+			UiColor(1, 0, 0, 1)
+			UiText("DebugStart is enabled!")
+		UiPop()
+	end
 	
 	UiPush()
 		UiAlign("center middle")

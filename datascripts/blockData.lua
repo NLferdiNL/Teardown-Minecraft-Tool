@@ -11,6 +11,7 @@ blocks =
 		["Oak Leaves"] = {"Oak Leaves",   		      					"MOD/vox/blocks/oakleaves.vox", 	          		{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil},
 		["Oak Planks"] = {"Oak Planks", 	          					"MOD/vox/blocks/oakplanks.vox", 	          		{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil},
 		["Oak Plank Slab"] = {"Oak Plank Slab",        					"MOD/vox/blocks/oakplankslab.vox",   		  		{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 8,  z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		3, nil},
+		["Oak Plank Stairs"] = {"Oak Plank Stairs",      				"MOD/vox/blocks/oakplankstairs.vox",     			{x = 0, y = 1,  z = 0},   	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		5, nil},
 		["TNT"] = {"TNT", 				     							"MOD/vox/blocks/tnt.vox", 				  			{x = 0, y = 0,  z = 0}, 	"tags='explosive=2'", 		{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					true, 		7, nil}, 
 		["Crafting Table"] = {"Crafting Table", 	     				"MOD/vox/blocks/craftingtable.vox", 	     		{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil}, 
 		["Smithing Table"] = {"Smithing Table", 	      				"MOD/vox/blocks/smithingtable.vox", 	      		{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil},

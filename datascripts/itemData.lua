@@ -6,15 +6,15 @@
 itemData = {
 --	Name		    = {init,		   update			 finish
 	["Ender Pearl"] = {enderPearlInit, enderPearlUpdate},
-	["Flint And Steel"] = {flintAndSteelInit, flintAndSteelUpdate}
-	["Fire Charge"] = {fireChargeInit, fireChargeUpdate}
-	["Dropped Item"] = {droppedInit, droppedUpdate}
+	["Flint And Steel"] = {flintAndSteelInit, flintAndSteelUpdate},
+	["Fire Charge"] = {fireChargeInit, fireChargeUpdate},
+	["Dropped Item"] = {droppedInit, droppedUpdate},
 }
 
 itemSprites = {
 --	Name		    = spritePath.png
-	["Fire Charge"] = "MOD/sprites/blocks/Fire Charge.png"
-	["Ender Pearl"] = "MOD/sprites/blocks/Ender Pearl.png"
+	["Fire Charge"] = "MOD/sprites/blocks/Fire Charge.png",
+	["Ender Pearl"] = "MOD/sprites/blocks/Ender Pearl.png",
 }
 
 function itemSprites_init()

@@ -210,7 +210,7 @@ function Redstone_Draw(dt)
 				UiAlign("left top")
 				UiFont(font, 26)
 				--{shape, block id, power, connection shapes, power last tick, extra(repeaterdata), softPower, softPowerLast}
-				UiTranslate(UiWidth() * 0.01, UiWidth() * 0.01)
+				UiTranslate(UiWidth() * 0.01, UiHeight() * 0.05)
 				UiText("Pos: " .. aimPos[1] .. ", " .. aimPos[2] .. ", " .. aimPos[3])
 				UiTranslate(0, 28)
 				UiText("Shape: " .. rsData[1])

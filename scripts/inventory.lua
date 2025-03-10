@@ -3,7 +3,7 @@
 local inventoryWidth = 9
 local inventoryOpen = false
 local inventoryBlockDataOnMouse = {"", 0}
-local inventoryIdMouseOver = {0, 0}
+local inventoryIdMouseOver = {0, ""}
 
 local creativeInventoryItemsTabImagePath = "MOD/sprites/container/creative_menu.png"
 local creativeInventoryScrollBarImagePath = "MOD/sprites/container/scrollbar.png"
@@ -96,7 +96,7 @@ function inventory_tick(dt)
 					local currSlotId = inventoryHotBarStartIndex + i
 					local toInvSlot = inventory[currSlotId]
 					
-					if InputPressed(i + 1) then
+					if InputPressed(i + 1) and not searchTextbox.inputActive then
 						if inventoryIdMouseOver[1] >= inventoryHotBarStartIndex and not mouseInCreativeInventory then
 							local fromInvSlot = inventory[inventoryIdMouseOver[1]]
 							
@@ -219,7 +219,7 @@ function inventory_draw()
 										
 										if UiIsMouseInRect(itemIconSize, itemIconSize) then
 											inventoryIdMouseOver[1] = currItemId--i * 9 + j
-											inventoryIdMouseOver[2] = currItemId
+											inventoryIdMouseOver[2] = blockList[currItemId]
 											mouseOver = true
 											mouseInCreativeInventory = true
 										end
@@ -367,7 +367,7 @@ function drawSurvivalBlockButton(invId, mouseOver)
 	local blockMaxStackSize = 64
 	
 	if blockId ~= "" then
-		UiImageBox("MOD/sprites/blocks/" .. blocks[blockId][1] .. ".png", itemIconSize, itemIconSize, 0, 0)
+		UiImageBox("MOD/sprites/blocks/" .. blockId .. ".png", itemIconSize, itemIconSize, 0, 0)
 	end
 	
 	local rmbDown = InputPressed("rmb")
@@ -404,7 +404,7 @@ function drawSurvivalBlockButton(invId, mouseOver)
 			else
 				--DebugPrint("0-2")
 				setInventoryBlockDataOnMouse(blockId, stackCount)
-				inventoryData[1] = 0
+				inventoryData[1] = ""
 				inventoryData[2] = 0
 			end
 		elseif rmbDown then
@@ -428,7 +428,7 @@ function drawSurvivalBlockButton(invId, mouseOver)
 					inventoryData[2] = stackCount - halfStackCount
 				else
 					setInventoryBlockDataOnMouse(blockId, stackCount)
-					inventoryData[1] = 0
+					inventoryData[1] = ""
 					inventoryData[2] = 0
 				end
 			end
@@ -520,7 +520,7 @@ function drawItemOnMouse()
 			DebugPrint("nil")
 		end]]--
 		
-		UiImageBox("MOD/sprites/blocks/" .. blockData[1] .. ".png", itemIconSize, itemIconSize, 0, 0)
+		UiImageBox("MOD/sprites/blocks/" .. inventoryBlockDataOnMouse[1] .. ".png", itemIconSize, itemIconSize, 0, 0)
 		
 		if inventoryBlockDataOnMouse[2] > 1 then
 			UiPush()

@@ -11,7 +11,7 @@ function HandleTnt(x, y, z, rsBlockData, dt)
 	local rsPower = rsBlockData[3]
 	local rsExtra = rsBlockData[6]
 	
-	if rsPower <= 0 and rsExtra == nil then
+	if rsPower <= 0 and rsExtra == nil and not HasTag(rsShape, "minecrafttriggertnt") then
 		return
 	end
 	
