@@ -41,6 +41,7 @@ local debugstarted = false
 
 -- Fixes:
 
+-- Fix tnt becoming invincible.
 -- Fix hard power blocks soft powering.
 -- Fix torch burnout sfx trigger if turned off.
 -- Fix dust connecting to sideway torches diagonally.
@@ -135,14 +136,14 @@ for i = 1, mainInventorySize + miscInventorySlots do
 	end
 	
 	if i == 32 then
-		inventory[i][1] = "Chest" --123
+		inventory[i][1] = "Obsidian" --123
 	end
 	
-	--[[  if i == 33 then
-		inventory[i][1] = "Oak Fence Gate"--124
+	if i == 33 then
+		inventory[i][1] = "Flint And Steel"--124
 	end
 	
-	if i == 34 then
+	--[[if i == 34 then
 		inventory[i][1] = "Oak Pressure Plate"--46
 	end
 	
@@ -418,6 +419,10 @@ function PickBlock()
 		return
 	end
 	
+	if tonumber(blockTag) ~= nil then -- Legacy map support
+		return
+	end
+	
 	local found = false
 	
 	for i = 0, 8 do
@@ -490,6 +495,10 @@ function RemoveBlock(blockToRemove)
 	
 	if blockTag == nil or blockTag == "" then
 		return
+	end
+	
+	if tonumber(blockTag) ~= nil then -- Legacy map support
+		blockTag = "Grass"
 	end
 	
 	local blockData = blocks[blockTag]
@@ -808,12 +817,17 @@ function PlaceBlock()
 
 	if selectedBlockData[9] > 1 then
 		local otherBlock = shape
-		local otherBlockId = 0
+		local otherBlockId = ""
 		local otherBlockType = 1
 		local otherBlockTransform = GetShapeWorldTransform(otherBlock)
 		
 		if HasTag(shape, "minecraftblockid") then
 			otherBlockId = GetTagValue(shape, "minecraftblockid")
+			
+			if tonumber(otherBlockId) ~= nil then
+				otherBlockId = "Grass"
+			end
+			
 			otherBlockType = blocks[otherBlockId][9]
 		end
 	
@@ -1260,6 +1274,13 @@ end
 function RemoveConnectionsInBlock(gridAligned, shapeIgnoreList)
 	local gridAlignedCentered = VecAdd(gridAligned, Vec(gridModulo / 2, gridModulo / 2, gridModulo / 2))
 	
+	--[[DebugPrint("---")
+	DebugPrint(VecToString(gridAligned))
+	DebugPrint(VecToString(gridAlignedCentered))
+	
+	spawnDebugParticle(gridAligned, 10, Color4.Red)
+	spawnDebugParticle(gridAlignedCentered, 10, Color4.Green)]]--
+	
 	local searchSize = {gridModulo, gridModulo, gridModulo}
 	
 	local blocksInGridAligned = CollisionCheckCenterPivot(gridAlignedCentered, searchSize)--(Transform(gridAligned), Vec(gridModulo / 2, gridModulo / 2, gridModulo / 2), false)
@@ -1273,8 +1294,15 @@ function RemoveConnectionsInBlock(gridAligned, shapeIgnoreList)
 	for i = 1, #blocksInGridAligned do
 		local currShape = blocksInGridAligned[i]
 		
-		if ignoreShapes[currShape] == nil and not HasTag(currShape, "minecraftblockid") then
-			Delete(currShape)
+		--DebugPrint("RM1")
+		--spawnDebugParticle(GetShapeWorldTransform(shape).pos, 10, Color4.Yellow)
+		
+
+		if ignoreShapes[currShape] == nil and HasTag(currShape, "minecraftblockid") then
+			--[[DebugPrint("RM2")
+			DebugPrint(HasTag(shape, "minecraftconnectedshapes"))
+			spawnDebugParticle(GetShapeWorldTransform(shape).pos, 10, Color4.Red)]]--
+			RemoveBlock(GetShapeBody(shape))
 		end
 	end
 end
@@ -1576,6 +1604,10 @@ function SpawnAdjustedConnector(selectedBlockData, selectedBlockId, otherShape, 
 		DebugPrint(toolName .. " WARNING: invalid otherShape passed in SpawnAdjustedConnector()")
 	end
 	
+	if tonumber(otherBlockId) ~= nil then
+		otherBlockId = "Grass"
+	end
+	
 	local sizeModifier = Vec(1, 1, 1)
 	
 	if otherBlockId == nil or otherBlockId == "" then
@@ -1672,16 +1704,18 @@ function HandleSpecialBlocks()
 end
 
 function HandleActiveEntities(dt)
-	local playerCamera = GetPlayerCameraTransform()
-	local pos = playerCamera.pos
-	local dir = TransformToParentVec(pos, Vec(0, 0, -1))
-	local spritePos = VecAdd(pos, VecScale(dir, 10))
+	--local playerCamera = GetPlayerCameraTransform()
+	--local pos = playerCamera.pos
+	--local dir = TransformToParentVec(pos, Vec(0, 0, -1))
+	--local spritePos = VecAdd(pos, VecScale(dir, 10))
 	
 	for i = #activeEntities, 1, -1 do
 		local currEntity = activeEntities[i]
 		
 		if currEntity ~= nil then
-			local entityData = itemData[currEntity[1]]			if not entityData[2](currEntity, dt) then
+			local entityData = itemData[currEntity[1]]
+
+			if not entityData[2](currEntity, dt) then
 				activeEntities[i] = nil
 			end
 		end

@@ -788,6 +788,10 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 	local rsExtra = rsBlockData[6]
 	local rsSoftPower = rsBlockData[7] -- Only valid for fake blocks.
 	
+	if tonumber(rsBlockId) ~= nil then
+		rsBlockData[2] = "Grass"
+	end
+	
 	if rsBlockId == "TNT" then
 		HandleTnt(x, y, z, rsBlockData, dt)
 		return
@@ -807,7 +811,7 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 		end
 	elseif rsBlockId == "Lever" then
 		HandleLever(x, y, z, rsBlockData, dt)
-	elseif blocks[rsBlockId][9] == 2 then
+	--[[elseif blocks[rsBlockId][9] == 2 then
 		local doorBody = GetShapeBody(rsShape)
 			
 			DrawBodyHighlight(doorBody, 1, 0, 0, 1)
@@ -816,7 +820,7 @@ function HandleRedstone(x, y, z, rsBlockData, dt)
 		if rsPower > 0 or rsSoftPower > 0 then
 			
 			SetBodyAngularVelocity(doorBody, Vec(0, -10, 0))
-		end
+		end]]--
 	elseif rsBlockId == "Stone Pressure Plate" or rsBlockId == "Oak Pressure Plate" then
 		HandlePressurePlate(x, y, z, rsBlockData, dt)
 	end

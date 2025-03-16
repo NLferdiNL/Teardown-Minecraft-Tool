@@ -2,13 +2,14 @@
 #include "scripts/items/flintandsteel.lua"
 #include "scripts/items/firecharge.lua"
 #include "scripts/items/droppeditem.lua"
+#include "scripts/world/portal.lua"
 
 itemData = {
 --	Name		    = {init,		   update			 finish
 	["Ender Pearl"] = {enderPearlInit, enderPearlUpdate},
 	["Flint And Steel"] = {flintAndSteelInit, flintAndSteelUpdate},
 	["Fire Charge"] = {fireChargeInit, fireChargeUpdate},
-	["Dropped Item"] = {droppedInit, droppedUpdate},
+	["Dropped Item"] = {droppedInit, droppedUpdate},	["Portal"] = {nil, portalUpdate},
 }
 
 itemSprites = {

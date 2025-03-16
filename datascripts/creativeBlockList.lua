@@ -35,6 +35,7 @@ blockList = {
 "Stone Brick Stairs",
 "Stone Brick Slab",
 "Soul Sand",
+"Obsidian",
 "Bedrock",
 "Basalt",
 "Smooth Basalt",

@@ -169,7 +169,8 @@ blocks =
 		["Stone Pressure Plate"] = {"Stone Pressure Plate", 			"MOD/vox/blocks/stonepressureplate.xml",			{x = 0, y = 0,  z = 0}, 	"",							{x = 14, y = 1, z = 14},	{x = 16, y = 16, z = 16},	nil, 					false, 		7, nil},
 		["Oak Pressure Plate"] = {"Oak Pressure Plate", 				"MOD/vox/blocks/oakpressureplate.xml",				{x = 0, y = 0,  z = 0}, 	"",							{x = 14, y = 1, z = 14},	{x = 16, y = 16, z = 16},	nil, 					false, 		7, nil},
 		["Chest"] = {"Chest", 											"MOD/vox/blocks/chest.xml",							{x = 0, y = 1,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil},
-		}																														--ROTATE TOWARDS PLAYER?
+		["Obsidian"] = {"Obsidian", 									"MOD/vox/blocks/Obsidian.vox",						{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil},
+		}																													--ROTATE TOWARDS PLAYER?
 																															--
 
 
