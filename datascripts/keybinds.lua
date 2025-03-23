@@ -12,6 +12,7 @@ binds = {
 	Toggle_Dynamic = "x",
 	Drop_Item = "q",
 	Quit_Tool = "n",
+	Spawn_Portal = "f4",
 	--Set_Offset = "l",
 	--Reset_Special_Blocks = "o",
 	Open_Menu = "m",

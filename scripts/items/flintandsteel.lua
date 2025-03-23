@@ -1,4 +1,4 @@
-#include "scripts/world/portal.lua" 
+--#include "scripts/world/portal.lua" 
 
 function flintAndSteelInit(extraData)
 	local hit, hitPoint, distance, normal, shape = GetAimVariables()
@@ -9,8 +9,8 @@ function flintAndSteelInit(extraData)
 		if blockId == "TNT" then
 			SetTag(shape, "minecrafttriggertnt", 1)
 			return false, nil
-		elseif blockId == "Obsidian" then
-			return startPortal(shape)
+		--[[elseif blockId == "Obsidian" then
+			return startPortal(shape)]]--
 		end
 	end
 	

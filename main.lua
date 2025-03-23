@@ -4,6 +4,7 @@
 #include "scripts/varhandlers.lua"
 #include "scripts/inventory.lua"
 #include "scripts/redstone.lua"
+#include "scripts/schematics.lua"
 #include "datascripts/keybinds.lua"
 #include "datascripts/inputList.lua"
 #include "datascripts/color4.lua"
@@ -99,6 +100,8 @@ local dynamicBlock = false
 local checkCollision = false
 creativeMode = true
 
+placingSchematic = 0
+
 local holdTimer = 0
 local holdTimerMax = {0.5, 0.25, 0.1}
 
@@ -135,7 +138,7 @@ for i = 1, mainInventorySize + miscInventorySlots do
 		inventory[i] = {blockList[i - 31], 1}
 	end
 	
-	if i == 32 then
+	--[[if i == 32 then
 		inventory[i][1] = "Obsidian" --123
 	end
 	
@@ -143,7 +146,7 @@ for i = 1, mainInventorySize + miscInventorySlots do
 		inventory[i][1] = "Flint And Steel"--124
 	end
 	
-	--[[if i == 34 then
+	--[if i == 34 then
 		inventory[i][1] = "Oak Pressure Plate"--46
 	end
 	
@@ -199,6 +202,7 @@ function init()
 	inventory_init(inventoryScales[GetValue("InventoryUIScale")])
 	redstone_init()
 	itemSprites_init()
+	schematics_init()
 	
 	if toolSlot ~= nil then
 		RegisterTool(toolName, toolReadableName, toolVox, toolSlot)
@@ -270,6 +274,10 @@ function tick(dt)
 	
 	if modDisabled then
 		return
+	end
+	
+	if hit and InputPressed(binds["Spawn_Portal"]) then
+		BuildPortal(hitPoint)
 	end
 	
 	if (InputPressed(binds["Open_Inventory"]) or (getInventoryOpen() and InputPressed("esc")) or (not playerInteractingWithAimShape and InputPressed(binds["Interact"]))) and not getTypingStateInventory() then
@@ -596,26 +604,39 @@ function UseItem(selectedBlockId, dropItem)
 	end
 end
 
-function PlaceBlock()
-	local selectedBlockInvData = getCurrentHeldBlockData()
+function PlaceBlock(forcedBlockId, forcedPosition)
+	local selectedBlockId
+	local selectedBlockData
 	
-	if selectedBlockInvData == nil then
-		return
+	if forcedBlockId == nil then
+		local selectedBlockInvData = getCurrentHeldBlockData()
+		if selectedBlockInvData == nil then
+			return
+		end
+		
+		selectedBlockId = selectedBlockInvData[1]
+	elseif forcedBlockId ~= "" then
+		selectedBlockId = forcedBlockId
 	end
 	
-	local selectedBlockId = selectedBlockInvData[1]
-	local selectedBlockData = blocks[selectedBlockId]
+	selectedBlockData = blocks[selectedBlockId]
 	
 	if selectedBlockData[9] == 10 then
 		UseItem(selectedBlockId)
 		return
 	end
 	
-	if not hit then
+	if not hit and forcedPosition == nil then
 		return
 	end
 	
 	local normalOffset = 0.45
+	
+	local hitPoint = hitPoint
+	
+	if forcedPosition ~= nil then
+		hitPoint = forcedPosition
+	end
 	
 	local normalOffset = VecAdd(hitPoint, VecScale(normal, gridModulo * normalOffset))
 	local gridAligned = getGridAlignedPos(normalOffset)
@@ -1219,7 +1240,7 @@ function PlaceBlock()
 	
 	RemoveConnectionsInBlock(gridAlignedPreOffset, connectedShapesTag .. " " .. block)
 	
-	if not creativeMode then
+	if not creativeMode and forcedBlockId == nil then
 		selectedBlockInvData[2] = selectedBlockInvData[2] - 1
 		if selectedBlockInvData[2] <= 0 then
 			selectedBlockInvData[1] = ""

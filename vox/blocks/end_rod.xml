@@ -1,0 +1,10 @@
+<prefab version="1.6.0">
+	<group>
+		<body name="end_rod" pos="0 0 0" dynamic="false" rot="0.0 0.0 0.0">
+			<vox pos="1.6 0.8 0.1" rot="0" file="MOD/vox/blocks/end_rod.vox">
+				<light pos="-0.8 0.0 0.7" unshadowed="0.1"/>
+			</vox>
+		</body>
+	</group>
+</prefab>
+

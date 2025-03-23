@@ -36,6 +36,19 @@ function tableToText(inputTable, loopThroughTables, useIPairs, addIndex, addNewL
 	return returnString
 end
 
+function mergeTables(a, b)
+	local merged = {}
+	
+	for _, v in ipairs(a) do
+        table.insert(merged, v)
+    end
+    for _, v in ipairs(b) do
+        table.insert(merged, v)
+    end
+	
+	return merged
+end
+
 function roundToTwoDecimals(a) -- To support older mods incase I update the utils.lua
 	--return math.floor(a * 100)/100
 	return roundToDecimal(a, 2)

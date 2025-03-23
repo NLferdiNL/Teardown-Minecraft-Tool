@@ -33,7 +33,9 @@ local function SearchForBlocksInDirection(start, direction)
 	local blocksFound = {}
 
 	for i = 1, 20 do
-		local foundBlocksAtPosition = FindBlocksAt(start, VecScale(direction, i))
+		local currPoss = VecScale(direction, i)
+		local foundBlocksAtPosition = FindBlocksAt(start, currPoss)
+		local foundBlocksAbovePosition = FindBlocksAt(start, VecAdd(currPoss, Vec(0, 1.6, 0)))
 		
 		if #foundBlocksAtPosition <= 0 then
 			-- End of portal
@@ -42,10 +44,29 @@ local function SearchForBlocksInDirection(start, direction)
 			blocksFound[i] = foundBlocksAtPosition[1]
 		end
 		
+		if #foundBlocksAbovePosition >= 1 then
+			if #foundBlocksAbovePosition >= 2 and foundBlocksAbovePosition[1] == blocksFound[i] then
+				foundBlocksAbovePosition = foundBlocksAbovePosition[2]
+			elseif foundBlocksAbovePosition[1] ~= blocksFound[i] then
+				foundBlocksAbovePosition = foundBlocksAbovePosition[1]
+			end
+		else
+			foundBlocksAbovePosition = nil
+		end
+		
 		if blocksFound[i] ~= nil and HasTag(blocksFound[i], "minecraftblockid") then
 			local blockId = GetTagValue(blocksFound[i], "minecraftblockid")
 			
 			if blockId ~= "Obsidian" then
+				blocksFound[i] = nil
+				-- End of portal
+				break
+			end
+		end
+		
+		if foundBlocksAbovePosition ~= nil and HasTag(foundBlocksAbovePosition, "minecraftblockid") then
+			local aboveBlockId = GetTagValue(foundBlocksAbovePosition, "minecraftblockid")
+			if aboveBlockId == "Obsidian" then
 				blocksFound[i] = nil
 				-- End of portal
 				break
@@ -94,9 +115,26 @@ local function FindBlocksLeftRight(pos, dir, maxDist)
 	return pieces
 end
 
+local function CompareX(a, b)
+	local aTf = GetShapeWorldTransform(a)
+	local bTf = GetShapeWorldTransform(b)
+	
+	return aTf.pos[1] > bTf.pos[1]
+end
+
+local function CompareZ(a, b)
+	local aTf = GetShapeWorldTransform(a)
+	local bTf = GetShapeWorldTransform(b)
+	
+	return aTf.pos[3] > bTf.pos[3]
+end
+
 local function GetCenterBetweenTwoBlocks(a, b)
 	local minA, maxA = GetShapeBounds(a)
 	local minB, maxB = GetShapeBounds(b)
+	
+	--DrawShapeOutline(a, 1, 0, 0, 1)
+	--DrawShapeOutline(b, 0, 1, 0, 1)
 	
 	local aCenter = VecLerp(minA, maxA, 0.5)
 	local bCenter = VecLerp(minB, maxB, 0.5)
@@ -133,8 +171,6 @@ local function GetPortalFrame(starterBlock)
 	local blocksLeft = SearchForBlocksInDirection(blockTransform, Vec(1.6, 0, 0))
 	local blocksRight = SearchForBlocksInDirection(blockTransform, Vec(-1.6, 0, 0))
 	
-	-- TODO: Combine left and right into one longy.
-	
 	local portalHorizontalFrame = {}
 	
 	local portalVerticalFrameDirection = Vec(1, 0, 0)
@@ -146,9 +182,19 @@ local function GetPortalFrame(starterBlock)
 	
 	--table.insert(blocksLeft, 1, starterBlock)
 	table.insert(blocksRight, 1, starterBlock)
+	--blocksLeft[#blocksLeft + 1] = starterBlock
 	
-	IndexBlocksAbove(blocksLeft, portalHorizontalFrame)
-	local upwardsDist = IndexBlocksAbove(blocksRight, portalHorizontalFrame)
+	local fullBottom = mergeTables(blocksRight, blocksLeft)
+	
+	--IndexBlocksAbove(fullBottom, portalHorizontalFrame)
+	local upwardsDist = IndexBlocksAbove(fullBottom, portalHorizontalFrame)
+	
+	table.sort(fullBottom, CompareX)
+	
+	for i = 1, #fullBottom do
+		DrawShapeHighlight(fullBottom[i], i / #fullBottom)
+		DrawShapeOutline(fullBottom[i], 1, 1, 1, i / #fullBottom)
+	end
 	
 	if #portalHorizontalFrame <= 1 then
 		local blocksForwards = SearchForBlocksInDirection(blockTransform, Vec(0, 0, 1.6))
@@ -159,12 +205,22 @@ local function GetPortalFrame(starterBlock)
 		
 		--table.insert(blocksForwards, 1, starterBlock)
 		table.insert(blocksBackwards, 1, starterBlock)
+		--blocksLeft[#blocksForwards + 1] = starterBlock
+		
+		fullBottom = mergeTables(blocksBackwards, blocksForwards)
+		
+		table.sort(fullBottom, CompareZ)
 	
 		portalHorizontalFrame = {}
 		
-		IndexBlocksAbove(blocksForwards, portalHorizontalFrame)
-		upwardsDist = IndexBlocksAbove(blocksBackwards, portalHorizontalFrame)
+		--IndexBlocksAbove(blocksForwards, portalHorizontalFrame)
+		upwardsDist = IndexBlocksAbove(fullBottom, portalHorizontalFrame)
 	end
+	
+	--[[for i = 1, #portalHorizontalFrame do
+		DrawShapeOutline(portalHorizontalFrame[i][1], 1)
+		DrawShapeOutline(portalHorizontalFrame[i][2], 1)
+	end]]--
 	
 	if #portalHorizontalFrame <= 1 then
 		return false, 0, 0, Vec()
@@ -181,6 +237,8 @@ local function GetPortalFrame(starterBlock)
 	local maxWidth = VecDist(minCenter, maxCenter) + 1.6 / 2
 	
 	local portalCenter = VecAdd(horizontalCenter, Vec(0, (upwardsDist + 0.8) / 2 + 0.8, 0))
+	
+	spawnDebugParticle(horizontalCenter, 2, Color4.Red)
 	
 	for i = 1, steps do
 		local framePieces = FindBlocksLeftRight(VecAdd(horizontalCenter, Vec(0, 1.6 * i, 0)), portalVerticalFrameDirection, maxWidth)
@@ -244,8 +302,6 @@ function portalUpdate(itemData, dt)
 	
 	local currentFrame = portalSprites[currentFrame]
 	
-	
-	
 	local pos = itemData[4]
 	local rot = QuatLookAt(pos, itemData[6])
 	
@@ -254,7 +310,7 @@ function portalUpdate(itemData, dt)
 	DrawSprite(currentFrame, transform, itemData[2], itemData[3], 1, 1, 1, 0.9, true, false, true)
 	
 	for i = 1, #itemData[5] do
-		if IsShapeBroken(itemData[5][i]) then
+		if not IsHandleValid(itemData[5][i]) then
 			return false
 		end
 	end

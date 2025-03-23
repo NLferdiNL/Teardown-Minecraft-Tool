@@ -170,6 +170,11 @@ blocks =
 		["Oak Pressure Plate"] = {"Oak Pressure Plate", 				"MOD/vox/blocks/oakpressureplate.xml",				{x = 0, y = 0,  z = 0}, 	"",							{x = 14, y = 1, z = 14},	{x = 16, y = 16, z = 16},	nil, 					false, 		7, nil},
 		["Chest"] = {"Chest", 											"MOD/vox/blocks/chest.xml",							{x = 0, y = 1,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil},
 		["Obsidian"] = {"Obsidian", 									"MOD/vox/blocks/Obsidian.vox",						{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil},
+		["End Rod"] = {"End Rod", 										"MOD/vox/blocks/end_rod.xml",						{x = 1, y = 1,  z = 1}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, "<light pos='0.8 0.9 0.8' type='sphere' color='1.00 1.00 1.00' scale='0.7' unshadowed='1.6'/>"},
+		["End Stone"] = {"End Stone", 									"MOD/vox/blocks/end_stone.vox",						{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil},
+		["End Stone Bricks"] = {"End Stone Bricks", 					"MOD/vox/blocks/end_stone_bricks.vox",				{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil},
+		["Purpur Block"] = {"Purpur Block", 							"MOD/vox/blocks/purpur_block.vox",					{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil},
+		["Purpur Pillar"] = {"Purpur Pillar ", 							"MOD/vox/blocks/purpur_pillar.vox",					{x = 1, y = 0,  z = 1}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil},
 		}																													--ROTATE TOWARDS PLAYER?
 																															--
 
