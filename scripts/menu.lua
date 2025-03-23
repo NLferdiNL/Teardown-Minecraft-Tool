@@ -40,7 +40,7 @@ local descBoxBg = "MOD/sprites/square.png"
 function menu_init()
 	setupTextBoxes()
 	
-	menuWidth = 384
+	menuWidth = 430
 	menuHeight = ((#bindOrder + #menuVarOrder + extraButtonHeight) / colums + 4) * 50 + menuMargin
 end
 

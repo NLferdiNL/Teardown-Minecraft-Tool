@@ -231,3 +231,11 @@ Defines what type of item it is.
 Extra XML: nil},
 Used for blocks that come as vox files that need extra mapping related data like lights for torches.
 ]]--
+
+blockSprites = {}
+
+function blocksprites_init()
+	for itemId, data in pairs(blocks) do
+		blockSprites[itemId] = LoadSprite("MOD/sprites/blocks/" .. itemId .. ".png")
+	end
+end

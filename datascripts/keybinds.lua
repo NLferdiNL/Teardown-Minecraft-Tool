@@ -13,6 +13,7 @@ binds = {
 	Drop_Item = "q",
 	Quit_Tool = "n",
 	Spawn_Portal = "f4",
+	Schematic_Start_Copy = "b",
 	--Set_Offset = "l",
 	--Reset_Special_Blocks = "o",
 	Open_Menu = "m",
@@ -28,6 +29,7 @@ bindOrder = {
 	--"Reset_Special_Blocks",
 	--"Set_Offset",
 	--"Drop_Item",
+	"Schematic_Start_Copy",
 	"Quit_Tool",
 	"Open_Menu",
 }
@@ -42,6 +44,7 @@ bindNames = {
 	Prev_Block = "Previous Block",
 	Next_Block = "Next Block",
 	Toggle_Dynamic = "Toggle Dynamic",
+	Schematic_Start_Copy = "Schematic Start Copy",
 	Drop_Item = "Drop Item",
 	Quit_Tool = "Quit Tool",
 	--Set_Offset = "Set Offset",

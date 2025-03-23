@@ -202,6 +202,7 @@ function init()
 	inventory_init(inventoryScales[GetValue("InventoryUIScale")])
 	redstone_init()
 	itemSprites_init()
+	blocksprites_init()
 	schematics_init()
 	
 	if toolSlot ~= nil then
@@ -296,7 +297,17 @@ function tick(dt)
 		setInventoryOpen(not inventoryOpen)
 	end
 	
+	if getCurrentSchematicState() ~= SCHEMATIC_STATE.IDLE then
+		schematics_update(VecSub(hitPoint, normal))
+		return
+	end
+	
 	if isMenuOpenRightNow or getInventoryOpen() then
+		return
+	end
+	
+	if InputPressed(binds["Schematic_Start_Copy"]) then
+		schematics_start_copy()
 		return
 	end
 	
