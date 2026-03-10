@@ -1,3 +1,5 @@
+#version 2
+
 --#include "scripts/world/portal.lua" 
 
 function flintAndSteelInit(extraData)

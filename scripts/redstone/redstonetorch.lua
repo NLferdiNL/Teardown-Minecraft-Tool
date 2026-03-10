@@ -1,3 +1,5 @@
+#version 2
+
 local mult = 100
 local origBlockSize = 1.6
 local blockSize = origBlockSize * mult
@@ -25,7 +27,6 @@ function HandleRedstoneTorch(x, y, z, rsBlockData, dt)
 	
 	if attachedShape ~= nil then
 		attachedRsData = GetRSDataFromShape(attachedShape)
-		--DrawShapeHighlight(attachedShape, 1)
 	end
 	
 	if rsExtra[6] > 0 then
@@ -132,11 +133,18 @@ function HandleRedstoneTorch(x, y, z, rsBlockData, dt)
 	end]]--
 	
 	SetLightEnabled(rsLight, rsBlockData[3] >= 1)
+	--local triggerFizz = (hardPowerLast > 0 and hardPower <= 0) or (softPowerLast > 0 and softPower <= 0)
+	
 	if rsPower >= 1 then
 		SetShapeEmissiveScale(rsShape, 1)
 	else
 		SetShapeEmissiveScale(rsShape, 0)
-		rsExtra[6] = rsExtra[6] + dt * (math.random(15, 20) / 10)
+		
+		--[[if triggerFizz then
+			rsExtra[6] = rsExtra[6] + dt * (math.random(15, 20) / 10)
+		else
+			rsExtra[6] = 0
+		end
 		
 		if rsExtra[6] > 0.5 then
 			rsExtra[7] = true
@@ -144,7 +152,7 @@ function HandleRedstoneTorch(x, y, z, rsBlockData, dt)
 			
 			PlaySound(getFizzSfx(), shapePos, math.random(25, 50) / 100)
 			PlayFizzParticleEffect(shapePos)
-		end
+		end]]--
 	end
 	
 	return rsBlockData[3] >= 1

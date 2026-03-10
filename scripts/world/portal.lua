@@ -1,3 +1,5 @@
+#version 2
+
 portalSprites = {}
 
 --During horizontal frame finding, check one block above and stop for frame edges.

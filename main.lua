@@ -1,3 +1,4 @@
+#version 2
 #include "scripts/utils.lua"
 #include "scripts/savedata.lua"
 #include "scripts/menu.lua"
@@ -13,6 +14,8 @@
 #include "datascripts/itemData.lua"
 #include "datascripts/blockConnectorSizing.lua"
 #include "datascripts/savedVars.lua"
+#include "script/include/player.lua"
+#include "script/include/common.lua"
 
 toolName = "minecraftbuildtool"
 toolReadableName = "Minecraft Tool"
@@ -111,7 +114,7 @@ local animTimerMax = 0.05
 --					{SHAPE, BLOCKID}
 local specialBlocks = {}
 
-local interactionSound = LoadSound("MOD/sfx/stoneDig_0.ogg")
+local interactionSound = "MOD/sfx/stoneDig_0.ogg"
 local hotbarImagePath = "MOD/sprites/hotbar.png"
 local hotbarSelectorImagePath = "MOD/sprites/hotbar_selector.png"
 local crosshairImagePath = "MOD/sprites/crosshair.png"
@@ -138,15 +141,15 @@ for i = 1, mainInventorySize + miscInventorySlots do
 		inventory[i] = {blockList[i - 31], 1}
 	end
 	
-	--[[if i == 32 then
-		inventory[i][1] = "Obsidian" --123
+	if i == 32 then
+		inventory[i][1] = "Redstone Dust" --123
 	end
 	
 	if i == 33 then
-		inventory[i][1] = "Flint And Steel"--124
+		inventory[i][1] = "Block Of Redstone"--124
 	end
 	
-	--[if i == 34 then
+	if i == 34 then
 		inventory[i][1] = "Oak Pressure Plate"--46
 	end
 	
@@ -172,7 +175,7 @@ for i = 1, mainInventorySize + miscInventorySlots do
 	
 	if i == 40 then
 		inventory[i][1] = "Stone"
-	end]]--
+	end--]]--
 end
 
 inventoryHotBarStartIndex = #inventory - 8
@@ -195,56 +198,83 @@ local canGrabObject = false
 local activeEntities = {}
 soundSfx = {}
 
-function init()
+function client.init()
+	interactionSound = LoadSound(interactionSound)
 	saveFileInit(savedVars)
-	menu_init()
-	--creativeInventory_blockData_init()
-	inventory_init(inventoryScales[GetValue("InventoryUIScale")])
-	redstone_init()
+	client.redstone_init()
 	itemSprites_init()
 	blocksprites_init()
-	schematics_init()
+	menu_init()
+	inventory_init(inventoryScales[GetValue("InventoryUIScale")])
 	
-	if toolSlot ~= nil then
-		RegisterTool(toolName, toolReadableName, toolVox, toolSlot)
-	else
-		RegisterTool(toolName, toolReadableName, toolVox)
-	end
-	SetBool("game.tool." .. toolName .. ".enabled", true)
-	
-	if Spawn == nil then
-		DebugPrint("Minecraft Building Tool requires the experimental build of Teardown.")
-		modDisabled = true
-	end
-
 	if binds["Open_Menu"] == "unbound" then
 		binds["Open_Menu"] = "m"
 		saveVars(savedVars)
 	end
 end
 
-function tick(dt)
-	if debugstart and not debugstarted then
-		debugstarted = true
-		SetString("game.player.tool", toolName)
+function server.init()
+	interactionSound = LoadSound(interactionSound)
+	--server.schematics_init()
+	--creativeInventory_blockData_init()
+	if toolSlot ~= nil then
+		RegisterTool(toolName, toolReadableName, toolVox, toolSlot)
+	else
+		RegisterTool(toolName, toolReadableName, toolVox)
 	end
+	--SetBool("game.tool." .. toolName .. ".enabled", true)
+	
+	if Spawn == nil then
+		DebugPrint("Minecraft Building Tool requires the experimental build of Teardown.")
+		modDisabled = true
+	end
+end
 
-	HandleSpecialBlocks()
-	HandleActiveEntities(dt)
+function handleToolHand(id)
+	SetToolHandPoseLocalTransform(nil, nil, id)
+	
+	if not IsPlayerLocal(id) or GetBool("game.thirdperson") then
+		SetToolTransform(Transform(Vec(0, -100, 0)), 0, id)
+	elseif IsPlayerLocal(id) and not GetBool("game.thirdperson") then
+		SetToolTransform(Transform(), 0, id)
+	end
+end
+
+function server.setMCTool(id)
+	SetPlayerTool(toolName, id)
+end
+
+function server.quitTool(id)
+	SetPlayerTool("sledge", id)
+end
+
+function server.PlayerRedstoneInteract(rsShape)
+	Redstone_Interact(rsShape)
+end
+
+function client.tick(dt)
+	for id in Players() do
+		if GetPlayerTool(id) == toolName then
+			handleToolHand(id)
+		end
+	end
 	textboxClass_tick()
 	
 	AimLogic(canUseTool() or lastFrameTool == toolName or isMenuOpenRightNow or getInventoryOpen())
 	
-	local playerInteractShape = GetPlayerInteractShape()
+	local playerInteractShape = GetPlayerInteractShape(0)
 	local playerInteractingWithAimShape = playerInteractShape == shape
 	
-	if playerInteractShape == 0 then
+	if playerInteractShape == 0 or getInventoryOpen()  then
 		playerInteractingWithAimShape = false
 	end
 	
-	if playerInteractingWithAimShape and (InputPressed(binds["Interact"]) or InputPressed(binds["Place"])) then
-		Redstone_Interact(playerInteractShape)
+	if playerInteractingWithAimShape and (InputPressed(binds["Interact"], 0) or InputPressed(binds["Place"], 0)) and not getInventoryOpen() then
+		ServerCall("server.PlayerRedstoneInteract", playerInteractShape)
 	end
+	
+	ScrollLogic()
+	lastFrameTool = GetPlayerTool(0)
 	
 	if not menu_disabled then
 		menu_tick(dt)
@@ -252,37 +282,20 @@ function tick(dt)
 	
 	local isMenuOpenRightNow = isMenuOpen()
 	
-	if isMenuOpenRightNow then
-		SetTimeScale(0.1)
-	end
-	
-	ScrollLogic()
-	lastFrameTool = GetString("game.player.tool")
-	
 	inventory_tick(dt)
 	
-	if not canUseTool() then
+	if not canUseTool() and not getInventoryOpen() then
 		return
 	end
 	
 	SetBool("hud.disable", true)
 	
-	SetToolTransform(Transform(), 0.1)
-	
 	if itemSwitchTimer > 0 then
 		itemSwitchTimer = itemSwitchTimer - dt * 8
 	end
 	
-	if modDisabled then
-		return
-	end
-	
-	if hit and InputPressed(binds["Spawn_Portal"]) then
-		BuildPortal(hitPoint)
-	end
-	
-	if (InputPressed(binds["Open_Inventory"]) or (getInventoryOpen() and InputPressed("esc")) or (not playerInteractingWithAimShape and InputPressed(binds["Interact"]))) and not getTypingStateInventory() then
-		if InputPressed("esc") then
+	if (InputPressed(binds["Open_Inventory"], 0) or (getInventoryOpen() and InputPressed("esc", 0)) or (not playerInteractingWithAimShape and InputPressed(binds["Interact"], 0))) and not getTypingStateInventory() then
+		if InputPressed("esc", 0) then
 			SetPaused(false)
 		end
 		
@@ -306,8 +319,8 @@ function tick(dt)
 		return
 	end
 	
-	if InputPressed(binds["Schematic_Start_Copy"]) then
-		schematics_start_copy()
+	if InputPressed(binds["Schematic_Start_Copy"], 0) then
+		--schematics_start_copy()
 		return
 	end
 	
@@ -320,23 +333,24 @@ function tick(dt)
 		ToolPlaceBlockAnim()
 	end
 	
-	if InputPressed(binds["Toggle_Dynamic"]) then
+	if InputPressed(binds["Toggle_Dynamic"], 0) then
 		dynamicBlock = not dynamicBlock
 	end
 	
-	if InputPressed(binds["Quit_Tool"]) then
-		SetString("game.player.tool", "sledge")
+	if InputPressed(binds["Quit_Tool"], 0) then
+		ServerCall("server.quitTool", GetLocalPlayer())
 	end
 	
-	if InputPressed(binds["Mine"]) then
-		RemoveBlock()
+	if InputPressed(binds["Mine"], 0) then
+		ServerCall("server.RemoveBlock", shape)
 		animTimer = animTimerMax
 		ToolPlaceBlockAnim()
 	end
 	
 	local selectedBlockInvData = getCurrentHeldBlockData()
 	
-	if InputPressed(binds["Drop_Item"]) and selectedBlockInvData ~= nil then
+	--TODO: Implement dropped items
+	--[[if InputPressed(binds["Drop_Item"], 0) and selectedBlockInvData ~= nil then
 		
 		selectedBlockInvData[2] = selectedBlockInvData[2] - 1
 		
@@ -348,11 +362,57 @@ function tick(dt)
 			selectedBlockInvData[1] = ""
 			selectedBlockInvData[2] = 0
 		end
-	end
+	end]]--
 	
-	if InputPressed(binds["Pick_Block"]) then
+	if InputPressed(binds["Pick_Block"], 0) then
 		PickBlock()
 	end
+	
+	if (InputPressed(binds["Place"], 0) or InputDown(binds["Place"], 0)) and (GetPlayerGrabBody(0) == 0 or GetPlayerGrabShape(0) == 0) and not playerInteractingWithAimShape then
+		--DebugPrint("OOOOOO")
+		if InputDown(binds["Place"]) then
+			holdTimer = holdTimer - dt
+			
+			if holdTimer < 0 then
+				--DebugPrint("AAA")
+				--PlaceBlock(forcedBlockId, forcedPosition, pId, useOldRotationMethod, selectedBlockId, selectedBlockData, hitPoint)
+				if hit and selectedBlockInvData ~= nil and selectedBlockInvData ~= ""  then
+					ServerCall("server.PlaceBlock", nil, nil, GetLocalPlayer(), GetValue("OldRotationMethod"), selectedBlockInvData[1], hitPoint, normal, dynamicBlock, shape)
+				end
+				--PlaceBlock()
+				ToolPlaceBlockAnim()
+				animTimer = animTimerMax
+				holdTimer = holdTimerMax[GetValue("BlockPlacementSpeed")]
+			end
+		else
+			--DebugPrint("BBB")
+			if hit and selectedBlockInvData ~= nil and selectedBlockInvData ~= "" then
+				ServerCall("server.PlaceBlock", nil, nil, GetLocalPlayer(), GetValue("OldRotationMethod"), selectedBlockInvData[1], hitPoint, normal,  dynamicBlock, shape)
+			end
+			ToolPlaceBlockAnim()
+			animTimer = animTimerMax
+		end
+	elseif InputReleased(binds["Place"]) and not playerInteractingWithAimShape then
+		holdTimer = 0
+	end
+end
+
+function server.tick(dt)
+	if modDisabled then
+		return
+	end
+	
+	for id in PlayersAdded() do
+		SetToolEnabled(toolName, id)
+		if debugstart and not debugstarted then
+			debugstarted = true
+			SetPlayerTool(toolName, id)
+		end
+	end
+
+	HandleSpecialBlocks()
+	--TODO: Implement active entities
+	--HandleActiveEntities(dt)
 	
 	if canGrabObject or GetPlayerGrabBody() ~= 0 or GetPlayerGrabShape() ~= 0 then
 		--DebugPrint("AHHHH")
@@ -366,36 +426,16 @@ function tick(dt)
 	DebugPrint("getgrabbody " .. tostring(GetPlayerGrabBody() == 0))
 	DebugPrint("getgrabshape " .. tostring(GetPlayerGrabShape() == 0))
 	DebugPrint("pInteract " .. (tostring(playerInteractingWithAimShape)))]]--
-	
-	if (InputPressed(binds["Place"]) or InputDown(binds["Place"])) and (GetPlayerGrabBody() == 0 or GetPlayerGrabShape() == 0) and not playerInteractingWithAimShape then
-		--DebugPrint("OOOOOO")
-		if InputDown(binds["Place"]) then
-			holdTimer = holdTimer - dt
-			
-			if holdTimer < 0 then
-				--DebugPrint("AAA")
-				PlaceBlock()
-				ToolPlaceBlockAnim()
-				animTimer = animTimerMax
-				holdTimer = holdTimerMax[GetValue("BlockPlacementSpeed")]
-			end
-		else
-			--DebugPrint("BBB")
-			PlaceBlock()
-			ToolPlaceBlockAnim()
-			animTimer = animTimerMax
-		end
-	elseif InputReleased(binds["Place"]) and not playerInteractingWithAimShape then
-		holdTimer = 0
-	end
 end
 
-function update(dt)
+function server.update(dt)
 	redstone_update(dt)
 end
 
-function draw(dt)
+function client.draw(dt)
 	menu_draw(dt)
+	
+	inventory_draw()
 	
 	if not canUseTool() or isMenuOpen() then
 		return
@@ -407,15 +447,13 @@ function draw(dt)
 	
 	renderHeldItem()
 	
-	inventory_draw()
-	
 	if not getInventoryOpen() then
 		renderCrosshair()
 	end
 end
 
 function GetAimTarget()
-	local cameraTransform = GetPlayerCameraTransform()
+	local cameraTransform = GetPlayerCameraTransform(0)
 	local forward = TransformToParentVec(cameraTransform, Vec(0, 0, -1))
 	
 	local hit, hitPoint, distance, normal, shape = raycast(cameraTransform.pos, forward, 100)
@@ -501,7 +539,7 @@ function spawnBrokenBlockParticles(blockShape)
 	end
 end
 
-function RemoveBlock(blockToRemove)
+function server.RemoveBlock(blockToRemove)
 	if not hit and blockToRemove == nil then
 		return
 	end
@@ -615,46 +653,54 @@ function UseItem(selectedBlockId, dropItem)
 	end
 end
 
-function PlaceBlock(forcedBlockId, forcedPosition)
-	local selectedBlockId
-	local selectedBlockData
-	
-	if forcedBlockId == nil then
-		local selectedBlockInvData = getCurrentHeldBlockData()
-		if selectedBlockInvData == nil then
-			return
+function server.PlaceBlock(forcedBlockId, forcedPosition, pId, useOldRotationMethod, selectedBlockId, hitPoint, normal, dynamicBlock, shape)
+	if selectedBlockId == nil then
+		if forcedBlockId == nil then
+			local selectedBlockInvData = getCurrentHeldBlockData()
+			if selectedBlockInvData == nil then
+				return
+			end
+			
+			selectedBlockId = selectedBlockInvData[1]
+		elseif forcedBlockId ~= "" then
+			selectedBlockId = forcedBlockId
 		end
-		
-		selectedBlockId = selectedBlockInvData[1]
-	elseif forcedBlockId ~= "" then
-		selectedBlockId = forcedBlockId
 	end
 	
 	selectedBlockData = blocks[selectedBlockId]
 	
+	--TODO: implement useItem
 	if selectedBlockData[9] == 10 then
-		UseItem(selectedBlockId)
+		--UseItem(selectedBlockId)
+		DebugPrint("USE")
 		return
 	end
 	
-	if not hit and forcedPosition == nil then
+	if hitPoint == nil and forcedPosition == nil then
+		DebugPrint("NO POS")
 		return
 	end
 	
-	local normalOffset = 0.45
+	local normalOffset = .45
 	
-	local hitPoint = hitPoint
+	if forcedPosition ~= nil and hitPoint == nil then
+		hitPoint = forcedPosition
+		normal = Vec()
+	end
+
+	normalOffset = VecAdd(hitPoint, VecScale(normal, gridModulo * normalOffset))
+	
+	local gridAligned
 	
 	if forcedPosition ~= nil then
-		hitPoint = forcedPosition
+		gridAligned = getGridAlignedPosNearest(normalOffset)
+	else
+		gridAligned = getGridAlignedPos(normalOffset)
 	end
-	
-	local normalOffset = VecAdd(hitPoint, VecScale(normal, gridModulo * normalOffset))
-	local gridAligned = getGridAlignedPos(normalOffset)
 	
 	local blockRot = Quat()
 	
-	local playerCameraTransform = GetPlayerCameraTransform()
+	local playerCameraTransform = GetPlayerCameraTransform(pId)
 	local playerPos = playerCameraTransform.pos
 	
 	playerPos[2] = playerPos[2] - gridModulo / 2
@@ -672,7 +718,7 @@ function PlaceBlock(forcedBlockId, forcedPosition)
 	local blockEulerZ = 0
 	local blockPosOffset = Vec()
 	
-	if GetValue("OldRotationMethod") then
+	if useOldRotationMethod then
 		if selectedBlockData[3].x ~= 0 or selectedBlockData[3].y ~= 0 or selectedBlockData[3].z ~= 0 then
 			if playerPos[2] == gridAligned[2] then
 				if selectedBlockData[3].x ~= 0 or selectedBlockData[3].z ~= 0 then
@@ -798,7 +844,7 @@ function PlaceBlock(forcedBlockId, forcedPosition)
 			end]]--
 		elseif (selectedBlockData[3].x ~= 0 or selectedBlockData[3].z ~= 0) and selectedBlockData[3].y == 0 then
 			local gridAlignedHitPoint = getGridAlignedPos(VecAdd(hitPoint, VecScale(normal, -gridModulo * 0.1)))
-			
+
 			if gridAlignedHitPoint[1] == gridAligned[1] and gridAlignedHitPoint[2] == gridAligned[2] then
 				blockEulerX = 90 * selectedBlockData[3].x
 				blockPosOffset[2] = blockPosOffset[2] + gridModulo
@@ -1036,6 +1082,7 @@ function PlaceBlock(forcedBlockId, forcedPosition)
 	if string.find(selectedBlockData[2], "xml") ~= nil then
 		blockXML = selectedBlockData[2]
 	end
+	
 	local blockArray = Spawn(blockXML, blockTransform, not dynamicBlock, true)
 	local block = blockArray[1]
 	
@@ -1227,7 +1274,7 @@ function PlaceBlock(forcedBlockId, forcedPosition)
 	-- Wood Button = 126
 	-- Lamp = 127
 	-- Redstone Torch = 129
-	if selectedBlockId == 123 or selectedBlockId == 124 or selectedBlockId == 125 or selectedBlockId == 126 or selectedBlockId == 129 or selectedBlockId == 130 then
+	if selectedBlockId == "Redstone Dust" or selectedBlockId == "Redstone Repeater" or selectedBlockId == "Stone Button" or selectedBlockId == "Oak Button" or selectedBlockId == "Redstone Torch" or selectedBlockId == "Lever" then
 		local otherBlock = shape
 		
 		if HasTag(shape, "minecraftblockid") then
@@ -1290,7 +1337,7 @@ function AimLogic(renderBlock)
 	renderBlockOutline(blockOffset, blockSize, false)
 	
 	if drawPlayerLine then
-		local playerPos = GetPlayerCameraTransform().pos
+		local playerPos = GetPlayerCameraTransform(0).pos
 		
 		playerPos[2] = playerPos[2] - gridModulo / 2
 		
@@ -1334,7 +1381,7 @@ function RemoveConnectionsInBlock(gridAligned, shapeIgnoreList)
 			--[[DebugPrint("RM2")
 			DebugPrint(HasTag(shape, "minecraftconnectedshapes"))
 			spawnDebugParticle(GetShapeWorldTransform(shape).pos, 10, Color4.Red)]]--
-			RemoveBlock(GetShapeBody(shape))
+			ServerCall("server.RemoveBlock", GetShapeBody(shape))
 		end
 	end
 end
@@ -1348,7 +1395,7 @@ function FilterBlockType(shapeList, typeId, blacklist)
 		
 		local blockId = GetTagValue(currShape, "minecraftblockid")
 		
-		if blockId ~= nil and blockId > 0 then
+		if blockId ~= nil and blockId ~= "" then
 			local otherTypeId = blocks[blockId][9]
 			
 			if (otherTypeId == typeId and not blacklist) or (otherTypeId ~= typeId and blacklist) then
@@ -1513,6 +1560,10 @@ function ConnectToAdjecentBlocks(selectedBlockId, selectedBlockData, adjecentBlo
 end
 
 function ToolPlaceBlockAnim()
+	if GetBool("game.thirdperson") then
+		return
+	end
+	
 	SetToolTransform(Transform(Vec(0, 0, -0.05), QuatEuler(-36, 44, 22)))
 end
 
@@ -1525,12 +1576,13 @@ function ScrollLogic()
 	
 	if GetValue("NumbersToSelect") and lastFrameTool == toolName then
 		for i = 1, 9 do
-			local numberKeyDown = InputPressed(tostring(i))
+			local numberKeyDown = InputPressed(tostring(i), 0)
 			
 			if numberKeyDown then
 				itemSwitchTimer = itemSwitchTimerMax
 				hotbarSelectedIndex = i
-				SetString("game.player.tool", toolName)
+				ServerCall("server.setMCTool", GetLocalPlayer())
+				--SetString("game.player.tool", toolName)
 				return
 			end
 		end
@@ -1544,14 +1596,15 @@ function ScrollLogic()
 		end
 	
 		if scrollDiff ~= 0 and GetString("game.player.tool") ~= toolName and lastFrameTool == toolName then
-			SetString("game.player.tool", toolName)
+			--SetString("game.player.tool", toolName)
+			ServerCall("server.setMCTool", GetLocalPlayer())
 		end
 	else
-		if InputPressed(binds["Prev_Block"]) then
+		if InputPressed(binds["Prev_Block"], 0) then
 			scrollDiff = scrollDiff + 1
 		end
 		
-		if InputPressed(binds["Next_Block"]) then
+		if InputPressed(binds["Next_Block"], 0) then
 			scrollDiff = scrollDiff - 1
 		end
 	end
@@ -1681,7 +1734,7 @@ end
 function RemoveConnectedShapes(shapeList)
 	for shape in string.gmatch(shapeList, "%d+") do
 		if HasTag(shape, "minecraftblockid") then
-			RemoveBlock(shape)
+			Server.RemoveBlock(shape)
 		else
 			Delete(shape)
 		end
@@ -1755,7 +1808,18 @@ function HandleActiveEntities(dt)
 end
 
 function canUseTool()
-	return GetString("game.player.tool") == toolName and GetPlayerVehicle() == 0
+	return GetPlayerTool(0) == toolName and GetPlayerCanUseTool(0)
+end
+
+function getGridAlignedAxis(a, modulo)
+	local halfDist = modulo / 2
+	local aModulo = a % modulo
+	
+	if aModulo < halfDist then
+		return a - aModulo
+	else
+		return a + (modulo - aModulo)
+	end
 end
 
 function getGridAlignedPos(pos, modulo)
@@ -1763,9 +1827,18 @@ function getGridAlignedPos(pos, modulo)
 		modulo = gridModulo
 	end
 
-	return Vec(pos[1] - (pos[1]) % gridModulo,
-			   pos[2] - (pos[2]) % gridModulo,
-			   pos[3] - (pos[3]) % gridModulo)
+	return Vec(pos[1] - pos[1] % gridModulo,
+			   pos[2] - pos[2] % gridModulo,
+			   pos[3] - pos[3] % gridModulo)
+end
+function getGridAlignedPosNearest(pos, modulo)
+	if modulo == nil then
+		modulo = gridModulo
+	end
+	
+	return Vec(getGridAlignedAxis(pos[1], modulo),
+			   getGridAlignedAxis(pos[2], modulo),
+			   getGridAlignedAxis(pos[3], modulo))
 end
 
 function getCurrentHeldBlockData(index)
@@ -1919,7 +1992,7 @@ function renderHud(dt)
 						transparancy = 1
 					end
 					
-					UiTranslate(0, -110)
+					UiTranslate(0, -220)
 					UiFont(font, 30)
 					UiColor(1, 1, 1, transparancy)
 					UiText(selectedBlockData[1])
@@ -1937,7 +2010,7 @@ end
 function renderHeldItem()
 	local heldItem = getCurrentHeldBlockData()
 	
-	if heldItem == nil then
+	if heldItem == nil or GetBool("game.thirdperson") then
 		return
 	end
 	

@@ -1,3 +1,5 @@
+#version 2
+
 function GetValue(name)
 	if savedVars[name] == nil then
 		DebugPrint(toolReadableName.. " Get Error: " .. name .. " value not found!")

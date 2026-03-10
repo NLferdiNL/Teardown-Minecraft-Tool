@@ -1,3 +1,5 @@
+#version 2
+
 local mult = 100
 local origBlockSize = 1.6
 local blockSize = origBlockSize * mult
@@ -24,9 +26,9 @@ function HandlePressurePlate(x, y, z, rsBlockData, dt)
 	
 	local active = false
 	
-	if rsBlockId == 166 then
+	if rsBlockId == "Stone Pressure Plate" then
 		active = GetActiveStateStone(originalPos)
-	elseif rsBlockId == 167 then
+	elseif rsBlockId == "Oak Pressure Plate" then
 		active = GetActiveStateWood(originalPos)
 	end
 	
@@ -55,14 +57,18 @@ function HandlePressurePlate(x, y, z, rsBlockData, dt)
 end
 
 function GetActiveStateWood(pos)
-	if GetActiveStateStone(pos) then
-		return true
+	for id in Players() do
+		if CheckPlayer(pos, id) then
+			return true
+		end
 	end
+	
+	return false
 	
 end
 
-function GetActiveStateStone(pos)
-	local playerPos = GetPlayerTransform().pos
+function CheckPlayer(pos, id)
+	local playerPos = GetPlayerTransform(id).pos
 	
 	local buttonMin = VecAdd(pos, Vec(0.1, 0.0, 0.0))
 	local buttonMax = VecAdd(pos, Vec(1.5, 0.0, 1.5))
@@ -72,4 +78,14 @@ function GetActiveStateStone(pos)
 	local meetsZ = playerPos[3] > buttonMin[3] and playerPos[3] <  buttonMax[3]
 	
 	return meetsX and meetsY and meetsZ
+end
+
+function GetActiveStateStone(pos)
+	for id in Players() do
+		if CheckPlayer(pos, id) then
+			return true
+		end
+	end
+	
+	return false
 end

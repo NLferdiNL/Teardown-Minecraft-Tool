@@ -1,3 +1,4 @@
+#version 2
 #include "scripts/redstone/tnt.lua" 
 #include "scripts/redstone/redstonerepeater.lua" 
 #include "scripts/redstone/button.lua" 
@@ -35,7 +36,7 @@ local blockSize = origBlockSize * mult
 local font = "MOD/fonts/MinecraftRegular.ttf"
 local sfx = {"MOD/sfx/button/stone_button_press.ogg", "MOD/sfx/button/stone_button_unpress.ogg", "MOD/sfx/button/wood_button_press.ogg", "MOD/sfx/button/wood_button_unpress.ogg"}
 
-function redstone_init()
+function client.redstone_init()
 	for i = 1, #sfx do
 		sfx[i] = LoadSound(sfx[i], 1)
 	end
@@ -281,7 +282,7 @@ function Redstone_Add(id, shape, connections, extraData, posOverride)
 	if redstoneDB[pos[1]][pos[2]][pos[3]] ~= nil then
 		local rsData = redstoneDB[pos[1]][pos[2]][pos[3]]
 		
-		RemoveBlock(rsData[1])
+		server.RemoveBlock(rsData[1])
 	end
 	
 	--[[if redstoneDB[pos[1]*][pos[2]*][pos[3]*] ~= nil then

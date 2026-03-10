@@ -1,3 +1,5 @@
+#version 2
+
 function HandleRedstoneRepeater(x, y, z, rsBlockData, dt)
 	if rsBlockData == nil or rsBlockData[6] == nil then
 		return false

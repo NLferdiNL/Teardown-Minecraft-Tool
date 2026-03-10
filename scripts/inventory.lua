@@ -1,3 +1,4 @@
+#version 2
 #include "scripts/textbox.lua"
 
 local inventoryWidth = 9
@@ -96,7 +97,7 @@ function inventory_tick(dt)
 					local currSlotId = inventoryHotBarStartIndex + i
 					local toInvSlot = inventory[currSlotId]
 					
-					if InputPressed(i + 1) and not searchTextbox.inputActive then
+					if InputPressed(i + 1, 0) and not searchTextbox.inputActive then
 						if inventoryIdMouseOver[1] >= inventoryHotBarStartIndex and not mouseInCreativeInventory then
 							local fromInvSlot = inventory[inventoryIdMouseOver[1]]
 							
@@ -239,7 +240,7 @@ function inventory_draw()
 				UiPush() --Creative scroll bar
 					UiTranslate(bgImageWidth - itemIconOffsetX * 1.95, creatveInvScrolBarPositionOne * creativeInventoryScroll)
 					local mouseInScrollBar = UiIsMouseInRect(scrollbarWidth, scrollbarHeight)
-					if (mouseInScrollBar or scrollbarHeld) and InputDown("lmb") then
+					if (mouseInScrollBar or scrollbarHeld) and InputDown("lmb", 0) then
 						UiImageBox(creativeInventoryScrollBarDownImagePath, scrollbarWidth, scrollbarHeight, 0, 0)
 						
 						UiTranslate(0, -creatveInvScrolBarPositionOne * creativeInventoryScroll)
@@ -349,7 +350,7 @@ function drawCreativeBlockButton(blockId, mouseOver)
 			else
 				local stackSize = 1
 				
-				if InputDown("shift") then
+				if InputDown("shift", 0) then
 					stackSize = 64
 				end
 				
@@ -370,7 +371,7 @@ function drawSurvivalBlockButton(invId, mouseOver)
 		UiImageBox("MOD/sprites/blocks/" .. blockId .. ".png", itemIconSize, itemIconSize, 0, 0)
 	end
 	
-	local rmbDown = InputPressed("rmb")
+	local rmbDown = InputPressed("rmb", 0)
 	
 	if UiBlankButton(itemIconSize, itemIconSize) or (mouseOver and rmbDown) then
 		if blockId == "" and inventoryBlockDataOnMouse[1] == "" then

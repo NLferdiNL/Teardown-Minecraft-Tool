@@ -1,3 +1,4 @@
+#version 2
 blocks = 
 	{ --Block Name, Block Name, 				      					Vox/XML Path, 							      		Axis Rotation, 		  		Block Properties,			Block Size,					Offset,						specialFeatures(shape), alwaysProp, blockType (block, door, slab, fence, stairs, trapdoor, redstone, fencegate, item), ExtraXML}
 		["Grass"] = {"Grass", 			      							"MOD/vox/blocks/grass.vox", 			      		{x = 0, y = 0,  z = 0}, 	"",							{x = 16, y = 16, z = 16},	{x = 16, y = 16, z = 16},	nil, 					false, 		1, nil},

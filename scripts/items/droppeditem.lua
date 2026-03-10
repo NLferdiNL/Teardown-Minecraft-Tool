@@ -1,3 +1,5 @@
+#version 2
+
 function droppedInit(blockId)
 	local currBlockData = blocks[blockId]
 	
@@ -10,7 +12,7 @@ function droppedInit(blockId)
 		itemSprites[blockName] = itemSprite
 	end
 	
-	local playerCamera = GetPlayerCameraTransform()
+	local playerCamera = GetPlayerCameraTransform(0)
 	local lifetime = 300
 	local pos = playerCamera.pos
 	local dir = TransformToParentVec(playerCamera, Vec(0, 0.1, -0.2))
@@ -71,7 +73,7 @@ function droppedUpdate(itemData, dt)
 	end
 	
 	
-	local playerCamera = GetPlayerCameraTransform()
+	local playerCamera = GetPlayerCameraTransform(0)
 	local lookAtPos = playerCamera.pos
 	lookAtPos[2] = pos[2]
 	

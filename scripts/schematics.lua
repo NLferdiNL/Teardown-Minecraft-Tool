@@ -1,3 +1,6 @@
+#version 2
+#include "scripts/perlin.lua"
+
 local box_test = { name = "Box Test", size = {5, 5, 5},
 			  blocks = {{{"Cobblestone", "Cobblestone", "Cobblestone", "Cobblestone", "Cobblestone"},
 						 {"Oak Planks", "Oak Planks", "Oak Planks", "Oak Planks", "Oak Planks"},
@@ -47,30 +50,97 @@ function getCurrentSchematicState()
 	return currentSchematicState
 end
 
-function schematics_init()
+local function generate_flatgrass()
+	for x = -19, 20 do
+		for y = 1, 4 do
+			for z = -19, 20 do
+				local blockPos = Vec(x * 1.6, y * 1.6, z * 1.6)
+				if y == 1 then
+					server.PlaceBlock("Bedrock", blockPos)
+				elseif y >= 2 and y <= 3 then
+					server.PlaceBlock("Dirt", blockPos)
+				elseif y >= 4 then
+					server.PlaceBlock("Grass", blockPos)
+				end
+			end
+		end
+	end
+end
+
+local function generate_terrain()
+	for x = -19, 20 do
+		for z = -19, 20 do
+			local maxY = 20--(math.floor(math.sin(x * 100)) + math.floor(math.sin(z * 100))) + 10
+			local cave = 1--math.sin((x + z) * 6)--perlin:noise(x, maxY, z)
+			
+			--DebugPrint(maxY)
+			
+			for y = 0, maxY do
+				local blockPos = Vec(x * 1.6, y * 1.6, z * 1.6)
+				if cave > 0.4 or y == 0 then
+					local block = "Dirt"
+					if y == 0 then
+						block = "Bedrock"
+					elseif y < maxY - 2 then
+						block = "Stone"
+					elseif y > maxY - 2 and y < maxY then
+						block = "Dirt"
+					elseif y == maxY then
+						block = "Grass"
+					end
+					
+					server.PlaceBlock(block, blockPos)
+				end
+			end
+		end
+	end
+end
+
+function generate_test()
+	for x = 0, 3 do
+		for y = 0, 3 do
+			server.PlaceBlock(blockList[math.random(1, #blockList)], Vec(x, y, 0))
+		end
+	end
+end
+
+function client.schematics_init()
 	-- Load schematics
+end
+
+function server.schematics_init()
+	generate_test()
+	--generate_flatgrass()
+	--generate_terrain()
 end
 
 local function render_schematic(hitpoint, schematic)
 	local schematic_blocks = schematic.blocks
-	local playerTf = GetPlayerTransform()
+	local playerTf = GetPlayerTransform(0)
 	
+	hitpoint[1] = hitpoint[1] - math.ceil(schematic.size[1] / 2)
 	hitpoint[2] = hitpoint[2] + math.ceil(schematic.size[2] / 2)
+	hitpoint[3] = hitpoint[3] - math.ceil(schematic.size[3] / 2)
 	
 	--spawnDebugParticle(hitpoint, .25, Color4.Red)
 	--spawnDebugParticle(VecAdd(hitpoint, schematic.size), .25, Color4.Green)
 	
 	--DebugPrint(#schematic)
 	
+	if schematic_blocks == nil then
+		DebugPrint("ERROR: schematic_blocks nil")
+		return
+	end
+	
 	for x = 1, #schematic_blocks do
 		for y = 1, #schematic_blocks[x] do
 			for z = 1, #schematic_blocks[x][y] do
 				if schematic_blocks[x][y][z] ~= nil then
-					local blockPos = VecAdd(hitpoint, Vec(x * 1.6 - 0.8, y * 1.6 - 0.8, z * 1.6 - 0.8))
+					local blockPos = VecAdd(hitpoint, Vec(x * 1.6, y * 1.6, z * 1.6))
 					
-					blockPos[1] = blockPos[1] - blockPos[1] % 1.6 + 0.8
-					blockPos[2] = blockPos[2] - blockPos[2] % 1.6 + 0.8
-					blockPos[3] = blockPos[3] - blockPos[3] % 1.6 + 0.8
+					blockPos[1] = blockPos[1] - blockPos[1] % 1.6
+					blockPos[2] = blockPos[2] - blockPos[2] % 1.6
+					blockPos[3] = blockPos[3] - blockPos[3] % 1.6
 					
 					spawnDebugParticle(blockPos, .25, Color4.Red)
 					
@@ -85,21 +155,23 @@ end
 local function place_schematic(hitpoint, schematic)
 	local schematic_blocks = schematic.blocks
 	
-	hitpoint[2] = hitpoint[2] + math.ceil(schematic.size[2] / 2) - 1.6
+	hitpoint[1] = hitpoint[1] - math.ceil(schematic.size[1] / 2)
+	hitpoint[2] = hitpoint[2] + math.ceil(schematic.size[2] / 2)
+	hitpoint[3] = hitpoint[3] - math.ceil(schematic.size[3] / 2)
 	
 	for x = 1, #schematic_blocks do
 		for y = 1, #schematic_blocks[x] do
 			for z = 1, #schematic_blocks[x][y] do
-				if schematic_blocks[x][y][z] ~= nil then
-					local blockPos = VecAdd(hitpoint, Vec(x * 1.6 - 0.8, y * 1.6 - 0.8, z * 1.6 - 0.8))
+				if schematic_blocks[x][y][z] ~= nil and schematic_blocks[x][y][z] ~= "" then
+					local blockPos = VecAdd(hitpoint, Vec(x * 1.6, y * 1.6, z * 1.6))
 					
-					blockPos[1] = blockPos[1] - blockPos[1] % 1.6 + 0.8
-					blockPos[2] = blockPos[2] - blockPos[2] % 1.6 + 0.8
-					blockPos[3] = blockPos[3] - blockPos[3] % 1.6 + 0.8
+					blockPos[1] = blockPos[1] - blockPos[1] % 1.6
+					blockPos[2] = blockPos[2] - blockPos[2] % 1.6
+					blockPos[3] = blockPos[3] - blockPos[3] % 1.6
 					
 					spawnDebugParticle(blockPos, 5.25, Color4.Yellow)
 					
-					PlaceBlock(schematic_blocks[x][y][z], blockPos)
+					server.PlaceBlock(schematic_blocks[x][y][z], blockPos)
 				end
 			end
 		end
@@ -160,7 +232,7 @@ local function load_into_schematic(a, b, schematic_blocks, schematic_size)
 					schematic_blocks[x][y][z] = GetTagValue(blocks[1], "minecraftblockid")
 					--DrawShapeHighlight(blocks[1], 1)
 				else
-					schematic_blocks[x][y][z] = nil
+					schematic_blocks[x][y][z] = ""
 				end
 			end
 		end
@@ -217,11 +289,20 @@ local function update_copy(hitpoint)
 			copy_pos_a = VecCopy(blockPos)
 		end
 	elseif copy_pos_b == nil then
-		renderAabbZone(VecAdd(copy_pos_a, Vec(-0.8, -0.8, -0.8)), VecAdd(blockPos, Vec(0.8, 0.8, 0.8)), 1, 1, 0, 0.25, true)
+		local startPos = copy_pos_a
+		local endPos = blockPos
+		
+		--[[if blockPos[1] < copy_pos_a[1] or blockPos[2] < copy_pos_a[2] or blockPos[3] < copy_pos_a[3] then
+			startPos = blockPos
+			endPos = copy_pos_a
+		end]]--
+		
+		renderAabbZone(VecAdd(startPos, Vec(-0.8, -0.8, -0.8)), VecAdd(endPos, Vec(0.8, 0.8, 0.8)), 1, 1, 0, 0.25, true)
 		if InputPressed(binds["Place"]) then
 			copy_pos_a = nil
 		elseif InputPressed(binds["Mine"]) then
-			copy_pos_b = VecCopy(blockPos)
+			copy_pos_a = VecCopy(startPos)
+			copy_pos_b = VecCopy(endPos)
 		end
 	else
 		renderAabbZone(VecAdd(copy_pos_a, Vec(-0.8, -0.8, -0.8)), VecAdd(copy_pos_b, Vec(0.8, 0.8, 0.8)), 1, 1, 0, 0.25, true)
@@ -286,10 +367,10 @@ function BuildPortal(hitpoint)
 		FindAndDeleteAtPos(leftBlockPos)
 		FindAndDeleteAtPos(rightBlockPos)]]--
 		
-		PlaceBlock("Obsidian", bottomBlockPos)
-		PlaceBlock("Obsidian", topBlockPos)
+		server.PlaceBlock("Obsidian", bottomBlockPos)
+		server.PlaceBlock("Obsidian", topBlockPos)
 		
-		PlaceBlock("Obsidian", leftBlockPos)
-		PlaceBlock("Obsidian", rightBlockPos)
+		server.PlaceBlock("Obsidian", leftBlockPos)
+		server.PlaceBlock("Obsidian", rightBlockPos)
 	end
 end

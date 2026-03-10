@@ -1,3 +1,5 @@
+#version 2
+
 local mult = 100
 local origBlockSize = 1.6
 local blockSize = origBlockSize * mult

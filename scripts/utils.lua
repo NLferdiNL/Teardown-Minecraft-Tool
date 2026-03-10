@@ -1,3 +1,5 @@
+#version 2
+
 function tableToText(inputTable, loopThroughTables, useIPairs, addIndex, addNewLine)
 	if inputTable == nil then
 		return "table nil"
@@ -285,9 +287,13 @@ function renderAabbZone(minPos, maxPos, red, green, blue, alpha, renderFaces)
 	end
 end
 
-local faceSprite = LoadSprite("MOD/sprites/square.png")
+local faceSprite = "MOD/sprites/square.png"
 
 function renderFace(pos, rot, xWidth, yWidth, red, green, blue, spriteAlpha)
+	if type(faceSprite) == "string" then
+		faceSprite = LoadSprite(faceSprite)
+	end
+
 	DrawSprite(faceSprite, Transform(pos, rot), xWidth, yWidth, red, green, blue, spriteAlpha, true, false)
 end
 

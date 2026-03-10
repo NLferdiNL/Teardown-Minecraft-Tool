@@ -1,3 +1,5 @@
+#version 2
+
 savedVars = {
 	ScrollToSelect = { 
 		name = "Scroll To Select",

@@ -1,5 +1,7 @@
-function fireChargeInit(extraData)
-	local playerCamera = GetPlayerCameraTransform()
+#version 2
+
+function fireChargeInit(extraData, id)
+	local playerCamera = GetPlayerCameraTransform(id)
 	local lifetime = 100
 	local pos = playerCamera.pos
 	local dir = TransformToParentVec(playerCamera, Vec(0, 0, -1))

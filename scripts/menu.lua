@@ -1,3 +1,4 @@
+#version 2
 #include "datascripts/inputList.lua"
 #include "datascripts/keybinds.lua"
 #include "scripts/ui.lua"
@@ -53,7 +54,7 @@ function menu_tick(dt)
 		setMenuOpen(true)
 	end
 	
-	if GetString("game.player.tool") == toolName and GetPlayerVehicle() == 0 and InputPressed(binds["Open_Menu"]) and not getInventoryOpen() then
+	if GetPlayerTool(0) == toolName and GetPlayerCanUseTool()and InputPressed(binds["Open_Menu"]) and not getInventoryOpen() then
 		setMenuOpen(not menuOpened)
 	end
 	

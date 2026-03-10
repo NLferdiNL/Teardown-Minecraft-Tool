@@ -1,3 +1,4 @@
+#version 2
 #include "scripts/items/enderpearl.lua"
 #include "scripts/items/flintandsteel.lua"
 #include "scripts/items/firecharge.lua"

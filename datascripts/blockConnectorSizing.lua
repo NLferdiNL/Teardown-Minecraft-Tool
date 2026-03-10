@@ -1,3 +1,4 @@
+#version 2
 -- While this data table contains keys for standard blocks.
 -- They are not used. They are merely there for correct ids to fill.
 

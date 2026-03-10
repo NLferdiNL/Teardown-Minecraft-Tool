@@ -1,14 +1,11 @@
+#version 2
+
 local filteredKeys = { esc = "f", 
 					   lmb = "f", 
 					   mmb = "f", 
 					   rmb = "f", 
 					   space = "f", 
 					   any = "f", 
-					   w = "f",
-					   a = "f",
-					   s = "f",
-					   d = "f",
-					   e = "f",
 					}
 
 function isFilteredKey(key)
@@ -16,7 +13,7 @@ function isFilteredKey(key)
 end
 
 function getKeyPressed()
-	local pressedKey = InputLastPressedKey():lower()
+	local pressedKey = InputLastPressedKey(0):lower()
 	
 	if pressedKey == nil or pressedKey == "" then
 		return nil
